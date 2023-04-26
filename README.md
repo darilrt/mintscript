@@ -1,10 +1,10 @@
-### ZenScript
+### MintScript
 
-ZenScript is a multipropose programming language.
+MintScript is a multipropose programming language.
 
-file extension: .zs
+file extension: .ms
 
-#### ZenScript internal structure
+#### MintScript internal structure
 
 program
 |
@@ -20,10 +20,10 @@ program
 |    |--- fields
 |    |--- methods
 
-#### ZenScript c++ api
+#### MintScript c++ api
 
 ```c++
-#include <ZenScript.h>
+#include <MintScript.h>
 
 int main(int argc, char** argv) {
     // Create a new zen script interpreter
