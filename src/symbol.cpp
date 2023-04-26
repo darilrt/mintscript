@@ -11,6 +11,10 @@ mObject *zSymbolTable::Get(std::string name) {
     return table[name];
 }
 
+mObject **zSymbolTable::GetRef(std::string name) {
+    return &table[name];
+}
+
 void zSymbolTable::Set(std::string name, mObject *value) {
     for (auto it = table.begin(); it != table.end(); ++it) {
         if (it->first == name) {

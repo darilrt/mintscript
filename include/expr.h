@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "token.h"
+#include "mlist.h"
 
 #include <string>
 
@@ -18,7 +19,7 @@ public:
     NumberExprAST(double value) : type(Type::Float), value(value) {}
     NumberExprAST(int value) : type(Type::Int), value(value) {}
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class StringExprAST : public ASTNode {
@@ -27,7 +28,7 @@ public:
 
     StringExprAST(const std::string& value) : value(value) {}
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class BoolExprAST : public ASTNode {
@@ -36,21 +37,21 @@ public:
 
     BoolExprAST(bool value) : value(value) {}
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class NullExprAST : public ASTNode {
 public:
     NullExprAST() = default;
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class LambdaExprAST : public ASTNode {
 public:
     LambdaExprAST() = default;
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class PropertyExprAST : public ASTNode {
@@ -61,7 +62,7 @@ public:
     PropertyExprAST(const std::string& name) : name(name) {}
     PropertyExprAST(const std::string& name, PropertyExprAST* next) : name(name), next(next) {}
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class IndexExprAST : public ASTNode {
@@ -71,7 +72,7 @@ public:
 
     IndexExprAST(ASTNode* expr, ASTNode* index) : expr(expr), index(index) {}
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class CallExprAST : public ASTNode {
@@ -80,7 +81,7 @@ public:
 
     CallExprAST(ASTNode* property) : property(property) {}
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class UnaryExprAST : public ASTNode {
@@ -92,7 +93,7 @@ public:
     UnaryExprAST(Token op, ASTNode* expr) : op(op), expr(expr), isPrefix(true) {}
     UnaryExprAST(Token op, ASTNode* expr, bool isPrefix) : op(op), expr(expr), isPrefix(isPrefix) {}
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class BinaryExprAST : public ASTNode {
@@ -103,7 +104,7 @@ public:
 
     BinaryExprAST(Token op, ASTNode* lhs, ASTNode* rhs) : op(op), lhs(lhs), rhs(rhs) {}
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class TernaryExprAST : public ASTNode {
@@ -114,7 +115,7 @@ public:
 
     TernaryExprAST(ASTNode* condition, ASTNode* trueExpr, ASTNode* falseExpr) : condition(condition), trueExpr(trueExpr), falseExpr(falseExpr) {}
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ParenExprAST : public ASTNode {
@@ -123,5 +124,5 @@ public:
 
     ParenExprAST(ASTNode* expr) : expr(expr) {}
 
-    mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

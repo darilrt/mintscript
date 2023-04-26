@@ -16,38 +16,55 @@
 
 #include "debug_visitor.h"
 
-mObject *EvalVisitor::Visit(ASTNode *node) {
-    return node->Accept(this);
+class mObjectRef : public mObject {
+public:
+    mObject **ref;
+
+    mObjectRef(mObject **ref) : ref(ref), mObject(mType::Type) {}
+
+    std::string ToString() override {
+        return "mObjectRef";
+    }
+};
+
+mlist EvalVisitor::Visit(ASTNode *node) {
+    mlist list = node->Accept(this);
+    mlist ret = mlist({ list[0] });
+	list.Clear();
+    return ret;
 }
 
-mObject *EvalVisitor::Visit(NumberExprAST *node) {
+mlist EvalVisitor::Visit(NumberExprAST *node) {
+    mObject *result = nullptr;
+
     switch (node->type) {
-    case NumberExprAST::Type::Int: return new mint((int)node->value);
-        case NumberExprAST::Type::Float: return new mfloat((float)node->value);
+        case NumberExprAST::Type::Int: result = new mint((int)node->value); break;
+        case NumberExprAST::Type::Float: result = new mfloat((float)node->value); break;
     }
 
-    return new mint(0);
+    return result ? mlist({ result }) : mlist();
 }
 
-mObject *EvalVisitor::Visit(StringExprAST *node) {
-    return new mStr(node->value);
+mlist EvalVisitor::Visit(StringExprAST *node) {
+    return mlist({ new mStr(node->value) });
 }
 
-mObject *EvalVisitor::Visit(BoolExprAST *node) {
-    return node->value ? mbool::True : mbool::False;
+mlist EvalVisitor::Visit(BoolExprAST *node) {
+    return mlist({ node->value ? mbool::True : mbool::False });
 }
 
-mObject *EvalVisitor::Visit(NullExprAST *node) {
-    return mnull::Null;
+mlist EvalVisitor::Visit(NullExprAST *node) {
+    return mlist({ mnull::Null });
 }
 
-mObject *EvalVisitor::Visit(LambdaExprAST *node) {
+mlist EvalVisitor::Visit(LambdaExprAST *node) {
     std::cout << "LambdaExprAST" << std::endl;
-    return nullptr;
+    return {};
 }
 
-mObject *EvalVisitor::Visit(PropertyExprAST *node) {
+mlist EvalVisitor::Visit(PropertyExprAST *node) {
     mObject *result = zSymbolTable::locals->Get(node->name);
+    mObjectRef *ref = new mObjectRef(zSymbolTable::locals->GetRef(node->name));
 
     if (result == nullptr) {
         std::cout << "Name '" << node->name << "' is not defined" << std::endl;
@@ -57,126 +74,133 @@ mObject *EvalVisitor::Visit(PropertyExprAST *node) {
         result = zSymbolTable::locals->Get(node->name); 
     }
 
-    return result;
+    return mlist({ result, ref });
 }
 
-mObject *EvalVisitor::Visit(IndexExprAST *node) {
-    mObject *object = node->expr->Accept(this);
+mlist EvalVisitor::Visit(IndexExprAST *node) {
+    mlist list = node->expr->Accept(this);
+    mObject* object = list[0];
+	INCREF(object);
+    list.Clear();
 
     if (object == nullptr) {
-        return nullptr; // TODO: Error
+        return {}; // TODO: Error
     }
 
-    mObject *index = node->index->Accept(this);
+    list = node->index->Accept(this);
+    mObject* index = list[0];
+	INCREF(index);
+    list.Clear();
 
     if (index == nullptr) {
-        return nullptr; // TODO: Error
+        return {}; // TODO: Error
     }
 
-    mlist* args = new mlist({ index });
+    mlist args({ index });
+    mObject *result = object->CallMethod("zGet", &args, nullptr);
+    
+	DECREF(object);
 
-    mObject *result = object->CallMethod("zGet", args, nullptr);
-
-    DECREF(args);
-    DECREF(object);
-    DECREF(index);
-
-    return nullptr;
+    return mlist({ result });
 }
 
-mObject *EvalVisitor::Visit(CallExprAST *node) {
-    mObject * object = node->property->Accept(this);
+mlist EvalVisitor::Visit(CallExprAST *node) {
+    mlist list = node->property->Accept(this);
+    mObject* object = list[0];
+	INCREF(object);
+    list.Clear();
 
     if (object == nullptr) {
-        return nullptr; // TODO: Error
+        return {}; // TODO: Error
     }
 
-    mlist* args = new mlist();
+    mlist args;
+    mObject *result = object->CallMethod("zCall", nullptr, nullptr);
 
-    // for (auto arg : node->args) {
-    //     zObject *result = arg->Accept(this);
+	DECREF(object);
 
-    //     if (result == nullptr) {
-    //         return nullptr; // TODO: Error
-    //     }
-
-    //     args->Append(result);
-    // }
-    
-    mObject *result = object->CallMethod("zCall", args, nullptr);
-
-    DECREF(args);
-
-    return result;
+    return mlist({ result });
 }
 
-mObject *EvalVisitor::Visit(UnaryExprAST *node) {
+mlist EvalVisitor::Visit(UnaryExprAST *node) {
     mObject *result = nullptr;
-    
-    mObject *operand = node->expr->Accept(this);
+
+    mlist list = node->expr->Accept(this);
+    mObject* operand = list[0];
+    INCREF(operand);
+    list.Clear();
 
     if (operand == nullptr) {
-        return nullptr;
+        return {};
     }
 
-    mlist* args = new mlist({ operand });
+    mlist args({ operand });
 
     // Operator overloading
 
     switch (node->op.type) {
-        case Token::Type::Plus:             result = operand->CallMethod("zPos",       args, nullptr); break; // +
-        case Token::Type::Minus:            result = operand->CallMethod("zNeg",       args, nullptr); break; // -
-        case Token::Type::Not:              result = operand->CallMethod("zNot",       args, nullptr); break; // !
+        case Token::Type::Plus:             result = operand->CallMethod("zPos",       &args, nullptr); break; // +
+        case Token::Type::Minus:            result = operand->CallMethod("zNeg",       &args, nullptr); break; // -
+        case Token::Type::Not:              result = operand->CallMethod("zNot",       &args, nullptr); break; // !
 
         case Token::Type::PlusPlus: {
-            if (node->isPrefix) {           result = operand->CallMethod("zPreInc",    args, nullptr); break; } // ++
-            else {                          result = operand->CallMethod("zPostInc",   args, nullptr); break; } // ++
+            if (node->isPrefix) {           result = operand->CallMethod("zPreInc",    &args, nullptr); break; } // ++
+            else {                          result = operand->CallMethod("zPostInc",   &args, nullptr); break; } // ++
             break;
         }
 
         case Token::Type::MinusMinus: {
-            if (node->isPrefix) {           result = operand->CallMethod("zPreDec",    args, nullptr); break; } // --
-            else {                          result = operand->CallMethod("zPostDec",   args, nullptr); break; } // --
+            if (node->isPrefix) {           result = operand->CallMethod("zPreDec",    &args, nullptr); break; } // --
+            else {                          result = operand->CallMethod("zPostDec",   &args, nullptr); break; } // --
             break;
         }
     }
 
-    DECREF(args);
     DECREF(operand);
-
-    return result;
+    
+    return mlist({ result });
 }
 
-mObject *EvalVisitor::Visit(BinaryExprAST *node) {
+mlist EvalVisitor::Visit(BinaryExprAST *node) {
     mObject *result = nullptr;
-    mObject *left = node->lhs->Accept(this);
-    mObject *right = node->rhs->Accept(this);
 
-    if (left == nullptr || right == nullptr) { return nullptr; }
+    mlist ret = node->lhs->Accept(this);
+    if (ret.items.size() == 0) { return {}; }
+    mObject *left = ret[0];
+	INCREF(left);
+    ret.Clear();
 
-    mlist* args = new mlist({ right });
+    ret = node->rhs->Accept(this);
+    if (ret.items.size() == 0) { return {}; }
+    mObject *right = ret[0];
+	INCREF(right);
+    ret.Clear();
+
+    if (left == nullptr || right == nullptr) { return {}; }
+
+    mlist args({ right });
 
     // Operator overloading
     // TODO: Move this to a separate function
     switch (node->op.type) {
-        case Token::Type::Plus:             result = left->CallMethod("zAdd",       args, nullptr); break; // +
-        case Token::Type::Minus:            result = left->CallMethod("zSub",       args, nullptr); break; // -
-        case Token::Type::Star:             result = left->CallMethod("zMul",       args, nullptr); break; // *
-        case Token::Type::Slash:            result = left->CallMethod("zDiv",       args, nullptr); break; // /
-        case Token::Type::Percent:          result = left->CallMethod("zMod",       args, nullptr); break; // %
-        case Token::Type::EqualEqual:       result = left->CallMethod("zEq",        args, nullptr); break; // ==
-        case Token::Type::NotEqual:         result = left->CallMethod("zNeq",       args, nullptr); break; // !=
-        case Token::Type::Less:             result = left->CallMethod("zLt",        args, nullptr); break; // <
-        case Token::Type::LessEqual:        result = left->CallMethod("zLe",        args, nullptr); break; // <=
-        case Token::Type::Greater:          result = left->CallMethod("zGt",        args, nullptr); break; // >
-        case Token::Type::GreaterEqual:     result = left->CallMethod("zGe",        args, nullptr); break; // >=
-        case Token::Type::Amp:              result = left->CallMethod("zAnd",       args, nullptr); break; // &
-        case Token::Type::Pipe:             result = left->CallMethod("zOr",        args, nullptr); break; // |
-        case Token::Type::Caret:            result = left->CallMethod("zXor",       args, nullptr); break; // ^ 
-        case Token::Type::LessLess:         result = left->CallMethod("zLShift",    args, nullptr); break; // <<
-        case Token::Type::GreaterGreater:   result = left->CallMethod("zRShift",    args, nullptr); break; // >>
-        case Token::Type::AmpAmp:           result = left->CallMethod("zLAnd",      args, nullptr); break; // &&
-        case Token::Type::PipePipe:         result = left->CallMethod("zLOr",       args, nullptr); break; // ||
+        case Token::Type::Plus:             result = left->CallMethod("zAdd",       &args, nullptr); break; // +
+        case Token::Type::Minus:            result = left->CallMethod("zSub",       &args, nullptr); break; // -
+        case Token::Type::Star:             result = left->CallMethod("zMul",       &args, nullptr); break; // *
+        case Token::Type::Slash:            result = left->CallMethod("zDiv",       &args, nullptr); break; // /
+        case Token::Type::Percent:          result = left->CallMethod("zMod",       &args, nullptr); break; // %
+        case Token::Type::EqualEqual:       result = left->CallMethod("zEq",        &args, nullptr); break; // ==
+        case Token::Type::NotEqual:         result = left->CallMethod("zNeq",       &args, nullptr); break; // !=
+        case Token::Type::Less:             result = left->CallMethod("zLt",        &args, nullptr); break; // <
+        case Token::Type::LessEqual:        result = left->CallMethod("zLe",        &args, nullptr); break; // <=
+        case Token::Type::Greater:          result = left->CallMethod("zGt",        &args, nullptr); break; // >
+        case Token::Type::GreaterEqual:     result = left->CallMethod("zGe",        &args, nullptr); break; // >=
+        case Token::Type::Amp:              result = left->CallMethod("zAnd",       &args, nullptr); break; // &
+        case Token::Type::Pipe:             result = left->CallMethod("zOr",        &args, nullptr); break; // |
+        case Token::Type::Caret:            result = left->CallMethod("zXor",       &args, nullptr); break; // ^ 
+        case Token::Type::LessLess:         result = left->CallMethod("zLShift",    &args, nullptr); break; // <<
+        case Token::Type::GreaterGreater:   result = left->CallMethod("zRShift",    &args, nullptr); break; // >>
+        case Token::Type::AmpAmp:           result = left->CallMethod("zLAnd",      &args, nullptr); break; // &&
+        case Token::Type::PipePipe:         result = left->CallMethod("zLOr",       &args, nullptr); break; // ||
     }
 
     if (result == nullptr) {
@@ -184,46 +208,55 @@ mObject *EvalVisitor::Visit(BinaryExprAST *node) {
         std::cout << " for types '" << left->type->name << "' and '" << right->type->name << "'" << std::endl;
     }
     
-    DECREF(args);
     DECREF(left);
     DECREF(right);
-
-    return result;
+    
+    return mlist({ result });
 }
 
-mObject *EvalVisitor::Visit(TernaryExprAST *node) {
-    return nullptr;
+mlist EvalVisitor::Visit(TernaryExprAST *node) {
+    return {};
 }
 
-mObject *EvalVisitor::Visit(ParenExprAST *node) {
-    return node->expr->Accept(this);
+mlist EvalVisitor::Visit(ParenExprAST *node) {
+	mlist list = node->expr->Accept(this);
+	mlist ret = mlist({ list[0] });
+	list.Clear();
+	return ret;
 }
 
-mObject *EvalVisitor::Visit(AssignmentAST *node) {
+mlist EvalVisitor::Visit(AssignmentAST *node) {
     mObject *result = nullptr;
 
-    mObject *left = node->declaration->Accept(this);
-    INCREF(left);
+    mlist ret = node->declaration->Accept(this);
+	mObject* prev = ret[0];
+    INCREF(prev);
+    mObjectRef* left = (mObjectRef*) ret[1];
+	INCREF(left);
+    ret.Clear();
+    
+    ret = node->expression->Accept(this);
+    mObject* right = ret[0];
+	INCREF(right);
+    ret.Clear();
 
-    mObject *right = node->expression->Accept(this);
-    INCREF(right);
-
-    if (left == nullptr || right == nullptr) { return nullptr; }
+    if (left == nullptr || right == nullptr) { return {}; }
 
     if (node->type.type != Token::Type::Equal) {
-        mError::AddError("Unsupported operator " + node->type.value);
-
-        DECREF(left);
-        DECREF(right);
-        return nullptr;
+        
+		DECREF(prev);
+        (*left->ref) = right;
+		INCREF(right);
+        
+        return {};
     }
 
-    mlist* args = new mlist({ right });
+    mlist args({ right });
+    left->CallMethod("zAssign", &args, nullptr);
 
-    left->CallMethod("zAssign", args, nullptr);
+	DECREF(prev);
+	DECREF(left);
+	DECREF(right);
 
-    DECREF(args);
-    DECREF(left);
-    DECREF(right);
-    return result;
+    return mlist({ result });
 }

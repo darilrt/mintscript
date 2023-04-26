@@ -72,16 +72,14 @@ void mRunString(const std::string &source) {
     
     // Evaluate the AST
     Eval eval(node);
-    mObject* result = eval.Evaluate();
-
-    if (result != nullptr) {
-        std::cout << result->ToString() << std::endl;
+    mlist result = eval.Evaluate();
+    
+    if (result.items.size() > 0) { 
+        std::cout << result[0]->ToString() << std::endl;
     }
 
     // Cleanup
     delete node;
-
-    DECREF(result);
 }
 
 void mRunInteractive() {

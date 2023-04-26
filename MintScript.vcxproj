@@ -130,6 +130,7 @@
   <ItemGroup>
     <ClCompile Include="src\context.cpp" />
     <ClCompile Include="src\debug_visitor.cpp" />
+    <ClCompile Include="src\error.cpp" />
     <ClCompile Include="src\eval.cpp" />
     <ClCompile Include="src\exception.cpp" />
     <ClCompile Include="src\expr.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="include\debug.h" />
     <ClInclude Include="include\debug_visitor.h" />
     <ClInclude Include="include\decl.h" />
+    <ClInclude Include="include\error.h" />
     <ClInclude Include="include\eval.h" />
     <ClInclude Include="include\exception.h" />
     <ClInclude Include="include\expr.h" />

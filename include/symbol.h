@@ -20,6 +20,8 @@ public:
     // get a symbol from the table or its parents
     mObject* Get(std::string name);
 
+    mObject** GetRef(std::string name);
+
     // set a symbol in the table or its parents
     void Set(std::string name, mObject* value);
 };

@@ -7,35 +7,37 @@
 #include "token.h"
 #include "error.h"
 
+#include "mlist.h"
+
 #include <iostream>
 
 class EvalVisitor : public Visitor {
 public:
-    mObject* Visit(ASTNode* node);
+    mlist Visit(ASTNode* node);
 
-    mObject* Visit(NumberExprAST* node);
+    mlist Visit(NumberExprAST* node);
 
-    mObject* Visit(StringExprAST* node);
+    mlist Visit(StringExprAST* node);
 
-    mObject* Visit(BoolExprAST* node);
+    mlist Visit(BoolExprAST* node);
 
-    mObject* Visit(NullExprAST* node);
+    mlist Visit(NullExprAST* node);
 
-    mObject* Visit(LambdaExprAST* node);
+    mlist Visit(LambdaExprAST* node);
 
-    mObject* Visit(PropertyExprAST* node);
+    mlist Visit(PropertyExprAST* node);
 
-    mObject* Visit(IndexExprAST* node);
+    mlist Visit(IndexExprAST* node);
 
-    mObject* Visit(CallExprAST* node);
+    mlist Visit(CallExprAST* node);
 
-    mObject* Visit(UnaryExprAST* node);
+    mlist Visit(UnaryExprAST* node);
 
-    mObject* Visit(BinaryExprAST* node);
+    mlist Visit(BinaryExprAST* node);
 
-    mObject* Visit(TernaryExprAST* node);
+    mlist Visit(TernaryExprAST* node);
 
-    mObject* Visit(ParenExprAST* node);
+    mlist Visit(ParenExprAST* node);
 
-    mObject* Visit(AssignmentAST* node);
+    mlist Visit(AssignmentAST* node);
 };

@@ -22,6 +22,16 @@ mlist::mlist() : mObject(mlist::Type) { }
 
 mlist::mlist(std::vector<mObject*> items) : mObject(mlist::Type) {
     this->items = items;
+
+    for (mObject* item : items) {
+        INCREF(item);
+    }
+}
+
+void mlist::Clear() {
+	for (mObject* item : items) {
+		DECREF(item);
+	}
 }
 
 std::string mlist::ToString() {
@@ -39,10 +49,12 @@ std::string mlist::ToString() {
 
 mObject *mlist::Push(mObject *_args, mObject *_kwargs, mObject *_self) {
     const mlist* args = (mlist*) _args;
-    const mlist* kwargs = (mlist*) _kwargs;
     mlist* self = (mlist*) _self;
-
+    
     self->items.push_back(args->GetItem(0));
+
+    INCREF(args->GetItem(0));
+
     return nullptr;
 }
 
@@ -53,6 +65,8 @@ mObject *mlist::Pop(mObject *_args, mObject *_kwargs, mObject *_self) {
 
     mObject* item = self->items.back();
     self->items.pop_back();
+
+    DECREF(item);
 
     return item;
 }
@@ -75,4 +89,12 @@ mObject *mlist::Length(mObject *_args, mObject *_kwargs, mObject *_self) {
     mlist* self = (mlist*) _self;
     
     return new mint(((mlist*) self)->items.size());
+}
+
+void mlist::Release() {
+    for (int i = 0; i < items.size(); i++) {
+        DECREF(items[i]);
+    }
+
+    delete this;
 }

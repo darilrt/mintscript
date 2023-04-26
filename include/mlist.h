@@ -16,6 +16,8 @@ public:
     mlist();
     mlist(std::vector<mObject*> items);
 
+	void Clear();
+
     std::string ToString();
 
     inline mObject* GetItem(int index) const { return items[index]; }
@@ -31,4 +33,8 @@ public:
     static mObject* Insert(mObject* args, mObject* kwargs, mObject *_self);
 
     static mObject* Length(mObject* args, mObject* kwargs, mObject *_self);
+
+    void Release();
+
+    mObject* operator [] (int index) { return items[index]; }
 };
