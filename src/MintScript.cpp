@@ -1,0 +1,92 @@
+#include "MintScript.h"
+#include "parser.h"
+#include "ast.h"
+#include "eval.h"
+
+#include <iostream>
+#include <fstream>
+
+void mInit() {
+    // types
+    zException::Type->Init();
+    mType::Type->Init();
+    zFunctionType->Init();
+    mint::Type->Init();
+    mStr::Type->Init();
+    mfloat::Type->Init();
+    mbool::Type->Init();
+    mnull::Type->Init();
+    mlist::Type->Init();
+    // zDict::Type->Init();
+}
+
+void mShutdown() {
+    // Shutdown the MintScript context
+}
+
+void mRunFile(const std::string &path) {
+    // Read the file
+    std::ifstream file(path);
+
+    if (!file.is_open()) {
+        std::cout << "Failed to open file: " << path << std::endl;
+        return;
+    }
+
+    std::string source((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+    // Parse the file
+    Parser parser(source);
+
+    ASTNode *node = parser.Parse();
+
+    if (node == nullptr) {
+        std::cout << "Failed to parse file: " << path << std::endl;
+        return;
+    }
+
+    // Evaluate the AST
+
+    Eval eval(node);
+    eval.Evaluate();
+}
+
+void mRunString(const std::string &source) {
+    // Parse the string
+    Parser parser(source);
+
+    ASTNode *node = parser.Parse();
+
+    if (node == nullptr) { return; }
+    
+    // Evaluate the AST
+    Eval eval(node);
+    mObject* result = eval.Evaluate();
+
+    if (result != nullptr) {
+        std::cout << result->ToString() << std::endl;
+    }
+
+    // Cleanup
+    delete node;
+
+    DECREF(result);
+}
+
+void mRunInteractive() {
+    std::cout << "MintScript Interpreter v0.1" << std::endl;
+    std::cout << "Type 'exit' to exit" << std::endl;
+
+    std::string input;
+    
+    while (true) {
+        std::cout << ">> ";
+        std::getline(std::cin, input);
+
+        if (input == "exit()") {
+            break;
+        }
+
+        mRunString(input);
+    }
+}
