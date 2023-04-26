@@ -229,6 +229,12 @@ mlist EvalVisitor::Visit(AssignmentAST *node) {
     mObject *result = nullptr;
 
     mlist ret = node->declaration->Accept(this);
+
+    if (ret.items.size() <= 1) { 
+        mError::AddError("Invalid assignment");
+        return {}; 
+    }
+
 	mObject* prev = ret[0];
     INCREF(prev);
     mObjectRef* left = (mObjectRef*) ret[1];
@@ -250,9 +256,6 @@ mlist EvalVisitor::Visit(AssignmentAST *node) {
         
         return {};
     }
-
-    mlist args({ right });
-    left->CallMethod("zAssign", &args, nullptr);
 
 	DECREF(prev);
 	DECREF(left);

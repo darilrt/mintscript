@@ -64,7 +64,6 @@ void mRunString(const std::string &source) {
     ASTNode *node = parser.Parse();
 
     if (mError::HasError()) {
-        mError::PrintErrors();
         return;
     }
 
@@ -73,6 +72,10 @@ void mRunString(const std::string &source) {
     // Evaluate the AST
     Eval eval(node);
     mlist result = eval.Evaluate();
+
+    if (mError::HasError()) {
+        return;
+    }
     
     if (result.items.size() > 0) { 
         std::cout << result[0]->ToString() << std::endl;
@@ -99,6 +102,7 @@ void mRunInteractive() {
         mRunString(input);
 
         if (mError::HasError()) {
+            mError::PrintErrors();
             mError::ClearErrors();
         }
     }
