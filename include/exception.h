@@ -5,14 +5,14 @@
 #include "types.h"
 #include "object.h"
 
-class zException : public mObject {
+class mException : public mObject {
 public:
     static mType* Type;
 
     std::string message;
 
-    zException();
-    zException(std::string message);
+    mException();
+    mException(std::string message);
 
     std::string ToString();
 

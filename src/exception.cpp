@@ -3,38 +3,38 @@
 #include "mstr.h"
 #include "mfn.h"
 
-mType* zException::Type = new mType(
+mType* mException::Type = new mType(
     "Exception",
     []() -> void {
-        zSymbolTable::globals->Set("Exception", zException::Type);
+        zSymbolTable::globals->Set("Exception", mException::Type);
         
-        zException::Type->methods["ToString"] = new zFunction(&zException::ToString);
+        mException::Type->methods["ToString"] = new zFunction(&mException::ToString);
 
-        zException::Type->methods["Raise"] = new zFunction(&zException::Raise);
+        mException::Type->methods["Raise"] = new zFunction(&mException::Raise);
     },
     []() -> mObject* {
-        return new zException();
+        return new mException();
     }
 );
 
-zException::zException() : mObject(zException::Type) {
+mException::mException() : mObject(mException::Type) {
     this->message = "";
 }
 
-zException::zException(std::string message) : mObject(zException::Type) {
+mException::mException(std::string message) : mObject(mException::Type) {
     this->message = message;
 }
 
-std::string zException::ToString() {
+std::string mException::ToString() {
     return this->message;
 }
 
-mObject* zException::ToString(mObject* _args, mObject* _kwargs, mObject* _self) {
+mObject* mException::ToString(mObject* _args, mObject* _kwargs, mObject* _self) {
     return new mStr(_self->ToString());
 }
 
-mObject *zException::Raise(mObject *_args, mObject *_kwargs, mObject *_self) {
-    zException* self = (zException*) _self;
+mObject *mException::Raise(mObject *_args, mObject *_kwargs, mObject *_self) {
+    mException* self = (mException*) _self;
 
     
 

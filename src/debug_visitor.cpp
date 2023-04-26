@@ -7,6 +7,11 @@
 #include "mnull.h"
 #include "mlist.h"
 
+#include "ast.h"
+#include "expr.h"
+#include "decl.h"
+#include "token.h"
+#include "error.h"
 #include "symbol.h"
 
 #include "debug_visitor.h"
@@ -46,8 +51,12 @@ mObject *EvalVisitor::Visit(PropertyExprAST *node) {
 
     if (result == nullptr) {
         std::cout << "Name '" << node->name << "' is not defined" << std::endl;
+        std::cout << " but we can define it for you as null" << std::endl;
+        
+        zSymbolTable::locals->Set(node->name, mnull::Null);
+        result = zSymbolTable::locals->Get(node->name); 
     }
-     
+
     return result;
 }
 
@@ -191,6 +200,30 @@ mObject *EvalVisitor::Visit(ParenExprAST *node) {
 }
 
 mObject *EvalVisitor::Visit(AssignmentAST *node) {
-    std::cout << "AssignmentAST" << std::endl;
-    return nullptr;
+    mObject *result = nullptr;
+
+    mObject *left = node->declaration->Accept(this);
+    INCREF(left);
+
+    mObject *right = node->expression->Accept(this);
+    INCREF(right);
+
+    if (left == nullptr || right == nullptr) { return nullptr; }
+
+    if (node->type.type != Token::Type::Equal) {
+        mError::AddError("Unsupported operator " + node->type.value);
+
+        DECREF(left);
+        DECREF(right);
+        return nullptr;
+    }
+
+    mlist* args = new mlist({ right });
+
+    left->CallMethod("zAssign", args, nullptr);
+
+    DECREF(args);
+    DECREF(left);
+    DECREF(right);
+    return result;
 }

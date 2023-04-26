@@ -7,7 +7,7 @@
 
 class Scanner {
 public:
-    Scanner(const std::string& source);
+    Scanner(const std::string& source, const std::string& filename="");
     
     Token Next();
 

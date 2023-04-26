@@ -7,7 +7,7 @@
 
 class Parser {
 public:
-    Parser(const std::string& source);
+    Parser(const std::string& source, const std::string& filename="");
 
     ASTNode *Parse();
     

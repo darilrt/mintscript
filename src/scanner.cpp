@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-Scanner::Scanner(const std::string &source) : lexer(source), ignoreNewLine(false) { }
+Scanner::Scanner(const std::string &source, const std::string& filename) : lexer(source, filename), ignoreNewLine(false) { }
 
 Token Scanner::Next() {
     if (current < buffer.size()) {

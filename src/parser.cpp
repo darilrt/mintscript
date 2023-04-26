@@ -1,6 +1,6 @@
 #include "parser.h"
 #include "token.h"
-
+#include "error.h"
 #include "ast.h"
 #include "expr.h"
 #include "decl.h"
@@ -16,13 +16,13 @@
 
 #define LOG_PEEK() std::cout << "Peek: " << scanner.Peek().ToString() << std::endl;
 
-Parser::Parser(const std::string &source) : scanner(source) { }
+Parser::Parser(const std::string &source, const std::string& filename) : scanner(source, filename) { }
 
 ASTNode *Parser::Parse() {
     ASTNode *node = nullptr;
 
     scanner.PushAndSetIgnoreNewLine(false);
-    while (scanner.Peek().type != Token::Type::EndFile) {
+    while (scanner.Peek().type != Token::Type::EndFile && !mError::HasError()) {
         node = Statement();
     }
     scanner.PopIgnoreNewLine();
@@ -38,8 +38,8 @@ ASTNode *Parser::Statement() {
         scanner.Next();
     }
 
-    // if (
-        // (node = Declaration()) // ||
+    if (
+        (node = Declaration()) // ||
         // (node = IfStatement()) ||
         // (node = WhileStatement()) ||
         // (node = ForStatement()) ||
@@ -48,11 +48,11 @@ ASTNode *Parser::Statement() {
         // (node = ContinueStatement()) ||
         // (node = BlockStatement()) ||
         // (node = Expression())
-    // ) { return true; }
+    ) { return node; }
     
     if (node = Expression()) {
         if (!(IS(NewLine) || IS(EndFile))) {
-            std::cout << "Syntax Error: Unexpected " << scanner.Peek().ToString() << std::endl;
+            mError::AddError("Syntax Error: Unexpected " + scanner.Peek().ToString());
             return 0;
         }
     }
@@ -86,12 +86,13 @@ ASTNode *Parser::Assignment() {
         EXPECTF(expr, Expression);
 
         if (IS(Equal)) {
-            scanner.Next();
+            const Token &op = scanner.Next();
 
             ASTNode *right = nullptr;
             EXPECTF(right, Expression);
 
-            node = new AssignmentAST(Token::Type::Equal, expr, right);
+            node = new AssignmentAST(op, expr, right);
+        
         } else {
             return expr;
         }
@@ -307,8 +308,13 @@ ASTNode *Parser::Additive() {
         Token token = scanner.Peek();
         scanner.Next();
 
-        ASTNode *right = nullptr;
-        EXPECTF(right, Multiplicative);
+        ASTNode *right = Multiplicative();
+
+        if (right == nullptr) {
+            mError::AddError("SyntaxError: Expected expression after operator '" + token.value + "' " + token.location.ToString());
+            scanner.Reset();
+            return nullptr;
+        }
 
         expr = new BinaryExprAST(token, expr, right);
     }

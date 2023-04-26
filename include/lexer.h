@@ -6,7 +6,7 @@
 
 class Lexer {
 public:
-    Lexer(const std::string& source);
+    Lexer(const std::string& source, const std::string& filename="");
 
     inline char Peek() const { return source[pos]; }
 

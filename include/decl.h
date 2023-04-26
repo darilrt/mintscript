@@ -10,11 +10,11 @@
 
 class AssignmentAST : public ASTNode {
 public:
-    Token::Type type;
+    Token type;
     ASTNode* declaration;
     ASTNode* expression;
-
-    AssignmentAST(Token::Type type, ASTNode* declaration, ASTNode* expression) : type(type), declaration(declaration), expression(expression) { }
+    
+    AssignmentAST(Token type, ASTNode* declaration, ASTNode* expression) : type(type), declaration(declaration), expression(expression) { }
 
     mObject* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

@@ -1,9 +1,9 @@
 import json
 import zs.http
 
-mut server := new http.Server()
+mut server := http.Server()
 
-server.route("/api/v1/users", "GET", (req : http.Request, res : http.Response) {
+server.route("/api/v1/users", "GET", (req : http.Request, res : http.Response) -> void {
     mut json : json.Object = {
         "users": [
             {
@@ -20,7 +20,6 @@ server.route("/api/v1/users", "GET", (req : http.Request, res : http.Response) {
     }
 
     res.send(json)
-}
-)
+})
 
 server.listen(8080)

@@ -3,6 +3,9 @@
 #include "visitor.h"
 #include "ast.h"
 #include "expr.h"
+#include "decl.h"
+#include "token.h"
+#include "error.h"
 
 #include <iostream>
 

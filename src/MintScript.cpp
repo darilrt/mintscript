@@ -2,13 +2,14 @@
 #include "parser.h"
 #include "ast.h"
 #include "eval.h"
+#include "error.h"
 
 #include <iostream>
 #include <fstream>
 
 void mInit() {
     // types
-    zException::Type->Init();
+    mException::Type->Init();
     mType::Type->Init();
     zFunctionType->Init();
     mint::Type->Init();
@@ -40,8 +41,14 @@ void mRunFile(const std::string &path) {
 
     ASTNode *node = parser.Parse();
 
+    // Check for errors
+    if (mError::HasError()) {
+        mError::PrintErrors();
+        return;
+    }
+
     if (node == nullptr) {
-        std::cout << "Failed to parse file: " << path << std::endl;
+        mError::AddError("Failed to parse file: " + path);
         return;
     }
 
@@ -52,10 +59,14 @@ void mRunFile(const std::string &path) {
 }
 
 void mRunString(const std::string &source) {
-    // Parse the string
     Parser parser(source);
 
     ASTNode *node = parser.Parse();
+
+    if (mError::HasError()) {
+        mError::PrintErrors();
+        return;
+    }
 
     if (node == nullptr) { return; }
     
@@ -88,5 +99,9 @@ void mRunInteractive() {
         }
 
         mRunString(input);
+
+        if (mError::HasError()) {
+            mError::ClearErrors();
+        }
     }
 }

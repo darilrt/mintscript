@@ -27,10 +27,14 @@ bool IsAlphaNumeric(char c) {
     return IsAlpha(c) || IsDigit(c);
 }
 
-Lexer::Lexer(const std::string& source) : source(source) {
+Lexer::Lexer(const std::string& source, const std::string& filename) : source(source) {
     location.line = 1;
     location.column = 0;
     location.file = "<stdin>";
+
+    if (filename != "") {
+        location.file = filename;
+    }
 }
 
 char Lexer::Next() {
