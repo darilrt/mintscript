@@ -7,170 +7,170 @@
 #include <sstream>
 #include <cmath>
 
-mType* mint::Type = new mType(
+mType* mInt::Type = new mType(
     "int",
     []() -> void {
         // Regist the type in the global scope
-        zSymbolTable::globals->Set("int", mint::Type);
+        zSymbolTable::globals->Set("int", mInt::Type);
         
         // Register methods
-        mint::Type->methods["ToString"] = new zFunction(&mint::ToString);
+        mInt::Type->methods["ToString"] = new zFunction(&mInt::ToString);
 
         // Binary operators.
-        mint::Type->methods["zAdd"] = new zFunction(&mint::zAdd);
-        mint::Type->methods["zSub"] = new zFunction(&mint::zSub);
-        mint::Type->methods["zMul"] = new zFunction(&mint::zMul);
-        mint::Type->methods["zDiv"] = new zFunction(&mint::zDiv);
-        mint::Type->methods["zMod"] = new zFunction(&mint::zMod);
+        mInt::Type->methods["zAdd"] = new zFunction(&mInt::zAdd);
+        mInt::Type->methods["zSub"] = new zFunction(&mInt::zSub);
+        mInt::Type->methods["zMul"] = new zFunction(&mInt::zMul);
+        mInt::Type->methods["zDiv"] = new zFunction(&mInt::zDiv);
+        mInt::Type->methods["zMod"] = new zFunction(&mInt::zMod);
 
         // Unary operators.
-        mint::Type->methods["zNeg"] = new zFunction(&mint::zNeg);
-        mint::Type->methods["zPos"] = new zFunction(&mint::zPos);
-        mint::Type->methods["zNot"] = new zFunction(&mint::zNot);
-        mint::Type->methods["zPreInc"] = new zFunction(&mint::zPreInc);
-        mint::Type->methods["zPreDec"] = new zFunction(&mint::zPreDec);
-        mint::Type->methods["zPostInc"] = new zFunction(&mint::zPostInc);
-        mint::Type->methods["zPostDec"] = new zFunction(&mint::zPostDec);
+        mInt::Type->methods["zNeg"] = new zFunction(&mInt::zNeg);
+        mInt::Type->methods["zPos"] = new zFunction(&mInt::zPos);
+        mInt::Type->methods["zNot"] = new zFunction(&mInt::zNot);
+        mInt::Type->methods["zPreInc"] = new zFunction(&mInt::zPreInc);
+        mInt::Type->methods["zPreDec"] = new zFunction(&mInt::zPreDec);
+        mInt::Type->methods["zPostInc"] = new zFunction(&mInt::zPostInc);
+        mInt::Type->methods["zPostDec"] = new zFunction(&mInt::zPostDec);
     },
     []() -> mObject* {
-        return new mint();
+        return new mInt();
     }
 );
 
-mint::mint() : mObject(mint::Type) {
+mInt::mInt() : mObject(mInt::Type) {
     this->value = 0;
 }
 
-mint::mint(int value) : mObject(mint::Type) {
+mInt::mInt(int value) : mObject(mInt::Type) {
     this->value = value;
 }
 
-std::string mint::ToString() {
+std::string mInt::ToString() {
     std::stringstream ss;
     ss << value;
     return ss.str();
 }
 
-mObject *mint::ToString(mObject *_args, mObject *_kwargs, mObject *_self) {
+mObject *mInt::ToString(mObject *_args, mObject *_kwargs, mObject *_self) {
     return new mStr(_self->ToString());
 }
 
-mObject *mint::zAdd(mObject *_args, mObject *_kwargs, mObject *_self) {
-    const mlist* args = (mlist*) _args;
+mObject *mInt::zAdd(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
 
-    mint* self = (mint*) _self;
+    mInt* self = (mInt*) _self;
     mObject* other = args->GetItem(0);
     
-    if (other->type == mint::Type) {
-        return new mint(self->value + ((mint*) other)->value);
+    if (other->type == mInt::Type) {
+        return new mInt(self->value + ((mInt*) other)->value);
     }
 
-    if (other->type == mfloat::Type) {
-        return new mfloat(self->value + ((mfloat*) other)->value);
+    if (other->type == mFloat::Type) {
+        return new mFloat(self->value + ((mFloat*) other)->value);
     }
 
     return nullptr;
 }
 
-mObject *mint::zSub(mObject *_args, mObject *_kwargs, mObject *_self) {
-    const mlist* args = (mlist*) _args;
+mObject *mInt::zSub(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
 
-    mint* self = (mint*) _self;
+    mInt* self = (mInt*) _self;
     mObject* other = args->GetItem(0);
     
-    if (other->type == mint::Type) {
-        return new mint(self->value - ((mint*) other)->value);
+    if (other->type == mInt::Type) {
+        return new mInt(self->value - ((mInt*) other)->value);
     }
 
-    if (other->type == mfloat::Type) {
-        return new mfloat(self->value - ((mfloat*) other)->value);
+    if (other->type == mFloat::Type) {
+        return new mFloat(self->value - ((mFloat*) other)->value);
     }
 
     return nullptr;
 }
 
-mObject *mint::zMul(mObject *_args, mObject *_kwargs, mObject *_self) {
-    const mlist* args = (mlist*) _args;
+mObject *mInt::zMul(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
 
-    mint* self = (mint*) _self;
+    mInt* self = (mInt*) _self;
     mObject* other = args->GetItem(0);
 
-    if (other->type == mint::Type) {
-        return new mint(self->value * ((mint*) other)->value);
+    if (other->type == mInt::Type) {
+        return new mInt(self->value * ((mInt*) other)->value);
     }
 
-    if (other->type == mfloat::Type) {
-        return new mfloat(self->value * ((mfloat*) other)->value);
-    }
-
-    return nullptr;
-}
-
-mObject *mint::zDiv(mObject *_args, mObject *_kwargs, mObject *_self) {
-    const mlist* args = (mlist*) _args;
-
-    mint* self = (mint*) _self;
-    mObject* other = args->GetItem(0);
-    
-    if (other->type == mint::Type) {
-        return new mint(self->value / ((mint*) other)->value);
-    }
-
-    if (other->type == mfloat::Type) {
-        return new mfloat(self->value / ((mfloat*) other)->value);
+    if (other->type == mFloat::Type) {
+        return new mFloat(self->value * ((mFloat*) other)->value);
     }
 
     return nullptr;
 }
 
-mObject *mint::zMod(mObject *_args, mObject *_kwargs, mObject *_self) {
-    const mlist* args = (mlist*) _args;
+mObject *mInt::zDiv(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
 
-    mint* self = (mint*) _self;
+    mInt* self = (mInt*) _self;
     mObject* other = args->GetItem(0);
     
-    if (other->type == mint::Type) {
-        return new mint(self->value % ((mint*) other)->value);
+    if (other->type == mInt::Type) {
+        return new mInt(self->value / ((mInt*) other)->value);
     }
 
-    if (other->type == mfloat::Type) {
-        return new mfloat(fmod(self->value, ((mfloat*) other)->value));
+    if (other->type == mFloat::Type) {
+        return new mFloat(self->value / ((mFloat*) other)->value);
     }
 
     return nullptr;
 }
 
-mObject *mint::zNeg(mObject *args, mObject *kwargs, mObject *_self) {
-    mint* self = (mint*) _self;
-    return new mint(-self->value);
+mObject *mInt::zMod(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
+
+    mInt* self = (mInt*) _self;
+    mObject* other = args->GetItem(0);
+    
+    if (other->type == mInt::Type) {
+        return new mInt(self->value % ((mInt*) other)->value);
+    }
+
+    if (other->type == mFloat::Type) {
+        return new mFloat(fmod(self->value, ((mFloat*) other)->value));
+    }
+
+    return nullptr;
 }
 
-mObject *mint::zPos(mObject *args, mObject *kwargs, mObject *_self) {
-    mint* self = (mint*) _self;
-    return new mint(self->value);
+mObject *mInt::zNeg(mObject *args, mObject *kwargs, mObject *_self) {
+    mInt* self = (mInt*) _self;
+    return new mInt(-self->value);
 }
 
-mObject *mint::zNot(mObject *args, mObject *kwargs, mObject *_self) {
-    mint* self = (mint*) _self;
-    return new mint(!self->value);
+mObject *mInt::zPos(mObject *args, mObject *kwargs, mObject *_self) {
+    mInt* self = (mInt*) _self;
+    return new mInt(self->value);
 }
 
-mObject *mint::zPreInc(mObject *args, mObject *kwargs, mObject *_self) {
-    mint* self = (mint*) _self;
-    return new mint(++self->value);
+mObject *mInt::zNot(mObject *args, mObject *kwargs, mObject *_self) {
+    mInt* self = (mInt*) _self;
+    return new mInt(!self->value);
 }
 
-mObject *mint::zPreDec(mObject *args, mObject *kwargs, mObject *_self) {
-    mint* self = (mint*) _self;
-    return new mint(--self->value);
+mObject *mInt::zPreInc(mObject *args, mObject *kwargs, mObject *_self) {
+    mInt* self = (mInt*) _self;
+    return new mInt(++self->value);
 }
 
-mObject *mint::zPostInc(mObject *args, mObject *kwargs, mObject *_self) {
-    mint* self = (mint*) _self;
-    return new mint(self->value++);
+mObject *mInt::zPreDec(mObject *args, mObject *kwargs, mObject *_self) {
+    mInt* self = (mInt*) _self;
+    return new mInt(--self->value);
 }
 
-mObject *mint::zPostDec(mObject *args, mObject *kwargs, mObject *_self) {
-    mint* self = (mint*) _self;
-    return new mint(self->value--);
+mObject *mInt::zPostInc(mObject *args, mObject *kwargs, mObject *_self) {
+    mInt* self = (mInt*) _self;
+    return new mInt(self->value++);
+}
+
+mObject *mInt::zPostDec(mObject *args, mObject *kwargs, mObject *_self) {
+    mInt* self = (mInt*) _self;
+    return new mInt(self->value--);
 }

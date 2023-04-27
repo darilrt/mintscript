@@ -7,7 +7,7 @@ class Eval {
 public:
     Eval(ASTNode* ast) : ast(ast) { }
 
-    mlist Evaluate();
+    mList Evaluate();
 
 private:
     ASTNode* ast;

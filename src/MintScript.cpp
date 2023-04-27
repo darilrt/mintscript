@@ -12,12 +12,12 @@ void mInit() {
     mException::Type->Init();
     mType::Type->Init();
     zFunctionType->Init();
-    mint::Type->Init();
+    mInt::Type->Init();
     mStr::Type->Init();
-    mfloat::Type->Init();
-    mbool::Type->Init();
-    mnull::Type->Init();
-    mlist::Type->Init();
+    mFloat::Type->Init();
+    mBool::Type->Init();
+    mNull::Type->Init();
+    mList::Type->Init();
     // zDict::Type->Init();
 }
 
@@ -71,7 +71,7 @@ void mRunString(const std::string &source) {
     
     // Evaluate the AST
     Eval eval(node);
-    mlist result = eval.Evaluate();
+    mList result = eval.Evaluate();
 
     if (mError::HasError()) {
         return;

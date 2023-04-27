@@ -5,12 +5,12 @@
 
 #include <string>
 
-class mnull : public mObject {
+class mNull : public mObject {
 public:
     static mType* Type;
-    static mnull* Null;
+    static mNull* Null;
 
-    mnull();
+    mNull();
 
     std::string ToString();
 

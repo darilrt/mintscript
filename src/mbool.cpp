@@ -3,32 +3,32 @@
 #include "mfn.h"
 #include "mlist.h"
 
-mType* mbool::Type = new mType(
+mType* mBool::Type = new mType(
     "bool",
     []() -> void {
-        mbool::Type->methods["ToString"] = new zFunction(&mbool::ToString);
+        mBool::Type->methods["ToString"] = new zFunction(&mBool::ToString);
     },
     []() -> mObject* {
-        return mbool::False;
+        return mBool::False;
     }
 );
 
-mbool* mbool::True = new mbool(true);
-mbool* mbool::False = new mbool(false);
+mBool* mBool::True = new mBool(true);
+mBool* mBool::False = new mBool(false);
 
-mbool::mbool(bool value) : mObject(mbool::Type) {
+mBool::mBool(bool value) : mObject(mBool::Type) {
     this->value = value;
 }
 
-std::string mbool::ToString() {
+std::string mBool::ToString() {
     return this->value ? "true" : "false";
 }
 
-mObject *mbool::ToString(mObject *_args, mObject *_kwargs, mObject *_self) {
-    const mlist* args = (mlist*) _args;
-    const mbool* self = (mbool*) _self;
+mObject *mBool::ToString(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
+    const mBool* self = (mBool*) _self;
     
-    return new mStr(((mbool *) self)->ToString());
+    return new mStr(((mBool *) self)->ToString());
 }
 
-void mbool::Release() { }
+void mBool::Release() { }

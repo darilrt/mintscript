@@ -5,14 +5,14 @@
 
 #include <string>
 
-class mfloat : public mObject {
+class mFloat : public mObject {
 public:
     static mType* Type;
 
     float value;
 
-    mfloat();
-    mfloat(float value);
+    mFloat();
+    mFloat(float value);
 
     std::string ToString();
 

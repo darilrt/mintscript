@@ -1,6 +1,6 @@
 #pragma once
 
-class mlist;
+class mList;
 class mObject;
 class ASTNode;
 class NumberExprAST;
@@ -19,35 +19,35 @@ class AssignmentAST;
 
 class Visitor {
 public:
-    virtual mlist Visit(ASTNode* node) = 0;
+    virtual mList Visit(ASTNode* node) = 0;
 
     // ExprASTs
     
-    virtual mlist Visit(NumberExprAST* node) = 0;
+    virtual mList Visit(NumberExprAST* node) = 0;
 
-    virtual mlist Visit(StringExprAST* node) = 0;
+    virtual mList Visit(StringExprAST* node) = 0;
     
-    virtual mlist Visit(BoolExprAST* node) = 0;
+    virtual mList Visit(BoolExprAST* node) = 0;
 
-    virtual mlist Visit(NullExprAST* node) = 0;
+    virtual mList Visit(NullExprAST* node) = 0;
 
-    virtual mlist Visit(LambdaExprAST* node) = 0;
+    virtual mList Visit(LambdaExprAST* node) = 0;
 
-    virtual mlist Visit(PropertyExprAST* node) = 0;
+    virtual mList Visit(PropertyExprAST* node) = 0;
 
-    virtual mlist Visit(IndexExprAST* node) = 0;
+    virtual mList Visit(IndexExprAST* node) = 0;
 
-    virtual mlist Visit(CallExprAST* node) = 0;
+    virtual mList Visit(CallExprAST* node) = 0;
 
-    virtual mlist Visit(UnaryExprAST* node) = 0;
+    virtual mList Visit(UnaryExprAST* node) = 0;
 
-    virtual mlist Visit(BinaryExprAST* node) = 0;
+    virtual mList Visit(BinaryExprAST* node) = 0;
 
-    virtual mlist Visit(TernaryExprAST* node) = 0;
+    virtual mList Visit(TernaryExprAST* node) = 0;
 
-    virtual mlist Visit(ParenExprAST* node) = 0;
+    virtual mList Visit(ParenExprAST* node) = 0;
 
     // DeclASTs
 
-    virtual mlist Visit(AssignmentAST* node) = 0;
+    virtual mList Visit(AssignmentAST* node) = 0;
 };

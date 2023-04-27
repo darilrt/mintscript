@@ -8,5 +8,5 @@ class ASTNode {
 public:
     virtual ~ASTNode() = default;
 
-    virtual mlist Accept(Visitor* visitor) = 0;
+    virtual mList Accept(Visitor* visitor) = 0;
 };

@@ -17,5 +17,5 @@ public:
     
     AssignmentAST(Token type, ASTNode* declaration, ASTNode* expression) : type(type), declaration(declaration), expression(expression) { }
 
-    mlist Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

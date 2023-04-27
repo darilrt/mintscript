@@ -2,26 +2,26 @@
 #include "mstr.h"
 #include "mfn.h"
 
-mType* mnull::Type = new mType(
+mType* mNull::Type = new mType(
     "null",
     []() -> void {
-        mnull::Type->methods["ToString"] = new zFunction(&mnull::ToString);
+        mNull::Type->methods["ToString"] = new zFunction(&mNull::ToString);
     },
     []() -> mObject* {
-        return mnull::Null;
+        return mNull::Null;
     }
 );
 
-mnull* mnull::Null = new mnull();
+mNull* mNull::Null = new mNull();
 
-mnull::mnull() : mObject(mnull::Type) { }
+mNull::mNull() : mObject(mNull::Type) { }
 
-std::string mnull::ToString() {
+std::string mNull::ToString() {
     return "null";
 }
 
-mObject *mnull::ToString(mObject *_args, mObject *_kwargs, mObject *_self) {
+mObject *mNull::ToString(mObject *_args, mObject *_kwargs, mObject *_self) {
     return new mStr("null");
 }
 
-void mnull::Release() { }
+void mNull::Release() { }

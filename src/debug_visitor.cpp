@@ -27,42 +27,42 @@ public:
     }
 };
 
-mlist EvalVisitor::Visit(ASTNode *node) {
-    mlist list = node->Accept(this);
-    mlist ret = mlist({ list[0] });
+mList EvalVisitor::Visit(ASTNode *node) {
+    mList list = node->Accept(this);
+    mList ret = mList({ list[0] });
 	list.Clear();
     return ret;
 }
 
-mlist EvalVisitor::Visit(NumberExprAST *node) {
+mList EvalVisitor::Visit(NumberExprAST *node) {
     mObject *result = nullptr;
 
     switch (node->type) {
-        case NumberExprAST::Type::Int: result = new mint((int)node->value); break;
-        case NumberExprAST::Type::Float: result = new mfloat((float)node->value); break;
+        case NumberExprAST::Type::Int: result = new mInt((int)node->value); break;
+        case NumberExprAST::Type::Float: result = new mFloat((float)node->value); break;
     }
 
-    return result ? mlist({ result }) : mlist();
+    return result ? mList({ result }) : mList();
 }
 
-mlist EvalVisitor::Visit(StringExprAST *node) {
-    return mlist({ new mStr(node->value) });
+mList EvalVisitor::Visit(StringExprAST *node) {
+    return mList({ new mStr(node->value) });
 }
 
-mlist EvalVisitor::Visit(BoolExprAST *node) {
-    return mlist({ node->value ? mbool::True : mbool::False });
+mList EvalVisitor::Visit(BoolExprAST *node) {
+    return mList({ node->value ? mBool::True : mBool::False });
 }
 
-mlist EvalVisitor::Visit(NullExprAST *node) {
-    return mlist({ mnull::Null });
+mList EvalVisitor::Visit(NullExprAST *node) {
+    return mList({ mNull::Null });
 }
 
-mlist EvalVisitor::Visit(LambdaExprAST *node) {
+mList EvalVisitor::Visit(LambdaExprAST *node) {
     std::cout << "LambdaExprAST" << std::endl;
     return {};
 }
 
-mlist EvalVisitor::Visit(PropertyExprAST *node) {
+mList EvalVisitor::Visit(PropertyExprAST *node) {
     mObject *result = zSymbolTable::locals->Get(node->name);
     mObjectRef *ref = new mObjectRef(zSymbolTable::locals->GetRef(node->name));
 
@@ -70,15 +70,15 @@ mlist EvalVisitor::Visit(PropertyExprAST *node) {
         std::cout << "Name '" << node->name << "' is not defined" << std::endl;
         std::cout << " but we can define it for you as null" << std::endl;
         
-        zSymbolTable::locals->Set(node->name, mnull::Null);
+        zSymbolTable::locals->Set(node->name, mNull::Null);
         result = zSymbolTable::locals->Get(node->name); 
     }
 
-    return mlist({ result, ref });
+    return mList({ result, ref });
 }
 
-mlist EvalVisitor::Visit(IndexExprAST *node) {
-    mlist list = node->expr->Accept(this);
+mList EvalVisitor::Visit(IndexExprAST *node) {
+    mList list = node->expr->Accept(this);
     mObject* object = list[0];
 	INCREF(object);
     list.Clear();
@@ -96,16 +96,16 @@ mlist EvalVisitor::Visit(IndexExprAST *node) {
         return {}; // TODO: Error
     }
 
-    mlist args({ index });
+    mList args({ index });
     mObject *result = object->CallMethod("zGet", &args, nullptr);
     
 	DECREF(object);
 
-    return mlist({ result });
+    return mList({ result });
 }
 
-mlist EvalVisitor::Visit(CallExprAST *node) {
-    mlist list = node->property->Accept(this);
+mList EvalVisitor::Visit(CallExprAST *node) {
+    mList list = node->property->Accept(this);
     mObject* object = list[0];
 	INCREF(object);
     list.Clear();
@@ -114,18 +114,18 @@ mlist EvalVisitor::Visit(CallExprAST *node) {
         return {}; // TODO: Error
     }
 
-    mlist args;
+    mList args;
     mObject *result = object->CallMethod("zCall", nullptr, nullptr);
 
 	DECREF(object);
 
-    return mlist({ result });
+    return mList({ result });
 }
 
-mlist EvalVisitor::Visit(UnaryExprAST *node) {
+mList EvalVisitor::Visit(UnaryExprAST *node) {
     mObject *result = nullptr;
 
-    mlist list = node->expr->Accept(this);
+    mList list = node->expr->Accept(this);
     mObject* operand = list[0];
     INCREF(operand);
     list.Clear();
@@ -134,7 +134,7 @@ mlist EvalVisitor::Visit(UnaryExprAST *node) {
         return {};
     }
 
-    mlist args({ operand });
+    mList args({ operand });
 
     // Operator overloading
 
@@ -158,13 +158,13 @@ mlist EvalVisitor::Visit(UnaryExprAST *node) {
 
     DECREF(operand);
     
-    return mlist({ result });
+    return mList({ result });
 }
 
-mlist EvalVisitor::Visit(BinaryExprAST *node) {
+mList EvalVisitor::Visit(BinaryExprAST *node) {
     mObject *result = nullptr;
 
-    mlist ret = node->lhs->Accept(this);
+    mList ret = node->lhs->Accept(this);
     if (ret.items.size() == 0) { return {}; }
     mObject *left = ret[0];
 	INCREF(left);
@@ -178,7 +178,7 @@ mlist EvalVisitor::Visit(BinaryExprAST *node) {
 
     if (left == nullptr || right == nullptr) { return {}; }
 
-    mlist args({ right });
+    mList args({ right });
 
     // Operator overloading
     // TODO: Move this to a separate function
@@ -211,24 +211,24 @@ mlist EvalVisitor::Visit(BinaryExprAST *node) {
     DECREF(left);
     DECREF(right);
     
-    return mlist({ result });
+    return mList({ result });
 }
 
-mlist EvalVisitor::Visit(TernaryExprAST *node) {
+mList EvalVisitor::Visit(TernaryExprAST *node) {
     return {};
 }
 
-mlist EvalVisitor::Visit(ParenExprAST *node) {
-	mlist list = node->expr->Accept(this);
-	mlist ret = mlist({ list[0] });
+mList EvalVisitor::Visit(ParenExprAST *node) {
+	mList list = node->expr->Accept(this);
+	mList ret = mList({ list[0] });
 	list.Clear();
 	return ret;
 }
 
-mlist EvalVisitor::Visit(AssignmentAST *node) {
+mList EvalVisitor::Visit(AssignmentAST *node) {
     mObject *result = nullptr;
 
-    mlist ret = node->declaration->Accept(this);
+    mList ret = node->declaration->Accept(this);
 
     if (ret.items.size() <= 1) { 
         mError::AddError("Invalid assignment");
@@ -261,5 +261,5 @@ mlist EvalVisitor::Visit(AssignmentAST *node) {
 	DECREF(left);
 	DECREF(right);
 
-    return mlist({ result });
+    return mList({ result });
 }

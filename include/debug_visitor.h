@@ -13,31 +13,31 @@
 
 class EvalVisitor : public Visitor {
 public:
-    mlist Visit(ASTNode* node);
+    mList Visit(ASTNode* node);
 
-    mlist Visit(NumberExprAST* node);
+    mList Visit(NumberExprAST* node);
 
-    mlist Visit(StringExprAST* node);
+    mList Visit(StringExprAST* node);
 
-    mlist Visit(BoolExprAST* node);
+    mList Visit(BoolExprAST* node);
 
-    mlist Visit(NullExprAST* node);
+    mList Visit(NullExprAST* node);
 
-    mlist Visit(LambdaExprAST* node);
+    mList Visit(LambdaExprAST* node);
 
-    mlist Visit(PropertyExprAST* node);
+    mList Visit(PropertyExprAST* node);
 
-    mlist Visit(IndexExprAST* node);
+    mList Visit(IndexExprAST* node);
 
-    mlist Visit(CallExprAST* node);
+    mList Visit(CallExprAST* node);
 
-    mlist Visit(UnaryExprAST* node);
+    mList Visit(UnaryExprAST* node);
 
-    mlist Visit(BinaryExprAST* node);
+    mList Visit(BinaryExprAST* node);
 
-    mlist Visit(TernaryExprAST* node);
+    mList Visit(TernaryExprAST* node);
 
-    mlist Visit(ParenExprAST* node);
+    mList Visit(ParenExprAST* node);
 
-    mlist Visit(AssignmentAST* node);
+    mList Visit(AssignmentAST* node);
 };

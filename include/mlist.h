@@ -7,14 +7,14 @@
 #include <string>
 #include <vector>
 
-class mlist : public mObject {
+class mList : public mObject {
 public:
     static mType* Type;
 
     std::vector<mObject*> items;
 
-    mlist();
-    mlist(std::vector<mObject*> items);
+    mList();
+    mList(std::vector<mObject*> items);
 
 	void Clear();
 

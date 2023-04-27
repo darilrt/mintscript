@@ -5,15 +5,15 @@
 
 #include <string>
 
-class mbool : public mObject {
+class mBool : public mObject {
 public:
     static mType* Type;
-    static mbool* True;
-    static mbool* False;
+    static mBool* True;
+    static mBool* False;
 
     bool value;
 
-    mbool(bool value);
+    mBool(bool value);
 
     std::string ToString();
 

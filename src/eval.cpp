@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-mlist Eval::Evaluate() {
+mList Eval::Evaluate() {
     EvalVisitor visitor;
     return ast->Accept(&visitor);
 }

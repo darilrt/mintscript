@@ -5,14 +5,14 @@
 
 #include <string>
 
-class mint : public mObject {
+class mInt : public mObject {
 public:
     static mType* Type;
 
     int value;
 
-    mint();
-    mint(int value);
+    mInt();
+    mInt(int value);
     
     std::string ToString();
 
