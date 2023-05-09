@@ -19,3 +19,15 @@ public:
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
+
+class VarDeclarationAST : public ASTNode {
+public:
+    bool isMutable;
+    Token identifier;
+    ASTNode* type;
+    ASTNode* expression;
+
+    VarDeclarationAST(bool isMutable, Token identifier, ASTNode* type, ASTNode* expression) : isMutable(isMutable), identifier(identifier), type(type), expression(expression) { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};

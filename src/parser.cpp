@@ -64,40 +64,82 @@ ASTNode *Parser::Statement() {
 ASTNode* Parser::Declaration() {
     ASTNode *node = nullptr;
 
-    node = Assignment();
+    (node = VarDeclaration()) ||
+    (node = Assignment());
     
-    // (node = MutDeclaration()) ||
-    // (node = LetDeclaration()) ||
-    // (node = FunctionDeclaration()) ||
-    // (node = ClassDeclaration()) ||
-    // (node = EnumDeclaration()) ||
-    // (node = InterfaceDeclaration());
-
     return node;
 }
 
-// Assignment: ( MutDeclaration | LetDeclaration | Expression ) '=' Expression
+// Assignment: Expression '=' Expression
 ASTNode *Parser::Assignment() {
-    AssignmentAST *node = nullptr;
+    ASTNode *node = nullptr;
 
-    if (IS(Mut) || IS(Let)) {
-    } else {
-        ASTNode *expr = nullptr;
-        EXPECTF(expr, Expression);
+    EXPECTF(node, Expression);
 
-        if (IS(Equal)) {
-            const Token &op = scanner.Next();
+    if (IS(Equal)) {
+        const Token &op = scanner.Next();
 
-            ASTNode *right = nullptr;
-            EXPECTF(right, Expression);
+        ASTNode *right = nullptr;
+        EXPECTF(right, Expression);
 
-            node = new AssignmentAST(op, expr, right);
-        
-        } else {
-            return expr;
+        node = new AssignmentAST(op, node, right);
+    
+    }
+
+    scanner.Consume();
+    return node;
+}
+
+// MutDeclaration: (Mut || Let) Identifier : Type = Expression
+ASTNode *Parser::VarDeclaration() {
+    ASTNode *node = nullptr;
+
+    if (!(IS(Mut) || IS(Let))) { return 0; }
+
+    Token mut = scanner.Peek(); 
+    scanner.Next();
+
+    if (!(IS(Identifier))) {
+        mError::AddError("SyntaxError: Expected identifier after '" + mut.value + "' " + mut.location.ToString());
+        scanner.Reset();
+        return 0;
+    }
+
+    Token name = scanner.Peek();
+    scanner.Next();
+
+    if (!(IS(Colon))) {
+        mError::AddError("SyntaxError: Expected ':' after identifier '" + name.value + "' " + name.location.ToString());
+        scanner.Reset();
+        return 0;
+    }
+
+    scanner.Next();
+
+    ASTNode *type = Expression();
+
+    if (type == nullptr) {
+        mError::AddError("SyntaxError: Expected type after ':' " + scanner.Peek().location.ToString());
+        scanner.Reset();
+        return 0;
+    }
+
+    ASTNode *expression = nullptr;
+
+    if (IS(Equal)) {
+        scanner.Next();
+
+        expression = Expression();
+
+        if (expression == nullptr) {
+            mError::AddError("SyntaxError: Expected expression after '=' " + scanner.Peek().location.ToString());
+            scanner.Reset();
+            return 0;
         }
     }
 
+    node = new VarDeclarationAST(mut.type == Token::Type::Mut, name, type, expression);
+    
     scanner.Consume();
     return node;
 }

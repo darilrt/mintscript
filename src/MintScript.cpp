@@ -77,8 +77,13 @@ void mRunString(const std::string &source) {
         return;
     }
     
-    if (result.items.size() > 0) { 
-        std::cout << result[0]->ToString() << std::endl;
+    if (result.items.size() > 0) {
+        if (result[0]) {
+			std::cout << result[0]->ToString() << std::endl;
+        }
+        else {
+			std::cout << "null error" << std::endl;
+        }
     }
 
     // Cleanup

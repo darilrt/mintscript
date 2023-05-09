@@ -19,8 +19,10 @@
 class mObjectRef : public mObject {
 public:
     mObject **ref;
+    mType *type;
+    bool isMutable;
 
-    mObjectRef(mObject **ref) : ref(ref), mObject(mType::Type) {}
+    mObjectRef(mObject **ref, mType *type, bool isMutable) : ref(ref), type(type), isMutable(isMutable), mObject(mType::Type) { }
 
     std::string ToString() override {
         return "mObjectRef";
@@ -63,43 +65,34 @@ mList EvalVisitor::Visit(LambdaExprAST *node) {
 }
 
 mList EvalVisitor::Visit(PropertyExprAST *node) {
-    mObject *result = zSymbolTable::locals->Get(node->name);
-    mObjectRef *ref = new mObjectRef(zSymbolTable::locals->GetRef(node->name));
+    zSymbolTable::Symbol* symbol = zSymbolTable::globals->GetSymbol(node->name);
 
-    if (result == nullptr) {
+    if (symbol == nullptr) {
         std::cout << "Name '" << node->name << "' is not defined" << std::endl;
-        std::cout << " but we can define it for you as null" << std::endl;
-        
-        zSymbolTable::locals->Set(node->name, mNull::Null);
-        result = zSymbolTable::locals->Get(node->name); 
+        return {};
     }
+
+    mObject *result = symbol->value;
+    mObjectRef *ref = new mObjectRef(&symbol->value, symbol->type, symbol->isMutable);
 
     return mList({ result, ref });
 }
 
 mList EvalVisitor::Visit(IndexExprAST *node) {
     mList list = node->expr->Accept(this);
+    
     mObject* object = list[0];
-	INCREF(object);
-    list.Clear();
-
-    if (object == nullptr) {
-        return {}; // TODO: Error
-    }
+    if (object == nullptr) { return {}; }
 
     list = node->index->Accept(this);
     mObject* index = list[0];
-	INCREF(index);
-    list.Clear();
 
-    if (index == nullptr) {
-        return {}; // TODO: Error
-    }
+    if (index == nullptr) { return {}; }
 
     mList args({ index });
     mObject *result = object->CallMethod("zGet", &args, nullptr);
-    
-	DECREF(object);
+
+	if (result == nullptr) { return {}; }
 
     return mList({ result });
 }
@@ -107,8 +100,6 @@ mList EvalVisitor::Visit(IndexExprAST *node) {
 mList EvalVisitor::Visit(CallExprAST *node) {
     mList list = node->property->Accept(this);
     mObject* object = list[0];
-	INCREF(object);
-    list.Clear();
 
     if (object == nullptr) {
         return {}; // TODO: Error
@@ -116,8 +107,6 @@ mList EvalVisitor::Visit(CallExprAST *node) {
 
     mList args;
     mObject *result = object->CallMethod("zCall", nullptr, nullptr);
-
-	DECREF(object);
 
     return mList({ result });
 }
@@ -127,8 +116,6 @@ mList EvalVisitor::Visit(UnaryExprAST *node) {
 
     mList list = node->expr->Accept(this);
     mObject* operand = list[0];
-    INCREF(operand);
-    list.Clear();
 
     if (operand == nullptr) {
         return {};
@@ -155,8 +142,6 @@ mList EvalVisitor::Visit(UnaryExprAST *node) {
             break;
         }
     }
-
-    DECREF(operand);
     
     return mList({ result });
 }
@@ -167,14 +152,10 @@ mList EvalVisitor::Visit(BinaryExprAST *node) {
     mList ret = node->lhs->Accept(this);
     if (ret.items.size() == 0) { return {}; }
     mObject *left = ret[0];
-	INCREF(left);
-    ret.Clear();
 
     ret = node->rhs->Accept(this);
     if (ret.items.size() == 0) { return {}; }
     mObject *right = ret[0];
-	INCREF(right);
-    ret.Clear();
 
     if (left == nullptr || right == nullptr) { return {}; }
 
@@ -208,9 +189,6 @@ mList EvalVisitor::Visit(BinaryExprAST *node) {
         std::cout << " for types '" << left->type->name << "' and '" << right->type->name << "'" << std::endl;
     }
     
-    DECREF(left);
-    DECREF(right);
-    
     return mList({ result });
 }
 
@@ -220,46 +198,86 @@ mList EvalVisitor::Visit(TernaryExprAST *node) {
 
 mList EvalVisitor::Visit(ParenExprAST *node) {
 	mList list = node->expr->Accept(this);
-	mList ret = mList({ list[0] });
-	list.Clear();
-	return ret;
+	return list;
 }
 
 mList EvalVisitor::Visit(AssignmentAST *node) {
-    mObject *result = nullptr;
+    mList leftRet = node->declaration->Accept(this);
 
-    mList ret = node->declaration->Accept(this);
-
-    if (ret.items.size() <= 1) { 
+    if (leftRet.items.size() <= 1) {
         mError::AddError("Invalid assignment");
         return {}; 
     }
 
-	mObject* prev = ret[0];
-    INCREF(prev);
-    mObjectRef* left = (mObjectRef*) ret[1];
-	INCREF(left);
-    ret.Clear();
-    
-    ret = node->expression->Accept(this);
-    mObject* right = ret[0];
-	INCREF(right);
-    ret.Clear();
+	mObject* prev = leftRet[0];
+    mObjectRef* left = (mObjectRef*)leftRet[1];
 
-    if (left == nullptr || right == nullptr) { return {}; }
+    if (left == nullptr) { return {}; }
+    if (!left->isMutable) {
+        std::cout << "Cannot assign to immutable variable" << std::endl;
+        return {};
+    }
+    
+    mList rightRet = node->expression->Accept(this);
+    mObject* right = rightRet[0];
+    
+    if (right == nullptr) { return {}; }
 
     if (node->type.type != Token::Type::Equal) {
-        
-		DECREF(prev);
+        if (left->type != right->type) {
+            std::cout << "Cannot assign type '" << right->type->name << "' to type '" << left->type->name << "'" << std::endl;
+
+            return {};
+        }
+
         (*left->ref) = right;
 		INCREF(right);
-        
+    }
+
+    return mList({ *left->ref });
+}
+
+mList EvalVisitor::Visit(VarDeclarationAST *node) {
+    mObject *result = nullptr;
+
+    if (!node->isMutable && node->expression == nullptr) {
+        mError::AddError("Cannot declare immutable variable without an initial value");
         return {};
     }
 
-	DECREF(prev);
-	DECREF(left);
-	DECREF(right);
+    mList ret = node->type->Accept(this);
 
-    return mList({ result });
+    if (ret.items.size() == 0) { return {}; }
+    
+    mObject *type = ret[0];
+
+    if (type == nullptr) { return {}; }
+
+    if (type->type != mType::Type) {
+        mError::AddError("Type '" + type->ToString() + "' is not a valid type");
+        return {};
+    }
+
+    const std::string& name = node->identifier.value;
+
+    if (zSymbolTable::locals->Exists(name, nullptr)) {
+        mError::AddError("Name '" + name + "' is already defined");
+        return {};
+    }
+
+    mObject *value = mNull::Null;
+
+    if (node->expression != nullptr) {
+        ret = node->expression->Accept(this);
+        
+        if (ret.items.size() == 0) { value = mNull::Null; }
+        
+        INCREF(value);
+
+        value = ret[0] == nullptr ? mNull::Null : ret[0];
+    }
+
+    zSymbolTable::locals->Set(name, value, (mType*)type, node->isMutable);
+    
+    return {};
 }

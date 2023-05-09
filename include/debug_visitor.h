@@ -40,4 +40,6 @@ public:
     mList Visit(ParenExprAST* node);
 
     mList Visit(AssignmentAST* node);
+
+    mList Visit(VarDeclarationAST* node);
 };

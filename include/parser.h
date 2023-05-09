@@ -21,10 +21,8 @@ public:
 
     ASTNode* Assignment(); // ( MutDeclaration | LetDeclaration | Expression ) = Expression
 
-    ASTNode* MutDeclaration(); // Mut Identifier : Type
-
-    ASTNode* LetDeclaration(); // Let Identifier : Type
-
+    ASTNode* VarDeclaration(); // Mut Identifier : Type
+    
     ASTNode* FunctionDeclaration(); // Function Identifier (Parameters) : Type {Statements}
 
     ASTNode* ClassDeclaration(); // Class Identifier {Statements}
@@ -49,8 +47,14 @@ public:
 
     ASTNode* BlockStatement(); // { Statement* }
 
-    // Expression parsing
+    // Other
 
+    ASTNode* Parameters(); // ( MutParameter | LetParameter ) [, ( MutParameter | LetParameter )]*
+
+    ASTNode* Type(); // Identifier
+
+    // Expression parsing
+    
     ASTNode* Expression(); // Assignment, Conditional
 
     ASTNode* Conditional(); // ?:
