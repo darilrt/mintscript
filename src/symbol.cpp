@@ -1,9 +1,9 @@
 #include "symbol.h"
 
-zSymbolTable *zSymbolTable::globals = new zSymbolTable();
-zSymbolTable *zSymbolTable::locals = zSymbolTable::globals;
+mSymbolTable *mSymbolTable::globals = new mSymbolTable();
+mSymbolTable *mSymbolTable::locals = mSymbolTable::globals;
 
-zSymbolTable::Symbol *zSymbolTable::GetSymbol(const std::string &name) {
+mSymbolTable::Symbol *mSymbolTable::GetSymbol(const std::string &name) {
     auto it = table.find(name);
 
     if (it == table.end())
@@ -12,16 +12,16 @@ zSymbolTable::Symbol *zSymbolTable::GetSymbol(const std::string &name) {
     return &it->second;
 }
 
-mObject *zSymbolTable::Get(const std::string &name)
+mObject *mSymbolTable::Get(const std::string &name)
 {
     return table[name].value;
 }
 
-mObject **zSymbolTable::GetRef(const std::string &name) {
+mObject **mSymbolTable::GetRef(const std::string &name) {
     return &table[name].value;
 }
 
-void zSymbolTable::Set(const std::string &name, mObject *value) {
+void mSymbolTable::Set(const std::string &name, mObject *value) {
     auto it = table.find(name);
 
     if (it != table.end()) {
@@ -32,7 +32,7 @@ void zSymbolTable::Set(const std::string &name, mObject *value) {
     table[name] = { name, value->type, value };
 }
 
-void zSymbolTable::Set(const std::string &name, mObject *value, mType *type, bool isMutable) {
+void mSymbolTable::Set(const std::string &name, mObject *value, mType *type, bool isMutable) {
     auto it = table.find(name);
 
     if (it != table.end()) {
@@ -43,7 +43,7 @@ void zSymbolTable::Set(const std::string &name, mObject *value, mType *type, boo
     table[name] = { name, type, value, isMutable };
 }
 
-bool zSymbolTable::Exists(const std::string &name, mType* type) {
+bool mSymbolTable::Exists(const std::string &name, mType* type) {
     auto it = table.find(name);
 
     if (it == table.end() && type != nullptr)

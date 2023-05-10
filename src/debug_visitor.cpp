@@ -65,7 +65,7 @@ mList EvalVisitor::Visit(LambdaExprAST *node) {
 }
 
 mList EvalVisitor::Visit(PropertyExprAST *node) {
-    zSymbolTable::Symbol* symbol = zSymbolTable::globals->GetSymbol(node->name);
+    mSymbolTable::Symbol* symbol = mSymbolTable::globals->GetSymbol(node->name);
 
     if (symbol == nullptr) {
         std::cout << "Name '" << node->name << "' is not defined" << std::endl;
@@ -90,7 +90,7 @@ mList EvalVisitor::Visit(IndexExprAST *node) {
     if (index == nullptr) { return {}; }
 
     mList args({ index });
-    mObject *result = object->CallMethod("zGet", &args, nullptr);
+    mObject *result = object->CallMethod("mGet", &args, nullptr);
 
 	if (result == nullptr) { return {}; }
 
@@ -106,7 +106,7 @@ mList EvalVisitor::Visit(CallExprAST *node) {
     }
 
     mList args;
-    mObject *result = object->CallMethod("zCall", nullptr, nullptr);
+    mObject *result = object->CallMethod("mCall", nullptr, nullptr);
 
     return mList({ result });
 }
@@ -126,19 +126,19 @@ mList EvalVisitor::Visit(UnaryExprAST *node) {
     // Operator overloading
 
     switch (node->op.type) {
-        case Token::Type::Plus:             result = operand->CallMethod("zPos",       &args, nullptr); break; // +
-        case Token::Type::Minus:            result = operand->CallMethod("zNeg",       &args, nullptr); break; // -
-        case Token::Type::Not:              result = operand->CallMethod("zNot",       &args, nullptr); break; // !
+        case Token::Type::Plus:             result = operand->CallMethod("mPos",       &args, nullptr); break; // +
+        case Token::Type::Minus:            result = operand->CallMethod("mNeg",       &args, nullptr); break; // -
+        case Token::Type::Not:              result = operand->CallMethod("mNot",       &args, nullptr); break; // !
 
         case Token::Type::PlusPlus: {
-            if (node->isPrefix) {           result = operand->CallMethod("zPreInc",    &args, nullptr); break; } // ++
-            else {                          result = operand->CallMethod("zPostInc",   &args, nullptr); break; } // ++
+            if (node->isPrefix) {           result = operand->CallMethod("mPreInc",    &args, nullptr); break; } // ++
+            else {                          result = operand->CallMethod("mPostInc",   &args, nullptr); break; } // ++
             break;
         }
 
         case Token::Type::MinusMinus: {
-            if (node->isPrefix) {           result = operand->CallMethod("zPreDec",    &args, nullptr); break; } // --
-            else {                          result = operand->CallMethod("zPostDec",   &args, nullptr); break; } // --
+            if (node->isPrefix) {           result = operand->CallMethod("mPreDec",    &args, nullptr); break; } // --
+            else {                          result = operand->CallMethod("mPostDec",   &args, nullptr); break; } // --
             break;
         }
     }
@@ -164,24 +164,24 @@ mList EvalVisitor::Visit(BinaryExprAST *node) {
     // Operator overloading
     // TODO: Move this to a separate function
     switch (node->op.type) {
-        case Token::Type::Plus:             result = left->CallMethod("zAdd",       &args, nullptr); break; // +
-        case Token::Type::Minus:            result = left->CallMethod("zSub",       &args, nullptr); break; // -
-        case Token::Type::Star:             result = left->CallMethod("zMul",       &args, nullptr); break; // *
-        case Token::Type::Slash:            result = left->CallMethod("zDiv",       &args, nullptr); break; // /
-        case Token::Type::Percent:          result = left->CallMethod("zMod",       &args, nullptr); break; // %
-        case Token::Type::EqualEqual:       result = left->CallMethod("zEq",        &args, nullptr); break; // ==
-        case Token::Type::NotEqual:         result = left->CallMethod("zNeq",       &args, nullptr); break; // !=
-        case Token::Type::Less:             result = left->CallMethod("zLt",        &args, nullptr); break; // <
-        case Token::Type::LessEqual:        result = left->CallMethod("zLe",        &args, nullptr); break; // <=
-        case Token::Type::Greater:          result = left->CallMethod("zGt",        &args, nullptr); break; // >
-        case Token::Type::GreaterEqual:     result = left->CallMethod("zGe",        &args, nullptr); break; // >=
-        case Token::Type::Amp:              result = left->CallMethod("zAnd",       &args, nullptr); break; // &
-        case Token::Type::Pipe:             result = left->CallMethod("zOr",        &args, nullptr); break; // |
-        case Token::Type::Caret:            result = left->CallMethod("zXor",       &args, nullptr); break; // ^ 
-        case Token::Type::LessLess:         result = left->CallMethod("zLShift",    &args, nullptr); break; // <<
-        case Token::Type::GreaterGreater:   result = left->CallMethod("zRShift",    &args, nullptr); break; // >>
-        case Token::Type::AmpAmp:           result = left->CallMethod("zLAnd",      &args, nullptr); break; // &&
-        case Token::Type::PipePipe:         result = left->CallMethod("zLOr",       &args, nullptr); break; // ||
+        case Token::Type::Plus:             result = left->CallMethod("mAdd",       &args, nullptr); break; // +
+        case Token::Type::Minus:            result = left->CallMethod("mSub",       &args, nullptr); break; // -
+        case Token::Type::Star:             result = left->CallMethod("mMul",       &args, nullptr); break; // *
+        case Token::Type::Slash:            result = left->CallMethod("mDiv",       &args, nullptr); break; // /
+        case Token::Type::Percent:          result = left->CallMethod("mMod",       &args, nullptr); break; // %
+        case Token::Type::EqualEqual:       result = left->CallMethod("mEq",        &args, nullptr); break; // ==
+        case Token::Type::NotEqual:         result = left->CallMethod("mNeq",       &args, nullptr); break; // !=
+        case Token::Type::Less:             result = left->CallMethod("mLt",        &args, nullptr); break; // <
+        case Token::Type::LessEqual:        result = left->CallMethod("mLe",        &args, nullptr); break; // <=
+        case Token::Type::Greater:          result = left->CallMethod("mGt",        &args, nullptr); break; // >
+        case Token::Type::GreaterEqual:     result = left->CallMethod("mGe",        &args, nullptr); break; // >=
+        case Token::Type::Amp:              result = left->CallMethod("mAnd",       &args, nullptr); break; // &
+        case Token::Type::Pipe:             result = left->CallMethod("mOr",        &args, nullptr); break; // |
+        case Token::Type::Caret:            result = left->CallMethod("mXor",       &args, nullptr); break; // ^ 
+        case Token::Type::LessLess:         result = left->CallMethod("mLShift",    &args, nullptr); break; // <<
+        case Token::Type::GreaterGreater:   result = left->CallMethod("mRShift",    &args, nullptr); break; // >>
+        case Token::Type::AmpAmp:           result = left->CallMethod("mLAnd",      &args, nullptr); break; // &&
+        case Token::Type::PipePipe:         result = left->CallMethod("mLOr",       &args, nullptr); break; // ||
     }
 
     if (result == nullptr) {
@@ -260,7 +260,7 @@ mList EvalVisitor::Visit(VarDeclarationAST *node) {
 
     const std::string& name = node->identifier.value;
 
-    if (zSymbolTable::locals->Exists(name, nullptr)) {
+    if (mSymbolTable::locals->Exists(name, nullptr)) {
         mError::AddError("Name '" + name + "' is already defined");
         return {};
     }
@@ -277,7 +277,7 @@ mList EvalVisitor::Visit(VarDeclarationAST *node) {
         value = ret[0] == nullptr ? mNull::Null : ret[0];
     }
 
-    zSymbolTable::locals->Set(name, value, (mType*)type, node->isMutable);
+    mSymbolTable::locals->Set(name, value, (mType*)type, node->isMutable);
     
     return {};
 }

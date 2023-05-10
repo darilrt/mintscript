@@ -22,8 +22,10 @@ ASTNode *Parser::Parse() {
     ASTNode *node = nullptr;
 
     scanner.PushAndSetIgnoreNewLine(false);
-    while (scanner.Peek().type != Token::Type::EndFile && !mError::HasError()) {
+    while (scanner.Peek().type != Token::Type::EndFile) {
         node = Statement();
+
+        if (mError::HasError()) { break; }
     }
     scanner.PopIgnoreNewLine();
 
@@ -50,13 +52,19 @@ ASTNode *Parser::Statement() {
         // (node = Expression())
     ) { return node; }
     
+    if (mError::HasError()) { return nullptr; }
+
     if (node = Expression()) {
         if (!(IS(NewLine) || IS(EndFile))) {
             mError::AddError("Syntax Error: Unexpected " + scanner.Peek().ToString());
-            return 0;
+            return nullptr;
         }
+
+        return node;
     }
 
+    mError::AddError("Syntax Error: Unexpected " + scanner.Peek().ToString());
+    
     return node;
 }
 

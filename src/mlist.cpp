@@ -6,7 +6,7 @@
 mType* mList::Type = new mType(
     "List",
     []() -> void {
-        zSymbolTable::globals->Set("List", mList::Type);
+        mSymbolTable::globals->Set("List", mList::Type);
 
         mList::Type->methods["Push"] = new zFunction(&mList::Push);
         mList::Type->methods["Pop"] = new zFunction(&mList::Pop);

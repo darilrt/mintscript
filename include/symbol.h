@@ -6,7 +6,7 @@
 #include <string>
 #include <unordered_map>
 
-class zSymbolTable {
+class mSymbolTable {
 public:
     struct Symbol {
         std::string name;
@@ -15,10 +15,10 @@ public:
         bool isMutable;
     };
 
-    static zSymbolTable* globals;
-    static zSymbolTable* locals;
+    static mSymbolTable* globals;
+    static mSymbolTable* locals;
 
-    zSymbolTable* parent = nullptr;
+    mSymbolTable* parent = nullptr;
     std::unordered_map<std::string, Symbol> table;
 
     Symbol* GetSymbol(const std::string &name);

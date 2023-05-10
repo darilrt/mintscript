@@ -6,7 +6,7 @@
 mType* mException::Type = new mType(
     "Exception",
     []() -> void {
-        zSymbolTable::globals->Set("Exception", mException::Type);
+        mSymbolTable::globals->Set("Exception", mException::Type);
         
         mException::Type->methods["ToString"] = new zFunction(&mException::ToString);
 

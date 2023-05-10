@@ -11,7 +11,7 @@ mType* mInt::Type = new mType(
     "int",
     []() -> void {
         // Regist the type in the global scope
-        zSymbolTable::globals->Set("int", mInt::Type);
+        mSymbolTable::globals->Set("int", mInt::Type);
         
         // Register methods
         mInt::Type->methods["ToString"] = new zFunction(&mInt::ToString);
