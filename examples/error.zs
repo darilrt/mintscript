@@ -10,8 +10,6 @@ class Error : Exception {
     }
 }
 
-
-
 main () -> void {
     raise("This is an error")
 

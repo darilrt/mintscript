@@ -8,9 +8,9 @@ mType* mException::Type = new mType(
     []() -> void {
         mSymbolTable::globals->Set("Exception", mException::Type);
         
-        mException::Type->methods["ToString"] = new zFunction(&mException::ToString);
+        mException::Type->methods["ToString"] = new mFunction(&mException::ToString);
 
-        mException::Type->methods["Raise"] = new zFunction(&mException::Raise);
+        mException::Type->methods["Raise"] = new mFunction(&mException::Raise);
     },
     []() -> mObject* {
         return new mException();

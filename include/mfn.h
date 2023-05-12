@@ -6,23 +6,23 @@
 #include "object.h"
 #include "types.h"
 
-class zFunction : public mObject {
+class mFunction : public mObject {
 public:
     mObject* (*func)(mObject* args, mObject* kwargs, mObject *self); // Function pointer.
 
-    zFunction();
-    zFunction(mObject* (*func)(mObject* args, mObject* kwargs, mObject *self));
+    mFunction();
+    mFunction(mObject* (*func)(mObject* args, mObject* kwargs, mObject *self));
 
     std::string ToString();
 
     mObject* Call(mObject* args, mObject* kwargs, mObject *self=nullptr);
 };
 
-static mType* zFunctionType = new mType(
+static mType* mFunctionType = new mType(
     "function",
     []() -> void {
         // Register type in the global scope.
-        zFunctionType->methods["zCall"] = new zFunction(
+        mFunctionType->methods["mCall"] = new mFunction(
             [](mObject* args, mObject* kwargs, mObject* self) -> mObject* {
                 // Call the function.
                 return nullptr;
@@ -30,7 +30,7 @@ static mType* zFunctionType = new mType(
         );
     },
     []() -> mObject* {
-        mObject* obj = new zFunction();
+        mObject* obj = new mFunction();
         return obj;
     }
 );

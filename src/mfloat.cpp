@@ -6,8 +6,8 @@
 mType* mFloat::Type = new mType(
     "float",
     []() -> void {
-        mFloat::Type->methods["zAdd"] = new zFunction(&mFloat::zAdd);
-        mFloat::Type->methods["ToString"] = new zFunction(&mFloat::ToString);
+        mFloat::Type->methods["mAdd"] = new mFunction(&mFloat::mAdd);
+        mFloat::Type->methods["ToString"] = new mFunction(&mFloat::ToString);
     },
     []() -> mObject* {
         return new mFloat();
@@ -34,7 +34,7 @@ mObject* mFloat::ToString(mObject* args, mObject* kwargs, mObject *_self) {
     return new mStr(self->ToString());
 }
 
-mObject* mFloat::zAdd(mObject* _args, mObject* _kwargs, mObject *_self) {
+mObject* mFloat::mAdd(mObject* _args, mObject* _kwargs, mObject *_self) {
     const mList* args = (mList*)_args;
     const mList* kwargs = (mList*)_kwargs;
 

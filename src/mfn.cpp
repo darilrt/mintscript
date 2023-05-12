@@ -1,15 +1,15 @@
 #include "mfn.h"
 
-zFunction::zFunction() : mObject(zFunctionType) { }
+mFunction::mFunction() : mObject(mFunctionType) { }
 
-zFunction::zFunction(mObject *(*func)(mObject *args, mObject *kwargs, mObject *self)) : mObject(zFunctionType) {
+mFunction::mFunction(mObject *(*func)(mObject *args, mObject *kwargs, mObject *self)) : mObject(mFunctionType) {
     this->func = func;
 }
 
-std::string zFunction::ToString() {
+std::string mFunction::ToString() {
     return "<function>";
 }
 
-mObject *zFunction::Call(mObject *args, mObject *kwargs, mObject *self) {
+mObject *mFunction::Call(mObject *args, mObject *kwargs, mObject *self) {
     return func(args, kwargs, self);
 }

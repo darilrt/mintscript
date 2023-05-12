@@ -8,7 +8,7 @@ mType* mStr::Type = new mType(
     []() -> void {
         mSymbolTable::globals->Set("str", mStr::Type);
 
-        mStr::Type->methods["ToString"] = new zFunction(&mStr::ToString);
+        mStr::Type->methods["ToString"] = new mFunction(&mStr::ToString);
     },
     []() -> mObject* {
         return new mStr();

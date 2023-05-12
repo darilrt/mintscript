@@ -8,10 +8,10 @@ mType* mList::Type = new mType(
     []() -> void {
         mSymbolTable::globals->Set("List", mList::Type);
 
-        mList::Type->methods["Push"] = new zFunction(&mList::Push);
-        mList::Type->methods["Pop"] = new zFunction(&mList::Pop);
-        mList::Type->methods["Insert"] = new zFunction(&mList::Insert);
-        mList::Type->methods["Length"] = new zFunction(&mList::Length);
+        mList::Type->methods["Push"] = new mFunction(&mList::Push);
+        mList::Type->methods["Pop"] = new mFunction(&mList::Pop);
+        mList::Type->methods["Insert"] = new mFunction(&mList::Insert);
+        mList::Type->methods["Length"] = new mFunction(&mList::Length);
     },
     []() -> mObject* {
         return new mList();

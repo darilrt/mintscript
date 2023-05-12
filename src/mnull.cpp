@@ -5,7 +5,7 @@
 mType* mNull::Type = new mType(
     "null",
     []() -> void {
-        mNull::Type->methods["ToString"] = new zFunction(&mNull::ToString);
+        mNull::Type->methods["ToString"] = new mFunction(&mNull::ToString);
     },
     []() -> mObject* {
         return mNull::Null;

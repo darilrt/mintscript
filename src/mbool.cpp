@@ -6,7 +6,7 @@
 mType* mBool::Type = new mType(
     "bool",
     []() -> void {
-        mBool::Type->methods["ToString"] = new zFunction(&mBool::ToString);
+        mBool::Type->methods["ToString"] = new mFunction(&mBool::ToString);
     },
     []() -> mObject* {
         return mBool::False;

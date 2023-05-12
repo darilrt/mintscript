@@ -20,29 +20,29 @@ public:
 
     // Binary operators.
 
-    static mObject* zAdd(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mAdd(mObject* args, mObject* kwargs, mObject *_self);
 
-    static mObject* zSub(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mSub(mObject* args, mObject* kwargs, mObject *_self);
 
-    static mObject* zMul(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mMul(mObject* args, mObject* kwargs, mObject *_self);
 
-    static mObject* zDiv(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mDiv(mObject* args, mObject* kwargs, mObject *_self);
 
-    static mObject* zMod(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mMod(mObject* args, mObject* kwargs, mObject *_self);
 
     // Unary operators.
 
-    static mObject* zNeg(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mNeg(mObject* args, mObject* kwargs, mObject *_self);
 
-    static mObject* zPos(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mPos(mObject* args, mObject* kwargs, mObject *_self);
 
-    static mObject* zNot(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mNot(mObject* args, mObject* kwargs, mObject *_self);
 
-    static mObject* zPreInc(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mPreInc(mObject* args, mObject* kwargs, mObject *_self);
 
-    static mObject* zPreDec(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mPreDec(mObject* args, mObject* kwargs, mObject *_self);
 
-    static mObject* zPostInc(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mPostInc(mObject* args, mObject* kwargs, mObject *_self);
 
-    static mObject* zPostDec(mObject* args, mObject* kwargs, mObject *_self);
+    static mObject* mPostDec(mObject* args, mObject* kwargs, mObject *_self);
 };

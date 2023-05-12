@@ -11,7 +11,7 @@ void mInit() {
     // types
     mException::Type->Init();
     mType::Type->Init();
-    zFunctionType->Init();
+    mFunctionType->Init();
     mInt::Type->Init();
     mStr::Type->Init();
     mFloat::Type->Init();
