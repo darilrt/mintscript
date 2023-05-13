@@ -17,12 +17,16 @@ main () {
 
     // Get fields of t
     let fields : [..] Field = t_type.fields()
-
+    
     // Print the name of each field
     for field in fields {
         print(field.name())
     }
     
+    for i in 0..fields.Len() {
+        print(fields[i].name())
+    }
+
     // Output:
     // a
 

@@ -106,7 +106,19 @@ mList EvalVisitor::Visit(CallExprAST *node) {
     }
 
     mList args;
-    mObject *result = object->CallMethod("mCall", nullptr, nullptr);
+
+    for (auto arg : node->args) {
+        mList list = arg->Accept(this);
+        mObject* result = list[0];
+
+        if (result == nullptr) {
+            return {}; // TODO: Error
+        }
+
+        args.items.push_back(result);
+    }
+
+    mObject *result = object->CallMethod("mCall", &args, nullptr);
 
     return mList({ result });
 }
@@ -275,9 +287,18 @@ mList EvalVisitor::Visit(VarDeclarationAST *node) {
         INCREF(value);
 
         value = ret[0] == nullptr ? mNull::Null : ret[0];
-    }
 
+        if (type != value->type) {
+            std::cout << "Cannot assign type '" << value->type->name << "' to type '" << ((mType*) type)->name << "'" << std::endl;
+            return {};
+        }
+    }
+    
     mSymbolTable::locals->Set(name, value, (mType*)type, node->isMutable);
     
+    return {};
+}
+
+mList EvalVisitor::Visit(LambdaAST *node) {
     return {};
 }

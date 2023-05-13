@@ -9,9 +9,9 @@
 
 #include <iostream>
 
-#define EXPECT(t) if (scanner.Peek().type != Token::Type::t) { scanner.Reset(); return 0; } scanner.Next();
-#define GET(var_name, t) Token var_name = scanner.Peek(); if (var_name.type != Token::Type::t) { scanner.Reset(); return 0; } scanner.Next();
-#define EXPECTF(var, f) if (!(var = f())) { scanner.Reset(); return 0; }
+#define EXPECT(t) if (scanner.Peek().type != Token::Type::t) { scanner.Reset(); return nullptr; } scanner.Next();
+#define GET(var_name, t) Token var_name = scanner.Peek(); if (var_name.type != Token::Type::t) { scanner.Reset(); return nullptr; } scanner.Next();
+#define EXPECTF(var, f) if (!(var = f())) { scanner.Reset(); return nullptr; }
 #define IS(t) scanner.Peek().type == Token::Type::t
 
 #define LOG_PEEK() std::cout << "Peek: " << scanner.Peek().ToString() << std::endl;
@@ -65,6 +65,7 @@ ASTNode *Parser::Statement() {
 
     mError::AddError("Syntax Error: Unexpected " + scanner.Peek().ToString());
     
+    scanner.Consume();
     return node;
 }
 
@@ -75,6 +76,7 @@ ASTNode* Parser::Declaration() {
     (node = VarDeclaration()) ||
     (node = Assignment());
     
+    scanner.Consume();
     return node;
 }
 
@@ -152,6 +154,57 @@ ASTNode *Parser::VarDeclaration() {
     return node;
 }
 
+// ExprList: (Expression (',' Expression)*)
+std::vector<ASTNode*> Parser::ExprList() {
+    std::vector<ASTNode*> exprs;
+
+    ASTNode *node = nullptr;
+    if (node = Expression()) {
+        exprs.push_back(node);
+
+        while (IS(Comma)) {
+            scanner.Next();
+
+            ASTNode *expr = nullptr;
+            if (!(expr = Expression())) {
+                mError::AddError("SyntaxError: Expected expression after ',' " + scanner.Peek().location.ToString());
+                scanner.Reset();
+
+                for (ASTNode *node : exprs) {
+                    delete node;
+                }
+
+                exprs.clear();
+                return exprs;
+            }
+
+            exprs.push_back(expr);
+        }
+    }
+
+    scanner.Consume();
+    return exprs;
+}
+
+// Block: '{' ((Statement NewLine)* Statement)? '}'
+ASTNode *Parser::Block() {
+    ASTNode* node = nullptr;
+
+    EXPECT(LBrace);
+
+    std::vector<ASTNode*> statements;
+
+    if (!(IS(RBrace))) {
+        mError::AddError("SyntaxError: Expected '}' " + scanner.Peek().location.ToString());
+        scanner.Reset();
+        return 0;
+    }
+
+    scanner.Next();
+    scanner.Consume();
+    return node;
+}
+
 // Expression: Factor
 ASTNode* Parser::Expression() {
     ASTNode *expr = nullptr;
@@ -160,7 +213,6 @@ ASTNode* Parser::Expression() {
     EXPECTF(expr, Conditional);
     scanner.PopIgnoreNewLine();
 
-    scanner.Consume();
     return expr;
 }
 
@@ -446,7 +498,7 @@ ASTNode *Parser::Postfix() {
                 ASTNode *index = Expression();
 
                 if (!(IS(RBracket))) {
-                    std::cout << "Expected ']'" << std::endl;
+                    mError::AddError("SyntaxError: Expected ']'");
                     scanner.Reset();
                     return 0;
                 }
@@ -458,15 +510,15 @@ ASTNode *Parser::Postfix() {
             while (IS(LParen)) {
                 scanner.Next();
 
-                // TODO: Get arguments
+                std::vector<ASTNode*> args = ExprList();
 
                 if (!(IS(RParen))) {
-                    std::cout << "Expected ')'" << std::endl;
+                    mError::AddError("SyntaxError: Expected ')'");	
                     scanner.Reset();
                     return 0;
                 }
 
-                expr = new CallExprAST(expr);
+                expr = new CallExprAST(expr, args);
                 scanner.Next();
             }
         }
@@ -504,8 +556,14 @@ ASTNode* Parser::Factor() {
         scanner.Next();
         expr = new NullExprAST();
     }
-    else if (expr = Lambda()) { }
     else if (IS(LParen)) {
+        if (expr = Lambda()) { return expr; }
+
+        if (mError::HasError()) {
+            scanner.Reset();
+            return nullptr;
+        }
+
         scanner.Next();
         expr = Expression();
 
@@ -527,7 +585,47 @@ ASTNode* Parser::Factor() {
 
 // LambdaDecl: "(" ")" "->" Type "{" statement* "}"
 ASTNode *Parser::Lambda() {
-    return 0;
+    ASTNode* node = nullptr;
+    std::vector<ASTNode*> params;
+    ASTNode* type = nullptr;
+    ASTNode* body = nullptr;
+
+    EXPECT(LParen);
+
+    // Parse parameters
+
+    if (!(IS(RParen))) {
+        mError::AddError("SyntaxError: Expected ')'");
+        scanner.Reset();
+        return nullptr;
+    }
+
+    scanner.Next();
+
+    if (IS(Arrow)) {
+        scanner.Next();
+
+        type = Expression();
+
+        if (type == nullptr) {
+            mError::AddError("SyntaxError: Expected expression after '->'");
+            scanner.Reset();
+            return nullptr;
+        }
+
+        if (!(IS(LBrace))) {
+            mError::AddError("SyntaxError: Expected '{'");
+            scanner.Reset();
+            return nullptr;
+        }
+    }
+
+    body = Block();
+
+    node = new LambdaAST(params, type, body);
+    
+    scanner.Consume();
+    return node;
 }
 
 // Property: IDENTIFIER? ("." IDENTIFIER)*

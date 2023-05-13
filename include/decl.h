@@ -31,3 +31,14 @@ public:
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
+
+class LambdaAST : public ASTNode {
+public:
+    std::vector<ASTNode*> parameters;
+    ASTNode* returnType;
+    ASTNode* body;
+
+    LambdaAST(std::vector<ASTNode*> parameters, ASTNode* returnType, ASTNode* body) : parameters(parameters), returnType(returnType), body(body) { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};

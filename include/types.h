@@ -28,5 +28,5 @@ public:
 
     static void InitType();
 
-    static mObject* zCall(mObject* args, mObject* kwargs, mObject* _self);
+    static mObject* mCall(mObject* args, mObject* kwargs, mObject* _self);
 };

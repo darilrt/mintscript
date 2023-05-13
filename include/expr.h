@@ -82,10 +82,13 @@ public:
 class CallExprAST : public ASTNode {
 public:
     ASTNode* property;
+    std::vector<ASTNode*> args;
 
     ~CallExprAST();
 
     CallExprAST(ASTNode* property) : property(property) {}
+
+    CallExprAST(ASTNode* property, std::vector<ASTNode*> args) : property(property), args(args) {}
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

@@ -53,6 +53,14 @@ public:
 
     ASTNode* Type(); // Identifier
 
+    std::vector<ASTNode*> ExprList(); // Expression [, Expression]*
+
+    std::vector<ASTNode*> ArgDeclList(); // ( MutDeclaration | LetDeclaration ) [, ( MutDeclaration | LetDeclaration )]*
+
+    std::vector<ASTNode*> ArgList(); // Expression [, Expression]*
+
+    ASTNode* Block(); // { Statement* }
+
     // Expression parsing
     
     ASTNode* Expression(); // Assignment, Conditional

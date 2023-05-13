@@ -1,7 +1,7 @@
 import json
-import zs.http
+import ms.http
 
-mut server := http.Server()
+mut server : http.Server = http.Server()
 
 server.route("/api/v1/users", "GET", (req : http.Request, res : http.Response) -> void {
     mut json : json.Object = {

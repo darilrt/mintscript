@@ -1,8 +1,28 @@
 #include "mfn.h"
+#include "symbol.h"
 
-mFunction::mFunction() : mObject(mFunctionType) { }
+mType* mFunction::Type = new mType(
+    "Function",
+    []() -> void {
+        // mSymbolTable::globals->Set("Function", mFunction::Type);
 
-mFunction::mFunction(mObject *(*func)(mObject *args, mObject *kwargs, mObject *self)) : mObject(mFunctionType) {
+        mFunction::Type->methods["mCall"] = new mFunction(
+            [](mObject* args, mObject* kwargs, mObject* _self) -> mObject* {
+                const mFunction* self = (mFunction*)_self;
+                self->func(args, kwargs, _self);
+                return nullptr;
+            }
+        );
+    },
+    []() -> mObject* {
+        mObject* obj = new mFunction();
+        return obj;
+    }
+);
+
+mFunction::mFunction() : mObject(Type) { }
+
+mFunction::mFunction(mObject *(*func)(mObject *args, mObject *kwargs, mObject *self)) : mObject(mFunction::Type) {
     this->func = func;
 }
 

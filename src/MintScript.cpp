@@ -7,11 +7,30 @@
 #include <iostream>
 #include <fstream>
 
+mObject* print(mObject* _args, mObject* _kwargs, mObject* _self) {
+    const mList* args = (mList*)_args;
+
+    for (mObject* arg : args->items) {
+        if (arg == nullptr) { return nullptr; }
+
+        if (arg->type == mStr::Type) {
+            std::cout << ((mStr*)arg)->value;
+        } else {
+            std::cout << arg->ToString();
+        }
+
+        std::cout << " ";
+    }
+
+    std::cout << std::endl;
+    return nullptr;
+}
+
 void mInit() {
     // types
     mException::Type->Init();
     mType::Type->Init();
-    mFunctionType->Init();
+    mFunction::Type->Init();
     mInt::Type->Init();
     mStr::Type->Init();
     mFloat::Type->Init();
@@ -19,6 +38,8 @@ void mInit() {
     mNull::Type->Init();
     mList::Type->Init();
     // zDict::Type->Init();
+
+    mSymbolTable::globals->Set("print", new mFunction(&print));
 }
 
 void mShutdown() {
@@ -82,7 +103,7 @@ void mRunString(const std::string &source) {
 			std::cout << result[0]->ToString() << std::endl;
         }
         else {
-			std::cout << "null error" << std::endl;
+			std::cout << "DEBUG: Result null" << std::endl; // DEBUG
         }
     }
 

@@ -42,4 +42,6 @@ public:
     mList Visit(AssignmentAST* node);
 
     mList Visit(VarDeclarationAST* node);
+
+    mList Visit(LambdaAST* node);
 };

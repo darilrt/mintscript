@@ -16,5 +16,7 @@ public:
 
     static mObject* ToString(mObject* args, mObject* kwargs, mObject *_self);
 
+    static mObject* mEquals(mObject* args, mObject* kwargs, mObject *_self);
+
     void Release();
 };

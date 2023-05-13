@@ -35,7 +35,7 @@ void mType::InitType() {
             
             mSymbolTable::globals->Set("type", mType::Type);
             
-            mType::Type->methods["mCall"] = new mFunction(&mType::zCall);
+            mType::Type->methods["mCall"] = new mFunction(&mType::mCall);
         },
         []() -> mObject* {
             return mType::Type;
@@ -43,6 +43,6 @@ void mType::InitType() {
     );
 }
 
-mObject *mType::zCall(mObject *args, mObject *kwargs, mObject *_self) {
+mObject *mType::mCall(mObject *args, mObject *kwargs, mObject *_self) {
     return ((mType*)_self)->New();
 }

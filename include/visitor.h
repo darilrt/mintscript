@@ -17,6 +17,7 @@ class TernaryExprAST;
 class ParenExprAST;
 class AssignmentAST;
 class VarDeclarationAST;
+class LambdaAST;
 
 class Visitor {
 public:
@@ -53,4 +54,6 @@ public:
     virtual mList Visit(AssignmentAST* node) = 0;
 
     virtual mList Visit(VarDeclarationAST* node) = 0;
+
+    virtual mList Visit(LambdaAST* node) = 0;
 };
