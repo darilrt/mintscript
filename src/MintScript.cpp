@@ -90,6 +90,14 @@ void mRunInteractive() {
         std::cout << ">> ";
         std::getline(std::cin, input);
 
+        while (input.size() > 0 && input[input.size() - 1] == '\\') {
+            input.pop_back();
+            std::string nextLine;
+            std::cout << ".. ";
+            std::getline(std::cin, nextLine);
+            input += nextLine;
+        }
+
         if (input == "exit()") {
             break;
         }
