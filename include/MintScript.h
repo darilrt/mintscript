@@ -14,6 +14,8 @@
 #include "object.h"
 #include "symbol.h"
 
+#include "builtin.h"
+
 // #include "zdict.h"
 
 void mInit();

@@ -231,6 +231,12 @@ mList EvalVisitor::Visit(AssignmentAST *node) {
     }
     
     mList rightRet = node->expression->Accept(this);
+
+    if (rightRet.items.size() <= 0) { 
+        mError::AddError("Invalid value");
+        return {}; 
+    }
+
     mObject* right = rightRet[0];
     
     if (right == nullptr) { return {}; }
@@ -300,5 +306,11 @@ mList EvalVisitor::Visit(VarDeclarationAST *node) {
 }
 
 mList EvalVisitor::Visit(LambdaAST *node) {
-    return {};
+    mFunction *func = new mFunction([] (mObject *args, mObject *kwargs, mObject *self) -> mObject* {
+        std::cout << "Lambda function called" << std::endl;
+        return nullptr;
+    });
+
+
+    return mList({ func });
 }

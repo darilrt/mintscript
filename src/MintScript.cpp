@@ -7,39 +7,8 @@
 #include <iostream>
 #include <fstream>
 
-mObject* print(mObject* _args, mObject* _kwargs, mObject* _self) {
-    const mList* args = (mList*)_args;
-
-    for (mObject* arg : args->items) {
-        if (arg == nullptr) { return nullptr; }
-
-        if (arg->type == mStr::Type) {
-            std::cout << ((mStr*)arg)->value;
-        } else {
-            std::cout << arg->ToString();
-        }
-
-        std::cout << " ";
-    }
-
-    std::cout << std::endl;
-    return nullptr;
-}
-
 void mInit() {
-    // types
-    mException::Type->Init();
-    mType::Type->Init();
-    mFunction::Type->Init();
-    mInt::Type->Init();
-    mStr::Type->Init();
-    mFloat::Type->Init();
-    mBool::Type->Init();
-    mNull::Type->Init();
-    mList::Type->Init();
-    // zDict::Type->Init();
-
-    mSymbolTable::globals->Set("print", new mFunction(&print));
+    BuiltInInit();
 }
 
 void mShutdown() {

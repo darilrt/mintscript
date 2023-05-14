@@ -55,7 +55,9 @@ public:
 
     std::vector<ASTNode*> ExprList(); // Expression [, Expression]*
 
-    std::vector<ASTNode*> ArgDeclList(); // ( MutDeclaration | LetDeclaration ) [, ( MutDeclaration | LetDeclaration )]*
+    std::vector<ASTNode*> ArgDeclList(); // ArgDecl [, ArgDecl]*
+
+    ASTNode* ArgDecl(); // ( MutParameter | LetParameter )
 
     std::vector<ASTNode*> ArgList(); // Expression [, Expression]*
 

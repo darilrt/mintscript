@@ -186,6 +186,82 @@ std::vector<ASTNode*> Parser::ExprList() {
     return exprs;
 }
 
+// ArgDeclList: (ArgDecl (',' ArgDecl)*)
+std::vector<ASTNode *> Parser::ArgDeclList() {
+    std::vector<ASTNode *> args;
+
+    ASTNode *node = nullptr;
+
+    if (node = ArgDecl()) {
+        args.push_back(node);
+
+        while (IS(Comma)) {
+            scanner.Next();
+
+            ASTNode *arg = nullptr;
+            if (!(arg = ArgDecl())) {
+                mError::AddError("SyntaxError: Expected argument after ',' " + scanner.Peek().location.ToString());
+                scanner.Reset();
+
+                for (ASTNode *node : args) {
+                    delete node;
+                }
+
+                args.clear();
+                return args;
+            }
+
+            args.push_back(arg);
+        }
+
+        scanner.Consume();
+    }
+
+    return args;
+}
+
+// ArgDecl: Identifier ':' Type ('=' Expression)?
+ASTNode *Parser::ArgDecl() {
+    ASTNode *node = nullptr;
+
+    GET(name, Identifier);
+
+    if (!(IS(Colon))) {
+        mError::AddError("SyntaxError: Expected ':' after identifier '" + name.value + "' " + name.location.ToString());
+        scanner.Reset();
+        return 0;
+    }
+
+    scanner.Next();
+
+    ASTNode *type = Expression();
+
+    if (type == nullptr) {
+        mError::AddError("SyntaxError: Expected type after ':' " + scanner.Peek().location.ToString());
+        scanner.Reset();
+        return 0;
+    }
+
+    ASTNode *expression = nullptr;
+
+    if (IS(Equal)) {
+        scanner.Next();
+
+        expression = Expression();
+
+        if (expression == nullptr) {
+            mError::AddError("SyntaxError: Expected expression after '=' " + scanner.Peek().location.ToString());
+            scanner.Reset();
+            return 0;
+        }
+    }
+
+    node = new ArgDeclAST(true, name, type, expression);
+
+    scanner.Consume();
+    return node;
+}
+
 // Block: '{' ((Statement NewLine)* Statement)? '}'
 ASTNode *Parser::Block() {
     ASTNode* node = nullptr;
@@ -557,14 +633,17 @@ ASTNode* Parser::Factor() {
         expr = new NullExprAST();
     }
     else if (IS(LParen)) {
+        scanner.Consume();
+
         if (expr = Lambda()) { return expr; }
 
         if (mError::HasError()) {
             scanner.Reset();
             return nullptr;
         }
-
+        
         scanner.Next();
+        
         expr = Expression();
 
         if (!(IS(RParen))) {
@@ -578,12 +657,12 @@ ASTNode* Parser::Factor() {
         scanner.Consume();
     }
     else if (expr = Property()) { }
-
+    
     scanner.Consume();
     return expr;
 }
 
-// LambdaDecl: "(" ")" "->" Type "{" statement* "}"
+// LambdaDecl: "(" ArgDeclList ")" "->" Type Block
 ASTNode *Parser::Lambda() {
     ASTNode* node = nullptr;
     std::vector<ASTNode*> params;
@@ -592,14 +671,20 @@ ASTNode *Parser::Lambda() {
 
     EXPECT(LParen);
 
-    // Parse parameters
+    params = ArgDeclList();
+    
+    if (params.size() == 0) { scanner.Next(); }
 
     if (!(IS(RParen))) {
-        mError::AddError("SyntaxError: Expected ')'");
+        if (params.size() != 0) {
+            mError::AddError("SyntaxError: Expected ')' or parameter");
+            scanner.Reset();
+            return nullptr;
+        }
         scanner.Reset();
         return nullptr;
     }
-
+    
     scanner.Next();
 
     if (IS(Arrow)) {

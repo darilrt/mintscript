@@ -42,3 +42,15 @@ public:
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
+
+class ArgDeclAST : public ASTNode {
+public:
+    bool isMutable;
+    Token identifier;
+    ASTNode* type;
+    ASTNode* defaultValue;
+
+    ArgDeclAST(bool isMutable, Token identifier, ASTNode* type, ASTNode* defaultValue) : isMutable(isMutable), identifier(identifier), type(type), defaultValue(defaultValue) { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};

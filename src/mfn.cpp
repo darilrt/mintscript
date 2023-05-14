@@ -4,13 +4,12 @@
 mType* mFunction::Type = new mType(
     "Function",
     []() -> void {
-        // mSymbolTable::globals->Set("Function", mFunction::Type);
+        mSymbolTable::globals->Set("Function", mFunction::Type);
 
         mFunction::Type->methods["mCall"] = new mFunction(
             [](mObject* args, mObject* kwargs, mObject* _self) -> mObject* {
-                const mFunction* self = (mFunction*)_self;
-                self->func(args, kwargs, _self);
-                return nullptr;
+                const mFunction* self = (mFunction*) _self;
+                return self->func(args, kwargs, _self);
             }
         );
     },
