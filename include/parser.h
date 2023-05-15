@@ -57,7 +57,7 @@ public:
 
     std::vector<ASTNode*> ArgDeclList(); // ArgDecl [, ArgDecl]*
 
-    ASTNode* ArgDecl(); // ( MutParameter | LetParameter )
+    ASTNode* ArgDecl(bool strict=true); // ( MutParameter | LetParameter )
 
     std::vector<ASTNode*> ArgList(); // Expression [, Expression]*
 

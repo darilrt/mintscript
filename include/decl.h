@@ -43,6 +43,15 @@ public:
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
+class ReturnAST : public ASTNode {
+public:
+    ASTNode* expression;
+
+    ReturnAST(ASTNode* expression) : expression(expression) { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
 class ArgDeclAST : public ASTNode {
 public:
     bool isMutable;
@@ -51,6 +60,25 @@ public:
     ASTNode* defaultValue;
 
     ArgDeclAST(bool isMutable, Token identifier, ASTNode* type, ASTNode* defaultValue) : isMutable(isMutable), identifier(identifier), type(type), defaultValue(defaultValue) { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class FunctionAST : public ASTNode {
+public:
+    Token name;
+    LambdaAST* lambda;
+
+    FunctionAST(Token name, LambdaAST* lambda) : name(name), lambda(lambda) { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class BlockAST : public ASTNode {
+public:
+    std::vector<ASTNode*> statements;
+
+    BlockAST(std::vector<ASTNode*> statements) : statements(statements) { }
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

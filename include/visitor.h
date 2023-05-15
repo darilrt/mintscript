@@ -18,6 +18,10 @@ class ParenExprAST;
 class AssignmentAST;
 class VarDeclarationAST;
 class LambdaAST;
+class ArgDeclAST;
+class BlockAST;
+class ReturnAST;
+class FunctionAST;
 
 class Visitor {
 public:
@@ -56,4 +60,16 @@ public:
     virtual mList Visit(VarDeclarationAST* node) = 0;
 
     virtual mList Visit(LambdaAST* node) = 0;
+
+    virtual mList Visit(ArgDeclAST* node) = 0;
+
+    virtual mList Visit(BlockAST* node) = 0;
+
+    virtual mList Visit(FunctionAST* node) = 0;
+
+    // Statements
+
+    virtual mList Visit(ReturnAST* node) = 0;
+    
+    // virtual mList Visit(IfAST* node) = 0;
 };

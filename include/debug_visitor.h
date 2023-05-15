@@ -44,4 +44,12 @@ public:
     mList Visit(VarDeclarationAST* node);
 
     mList Visit(LambdaAST* node);
+
+    mList Visit(ArgDeclAST* node);
+
+    mList Visit(BlockAST* node);
+
+    mList Visit(ReturnAST* node);
+
+    mList Visit(FunctionAST* node);
 };

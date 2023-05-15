@@ -30,10 +30,7 @@ public:
 };
 
 mList EvalVisitor::Visit(ASTNode *node) {
-    mList list = node->Accept(this);
-    mList ret = mList({ list[0] });
-	list.Clear();
-    return ret;
+    return {};
 }
 
 mList EvalVisitor::Visit(NumberExprAST *node) {
@@ -65,8 +62,8 @@ mList EvalVisitor::Visit(LambdaExprAST *node) {
 }
 
 mList EvalVisitor::Visit(PropertyExprAST *node) {
-    mSymbolTable::Symbol* symbol = mSymbolTable::globals->GetSymbol(node->name);
-
+    mSymbolTable::Symbol* symbol = mSymbolTable::LocalsGetSymbol(node->name);
+    
     if (symbol == nullptr) {
         std::cout << "Name '" << node->name << "' is not defined" << std::endl;
         return {};
@@ -109,18 +106,87 @@ mList EvalVisitor::Visit(CallExprAST *node) {
 
     for (auto arg : node->args) {
         mList list = arg->Accept(this);
-        mObject* result = list[0];
+        
+        if (mError::HasError()) { return {}; }
 
-        if (result == nullptr) {
+        if (list.items.size() == 0) {
+            mError::AddError("Expected argument");
             return {}; // TODO: Error
         }
 
-        args.items.push_back(result);
+        mObject* value = list[0];
+
+        if (value == nullptr) {
+            mError::AddError("Expected argument");
+            return {}; // TODO: Error
+        }
+        
+        args.items.push_back(value);
     }
 
-    mObject *result = object->CallMethod("mCall", &args, nullptr);
+    mFunction* func = dynamic_cast<mFunction*>(object);
+    mObject* result = nullptr;
 
-    return mList({ result });
+    if (func) {
+        if (func->ast) {
+            // Load symbol table
+            mSymbolTable* table = func->symbolTable ? func->symbolTable : new mSymbolTable(mSymbolTable::locals);
+            mSymbolTable::locals = table;
+
+            // Load arguments
+            if (args.items.size() != func->args.size()) {
+                mError::AddError("Expected " + std::to_string(func->args.size()) + " arguments, got " + std::to_string(args.items.size()));
+                mSymbolTable::locals = mSymbolTable::locals->parent;
+                return {};
+            }
+            
+            for (int i = 0; i < args.items.size(); i++) {
+                mObject* value = args[i];
+                
+                if (i >= func->args.size()) {
+                    std::cout << "Too many arguments" << std::endl;
+                    mSymbolTable::locals = mSymbolTable::locals->parent;
+                    return {};
+                }
+
+                if (value->type != func->args[i].type) {
+                    std::cout << "Argument type mismatch" << std::endl;
+                    mSymbolTable::locals = mSymbolTable::locals->parent;
+                    return {};
+                }
+
+                mSymbolTable::locals->Set(func->args[i].name, value, func->args[i].type, false);
+            }
+            
+            // Call lambda
+            LambdaAST* lambda = (LambdaAST*) func->ast;
+
+            mList ret = lambda->body->Accept(this);
+
+            if (ret.items.size() == 0 || mError::HasError()) {
+                return {};
+            }
+
+            result = ret[0];
+
+            if (result->type != func->returnType) {
+                std::cout << "Return type mismatch" << std::endl;
+                mSymbolTable::locals = mSymbolTable::locals->parent;
+                return {};
+            }
+
+            // Unload symbol table
+            mSymbolTable::locals = mSymbolTable::locals->parent;
+        }
+        else {
+            result = func->Call(&args, nullptr, nullptr);
+        }
+    }
+    else {
+        result = object->CallMethod("mCall", &args, nullptr);
+    }
+    
+    return result ? mList({ result }) : mList();
 }
 
 mList EvalVisitor::Visit(UnaryExprAST *node) {
@@ -306,11 +372,106 @@ mList EvalVisitor::Visit(VarDeclarationAST *node) {
 }
 
 mList EvalVisitor::Visit(LambdaAST *node) {
-    mFunction *func = new mFunction([] (mObject *args, mObject *kwargs, mObject *self) -> mObject* {
-        std::cout << "Lambda function called" << std::endl;
-        return nullptr;
-    });
+    mFunction* func = new mFunction();
+    func->ast = node;
 
+    // Resolve return type
+    if (node->returnType) {
+        mList ret = node->returnType->Accept(this);
+
+        if (ret.items.size() == 0) {
+            func->returnType = mNull::Type; // TODO: Change this to void
+        }
+        else {
+            if (ret[0]->type != mType::Type) {
+                mError::AddError("Type '" + ret[0]->ToString() + "' is not a valid type");
+                return {};
+            }
+
+            func->returnType = (mType*) ret[0];
+        }
+    }
+    else {
+        func->returnType = mNull::Type; // TODO: Change this to void
+    }
+
+    // Resolve arguments
+    for (auto& arg : node->parameters) {
+        const ArgDeclAST* argDecl = (ArgDeclAST*) arg;
+
+        mList type = argDecl->type->Accept(this);
+        if (type.items.size() == 0) { 
+            mError::AddError("Invalid type");
+            return {}; 
+        }
+
+        mType* argType = (mType*) type[0];
+        if (argType == nullptr) {
+            mError::AddError("Invalid type");
+            return {};
+        }
+
+        if (argType->type != mType::Type) {
+            mError::AddError("Type '" + argType->ToString() + "' is not a valid type");
+            return {};
+        }
+
+        func->args.push_back({
+            argDecl->identifier.value,
+            argType
+        });
+    }
 
     return mList({ func });
+}
+
+mList EvalVisitor::Visit(ArgDeclAST *node) {
+    return {};
+}
+
+mList EvalVisitor::Visit(BlockAST *node) {
+    for (auto& stmt : node->statements) {
+        if (stmt == nullptr) { continue; }
+
+        mList res = stmt->Accept(this);
+
+        if (mError::HasError()) { return {}; }
+
+        if (res.items.size() > 0) {
+            mObject* result = res[0];
+
+            if (result != nullptr) {
+                return mList({ result });
+            }
+        }
+    }
+    
+    return {};
+}
+
+mList EvalVisitor::Visit(ReturnAST *node) {
+    mList ret = node->expression->Accept(this);
+
+    if (ret.items.size() == 0) { return {}; }
+
+    mObject* result = ret[0];
+    
+    if (result == nullptr) { return {}; }
+
+    return mList({ result });
+}
+
+mList EvalVisitor::Visit(FunctionAST *node) {
+    mObject* func = node->lambda->Accept(this)[0];
+
+    if (func == nullptr) { return {}; }
+
+    mSymbolTable::locals->Set(
+        node->name.value,
+        func,
+        mFunction::Type,
+        false
+    );
+
+    return mList();
 }

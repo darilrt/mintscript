@@ -4,7 +4,8 @@
 
 int main() {
     mInit();
-    mRunInteractive();
+    // mRunInteractive();
+    mRunFile("examples/test.ms");
     mShutdown();
     return 0;
 }

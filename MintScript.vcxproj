@@ -128,6 +128,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\builtin.cpp" />
     <ClCompile Include="src\context.cpp" />
     <ClCompile Include="src\debug_visitor.cpp" />
     <ClCompile Include="src\error.cpp" />
@@ -153,6 +154,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ast.h" />
+    <ClInclude Include="include\builtin.h" />
     <ClInclude Include="include\context.h" />
     <ClInclude Include="include\debug.h" />
     <ClInclude Include="include\debug_visitor.h" />

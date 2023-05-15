@@ -46,6 +46,12 @@ void mRunFile(const std::string &path) {
 
     Eval eval(node);
     eval.Evaluate();
+
+    // Check for errors
+    if (mError::HasError()) {
+        mError::PrintErrors();
+        return;
+    }
 }
 
 void mRunString(const std::string &source) {
@@ -92,6 +98,7 @@ void mRunInteractive() {
 
         while (input.size() > 0 && input[input.size() - 1] == '\\') {
             input.pop_back();
+            input += '\n';
             std::string nextLine;
             std::cout << ".. ";
             std::getline(std::cin, nextLine);

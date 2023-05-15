@@ -3,6 +3,10 @@
 mSymbolTable *mSymbolTable::globals = new mSymbolTable();
 mSymbolTable *mSymbolTable::locals = mSymbolTable::globals;
 
+mSymbolTable::mSymbolTable() { }
+
+mSymbolTable::mSymbolTable(mSymbolTable *parent) : parent(parent) { }
+
 mSymbolTable::Symbol *mSymbolTable::GetSymbol(const std::string &name) {
     auto it = table.find(name);
 
@@ -12,8 +16,7 @@ mSymbolTable::Symbol *mSymbolTable::GetSymbol(const std::string &name) {
     return &it->second;
 }
 
-mObject *mSymbolTable::Get(const std::string &name)
-{
+mObject *mSymbolTable::Get(const std::string &name) {
     return table[name].value;
 }
 
@@ -50,4 +53,31 @@ bool mSymbolTable::Exists(const std::string &name, mType* type) {
         type = type->type;
 
     return it != table.end();
+}
+
+void mSymbolTable::Show() {
+    std::cout << "Symbol table: " << std::endl;
+
+    for (auto it = table.begin(); it != table.end(); it++) {
+        std::cout << it->first << " : " << it->second.value->ToString() << std::endl;
+    }
+}
+
+mSymbolTable::Symbol* mSymbolTable::LocalsGetSymbol(const std::string &name) {
+    mSymbolTable* table = mSymbolTable::locals;
+
+    Symbol* it = table->GetSymbol(name);
+
+    while (it == nullptr) {
+        if (table->parent == nullptr)
+            return nullptr;
+
+        table = table->parent;
+        it = table->GetSymbol(name);
+    }
+    
+    if (it == nullptr)
+        return nullptr;
+
+    return it;
 }

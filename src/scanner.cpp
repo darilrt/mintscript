@@ -33,12 +33,31 @@ Token Scanner::Next() {
 }
 
 Token Scanner::Peek() {
-    if (current == 0 && buffer.size() > 0) {
-        return buffer[0];
-    }
+    Token peek;
 
     if (current < buffer.size()) {
-        return buffer[current];
+        peek = buffer[current];
+    }
+    else {
+        buffer.push_back(lexer.NextToken());
+        current = buffer.size() - 1;
+
+        peek = buffer[current];
+    }
+    
+    if (ignoreNewLine) {
+        while (peek.type == Token::Type::NewLine) {
+            current++;
+            
+            if (current >= buffer.size()) {
+                buffer.push_back(lexer.NextToken());
+                current = buffer.size() - 1;
+            }
+
+            peek = buffer[current];
+        }
+
+        return peek;
     }
 
     buffer.push_back(lexer.NextToken());
@@ -73,4 +92,12 @@ void Scanner::ShowBuffer() {
         i++;
     }
     std::cout << "]" << std::endl;
+}
+
+void Scanner::SkipNewLine() {
+    while (Peek().type == Token::Type::NewLine) {
+        Next();
+    }
+
+    Consume();
 }

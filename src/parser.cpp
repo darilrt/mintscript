@@ -18,34 +18,36 @@
 
 Parser::Parser(const std::string &source, const std::string& filename) : scanner(source, filename) { }
 
-ASTNode *Parser::Parse() {
+ASTNode* Parser::Parse() {
     ASTNode *node = nullptr;
+    std::vector<ASTNode*> nodes;
 
-    scanner.PushAndSetIgnoreNewLine(false);
+    scanner.PushAndSetIgnoreNewLine(true);
     while (scanner.Peek().type != Token::Type::EndFile) {
         node = Statement();
+        if (node) { nodes.push_back(node); }
 
+        scanner.SkipNewLine();
+        
         if (mError::HasError()) { break; }
     }
     scanner.PopIgnoreNewLine();
-
-    return node;
+    
+    return new BlockAST(nodes);
 }
 
 // Statement: NewLine | Declaration | IfStatement | WhileStatement | ForStatement | ReturnStatement | BreakStatement | ContinueStatement | Block | Expression
 ASTNode *Parser::Statement() {
     ASTNode *node = nullptr;
 
-    while (IS(NewLine)) {
-        scanner.Next();
-    }
+    scanner.SkipNewLine();
 
     if (
-        (node = Declaration()) // ||
+        (node = Declaration()) ||
         // (node = IfStatement()) ||
         // (node = WhileStatement()) ||
         // (node = ForStatement()) ||
-        // (node = ReturnStatement()) ||
+        (node = ReturnStatement())// ||
         // (node = BreakStatement()) ||
         // (node = ContinueStatement()) ||
         // (node = BlockStatement()) ||
@@ -55,17 +57,13 @@ ASTNode *Parser::Statement() {
     if (mError::HasError()) { return nullptr; }
 
     if (node = Expression()) {
-        if (!(IS(NewLine) || IS(EndFile))) {
-            mError::AddError("Syntax Error: Unexpected " + scanner.Peek().ToString());
-            return nullptr;
-        }
-
+        scanner.Consume();
         return node;
     }
 
     mError::AddError("Syntax Error: Unexpected " + scanner.Peek().ToString());
     
-    scanner.Consume();
+    scanner.Reset();
     return node;
 }
 
@@ -73,10 +71,14 @@ ASTNode *Parser::Statement() {
 ASTNode* Parser::Declaration() {
     ASTNode *node = nullptr;
 
-    (node = VarDeclaration()) ||
-    (node = Assignment());
+    if ((node = VarDeclaration()) ||
+        (node = FunctionDeclaration()) ||
+        (node = Assignment())) {
+        scanner.Consume();
+        return node;
+    }
     
-    scanner.Consume();
+    scanner.Reset();
     return node;
 }
 
@@ -93,7 +95,6 @@ ASTNode *Parser::Assignment() {
         EXPECTF(right, Expression);
 
         node = new AssignmentAST(op, node, right);
-    
     }
 
     scanner.Consume();
@@ -104,7 +105,7 @@ ASTNode *Parser::Assignment() {
 ASTNode *Parser::VarDeclaration() {
     ASTNode *node = nullptr;
 
-    if (!(IS(Mut) || IS(Let))) { return 0; }
+    if (!(IS(Mut)) && !(IS(Let))) { return 0; }
 
     Token mut = scanner.Peek(); 
     scanner.Next();
@@ -154,6 +155,30 @@ ASTNode *Parser::VarDeclaration() {
     return node;
 }
 
+// FunctionDeclaration: Identifier Lambda
+ASTNode *Parser::FunctionDeclaration() {
+    ASTNode *node = nullptr;
+
+    GET(name, Identifier);
+
+    if (!(IS(LParen))) {
+        scanner.Reset();
+        return 0; 
+    }
+    
+    node = Lambda();
+
+    if (node == nullptr) { 
+        scanner.Reset();
+        return 0;
+    }
+
+    node = new FunctionAST(name, (LambdaAST*) node);
+    
+    scanner.Consume();
+    return node;
+}
+
 // ExprList: (Expression (',' Expression)*)
 std::vector<ASTNode*> Parser::ExprList() {
     std::vector<ASTNode*> exprs;
@@ -187,12 +212,12 @@ std::vector<ASTNode*> Parser::ExprList() {
 }
 
 // ArgDeclList: (ArgDecl (',' ArgDecl)*)
-std::vector<ASTNode *> Parser::ArgDeclList() {
+std::vector<ASTNode*> Parser::ArgDeclList() {
     std::vector<ASTNode *> args;
 
     ASTNode *node = nullptr;
 
-    if (node = ArgDecl()) {
+    if (node = ArgDecl(false)) {
         args.push_back(node);
 
         while (IS(Comma)) {
@@ -208,12 +233,14 @@ std::vector<ASTNode *> Parser::ArgDeclList() {
                 }
 
                 args.clear();
+
+                args.push_back(nullptr);
                 return args;
             }
 
             args.push_back(arg);
         }
-
+        
         scanner.Consume();
     }
 
@@ -221,13 +248,13 @@ std::vector<ASTNode *> Parser::ArgDeclList() {
 }
 
 // ArgDecl: Identifier ':' Type ('=' Expression)?
-ASTNode *Parser::ArgDecl() {
+ASTNode *Parser::ArgDecl(bool strict) {
     ASTNode *node = nullptr;
 
     GET(name, Identifier);
 
     if (!(IS(Colon))) {
-        mError::AddError("SyntaxError: Expected ':' after identifier '" + name.value + "' " + name.location.ToString());
+        if (strict) mError::AddError("SyntaxError: Expected ':' after identifier '" + name.value + "' " + name.location.ToString());
         scanner.Reset();
         return 0;
     }
@@ -269,6 +296,30 @@ ASTNode *Parser::Block() {
     EXPECT(LBrace);
 
     std::vector<ASTNode*> statements;
+    
+    scanner.PushAndSetIgnoreNewLine(true);
+
+    while (!(IS(RBrace))) {
+        ASTNode* statement = nullptr;
+
+        if (statement = Statement()) {
+            statements.push_back(statement);
+        }
+
+        if (mError::HasError()) { 
+            scanner.Reset();
+
+            for (ASTNode *node : statements) {
+                delete node;
+            }
+
+            return 0;
+        }
+
+        scanner.SkipNewLine();
+    }
+
+    scanner.PopIgnoreNewLine();
 
     if (!(IS(RBrace))) {
         mError::AddError("SyntaxError: Expected '}' " + scanner.Peek().location.ToString());
@@ -278,7 +329,7 @@ ASTNode *Parser::Block() {
 
     scanner.Next();
     scanner.Consume();
-    return node;
+    return new BlockAST(statements);
 }
 
 // Expression: Factor
@@ -657,6 +708,10 @@ ASTNode* Parser::Factor() {
         scanner.Consume();
     }
     else if (expr = Property()) { }
+    else { 
+        scanner.Reset(); 
+        return nullptr;
+    }
     
     scanner.Consume();
     return expr;
@@ -674,6 +729,11 @@ ASTNode *Parser::Lambda() {
     params = ArgDeclList();
     
     if (params.size() == 0) { scanner.Next(); }
+
+    if (params.size() == 1 && params[0] == nullptr) {
+        scanner.Reset();
+        return nullptr;
+    }
 
     if (!(IS(RParen))) {
         if (params.size() != 0) {
@@ -746,4 +806,17 @@ ASTNode *Parser::Property() {
 
     scanner.Consume();
     return (ASTNode*) base;
+}
+
+ASTNode *Parser::ReturnStatement() {
+    ASTNode *expr = nullptr;
+
+    EXPECT(Return);
+
+    if (expr = Expression()) {
+        scanner.Consume();
+        return new ReturnAST(expr);
+    }
+
+    return new ReturnAST(nullptr);
 }

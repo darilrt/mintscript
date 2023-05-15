@@ -19,6 +19,8 @@ public:
 
     void ShowBuffer();
 
+    void SkipNewLine();
+
     inline void IgnoreNewLine(bool ignore) { ignoreNewLine = ignore; }
 
     inline bool IsIgnoringNewLine() const { return ignoreNewLine; }
