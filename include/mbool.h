@@ -18,6 +18,10 @@ public:
     std::string ToString();
 
     static mObject* ToString(mObject* args, mObject* kwargs, mObject *_self);
+
+    inline static mBool* FromBool(bool value) {
+        return value ? mBool::True : mBool::False;
+    }
     
     void Release();
 };

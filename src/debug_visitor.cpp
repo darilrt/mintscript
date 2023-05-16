@@ -475,3 +475,48 @@ mList EvalVisitor::Visit(FunctionAST *node) {
 
     return mList();
 }
+
+mList EvalVisitor::Visit(IfAST* node) {
+    mList ret = node->condition->Accept(this);
+
+    if (ret.items.size() == 0) { return {}; }
+
+    mBool* result = (mBool*) ret[0];
+
+    if (result == nullptr) { return {}; }
+
+    if (result->type != mBool::Type) {
+        mError::AddError("Condition must be a boolean");
+        return {};
+    }
+
+    if ((result)->value) {
+        return node->body->Accept(this);
+    }
+    else {
+        for (auto& elif : node->elseIfs) {
+            ret = elif->condition->Accept(this);
+
+            if (ret.items.size() == 0) { return {}; }
+
+            result = (mBool*) ret[0];
+
+            if (result == nullptr) { return {}; }
+
+            if (result->type != mBool::Type) {
+                mError::AddError("Condition must be a boolean");
+                return {};
+            }
+
+            if ((result)->value) {
+                return elif->body->Accept(this);
+            }
+        }
+
+        if (node->elseBody != nullptr) {
+            return node->elseBody->Accept(this);
+        }
+    }
+
+    return {};
+}

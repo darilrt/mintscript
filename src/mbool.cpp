@@ -25,10 +25,8 @@ std::string mBool::ToString() {
 }
 
 mObject *mBool::ToString(mObject *_args, mObject *_kwargs, mObject *_self) {
-    const mList* args = (mList*) _args;
-    const mBool* self = (mBool*) _self;
-    
-    return new mStr(((mBool *) self)->ToString());
+    mBool* self = (mBool*) _self;
+    return new mStr(self->ToString());
 }
 
 void mBool::Release() { }

@@ -2,6 +2,7 @@
 #include "mfloat.h"
 #include "mlist.h"
 #include "mstr.h"
+#include "mbool.h"
 #include "symbol.h"
 
 #include <sstream>
@@ -22,6 +23,12 @@ mType* mInt::Type = new mType(
         mInt::Type->methods["mMul"] = new mFunction(&mInt::mMul);
         mInt::Type->methods["mDiv"] = new mFunction(&mInt::mDiv);
         mInt::Type->methods["mMod"] = new mFunction(&mInt::mMod);
+
+        // Comparison operators.
+        mInt::Type->methods["mEq"] = new mFunction(&mInt::mEq);
+        mInt::Type->methods["mNe"] = new mFunction(&mInt::mNe);
+        mInt::Type->methods["mLt"] = new mFunction(&mInt::mLt);
+        mInt::Type->methods["mGt"] = new mFunction(&mInt::mGt);
 
         // Unary operators.
         mInt::Type->methods["mNeg"] = new mFunction(&mInt::mNeg);
@@ -138,6 +145,34 @@ mObject *mInt::mMod(mObject *_args, mObject *_kwargs, mObject *_self) {
     }
 
     return nullptr;
+}
+
+mObject *mInt::mEq(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
+    const mInt* self = (mInt*) _self;
+    const mInt* other = (mInt*) args->GetItem(0);
+    return mBool::FromBool(self->value == other->value);
+}
+
+mObject *mInt::mNe(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
+    const mInt* self = (mInt*) _self;
+    const mInt* other = (mInt*) args->GetItem(0);
+    return mBool::FromBool(self->value != other->value);
+}
+
+mObject *mInt::mLt(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
+    const mInt* self = (mInt*) _self;
+    const mInt* other = (mInt*) args->GetItem(0);
+    return mBool::FromBool(self->value < other->value);
+}
+
+mObject *mInt::mGt(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
+    const mInt* self = (mInt*) _self;
+    const mInt* other = (mInt*) args->GetItem(0);
+    return mBool::FromBool(self->value > other->value);
 }
 
 mObject *mInt::mNeg(mObject *args, mObject *kwargs, mObject *_self) {

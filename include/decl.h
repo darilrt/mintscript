@@ -82,3 +82,15 @@ public:
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
+
+class IfAST : public ASTNode {
+public:
+    ASTNode* condition;
+    ASTNode* body;
+    std::vector<IfAST*> elseIfs;
+    ASTNode* elseBody;
+
+    IfAST() { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};

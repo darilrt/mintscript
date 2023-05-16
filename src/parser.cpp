@@ -44,7 +44,7 @@ ASTNode *Parser::Statement() {
 
     if (
         (node = Declaration()) ||
-        // (node = IfStatement()) ||
+        (node = IfStatement()) ||
         // (node = WhileStatement()) ||
         // (node = ForStatement()) ||
         (node = ReturnStatement())// ||
@@ -251,7 +251,10 @@ std::vector<ASTNode*> Parser::ArgDeclList() {
 ASTNode *Parser::ArgDecl(bool strict) {
     ASTNode *node = nullptr;
 
-    GET(name, Identifier);
+    Token name = scanner.Peek();
+    if (!(IS(Identifier))) {
+        return 0;
+    }
 
     if (!(IS(Colon))) {
         if (strict) mError::AddError("SyntaxError: Expected ':' after identifier '" + name.value + "' " + name.location.ToString());
@@ -728,9 +731,8 @@ ASTNode *Parser::Lambda() {
 
     params = ArgDeclList();
     
-    if (params.size() == 0) { scanner.Next(); }
-
-    if (params.size() == 1 && params[0] == nullptr) {
+    if (params.size() == 0) { }
+    else if (params.size() == 1 && params[0] == nullptr) {
         scanner.Reset();
         return nullptr;
     }
@@ -746,7 +748,7 @@ ASTNode *Parser::Lambda() {
     }
     
     scanner.Next();
-
+    
     if (IS(Arrow)) {
         scanner.Next();
 
@@ -763,6 +765,10 @@ ASTNode *Parser::Lambda() {
             scanner.Reset();
             return nullptr;
         }
+    }
+
+    if (!(IS(LBrace)) && params.size() == 0) {
+        return nullptr;
     }
 
     body = Block();
@@ -808,6 +814,70 @@ ASTNode *Parser::Property() {
     return (ASTNode*) base;
 }
 
+// IfStatement: "if" Expression Block ("elif" Expression Block)* ("else" Block)?
+ASTNode *Parser::IfStatement() {
+    IfAST *node = new IfAST();
+
+    EXPECT(If);
+
+    node->condition = Expression();
+
+    if (node->condition == nullptr) {
+        mError::AddError("SyntaxError: Expected expression after 'if'");
+        scanner.Reset();
+        return nullptr;
+    }
+
+    node->body = Block();
+    
+    if (node->body == nullptr) {
+        mError::AddError("SyntaxError: Expected block after 'if' expression");
+        scanner.Reset();
+        return nullptr;
+    }
+
+    while (IS(Elif)) {
+        scanner.Next();
+
+        IfAST* elif = new IfAST();
+        elif->condition = Expression();
+
+        if (elif->condition == nullptr) {
+            mError::AddError("SyntaxError: Expected expression after 'elif'");
+            scanner.Reset();
+            return nullptr;
+        }
+
+        elif->body = Block();
+
+        if (elif->body == nullptr) {
+            mError::AddError("SyntaxError: Expected block after 'elif' expression");
+            scanner.Reset();
+            return nullptr;
+        }
+        
+        node->elseIfs.push_back(elif);
+    }
+
+    if (IS(Else)) {
+        scanner.Next();
+
+        ASTNode* elseBody = Block();
+
+        if (elseBody == nullptr) {
+            mError::AddError("SyntaxError: Expected block after 'else'");
+            scanner.Reset();
+            return nullptr;
+        }
+
+        node->elseBody = elseBody;
+    }
+    
+    scanner.Consume();
+    return (ASTNode*) node;
+}
+
+// ReturnStatement: "ret" Expression?
 ASTNode *Parser::ReturnStatement() {
     ASTNode *expr = nullptr;
 

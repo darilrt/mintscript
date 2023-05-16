@@ -52,4 +52,6 @@ public:
     mList Visit(ReturnAST* node);
 
     mList Visit(FunctionAST* node);
+
+    mList Visit(IfAST* node);
 };

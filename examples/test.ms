@@ -1,10 +1,16 @@
-let b : int = 5
-
-foo(a : int) -> int { a * b }
 
 let main : Function = () {
-    print(foo(5))
+    mut num : int = 88
+
+    if num == 1 {
+        print("You entered one")
+    } elif num == 2 {
+        print("You entered two")
+    } elif num == 3 {
+        print("You entered three")
+    } else {
+        print("You entered something else:", num)
+    }
 }
 
 main()
-

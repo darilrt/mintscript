@@ -22,6 +22,7 @@ class ArgDeclAST;
 class BlockAST;
 class ReturnAST;
 class FunctionAST;
+class IfAST;
 
 class Visitor {
 public:
@@ -71,5 +72,5 @@ public:
 
     virtual mList Visit(ReturnAST* node) = 0;
     
-    // virtual mList Visit(IfAST* node) = 0;
+    virtual mList Visit(IfAST* node) = 0;
 };

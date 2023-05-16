@@ -30,6 +30,16 @@ public:
 
     static mObject* mMod(mObject* args, mObject* kwargs, mObject *_self);
 
+    // Comparison operators.
+
+    static mObject* mEq(mObject* args, mObject* kwargs, mObject *_self);
+
+    static mObject* mNe(mObject* args, mObject* kwargs, mObject *_self);
+
+    static mObject* mLt(mObject* args, mObject* kwargs, mObject *_self);
+
+    static mObject* mGt(mObject* args, mObject* kwargs, mObject *_self);
+
     // Unary operators.
 
     static mObject* mNeg(mObject* args, mObject* kwargs, mObject *_self);
