@@ -16,6 +16,11 @@
 
 #define LOG_PEEK() std::cout << "Peek: " << scanner.Peek().ToString() << std::endl;
 
+// macro for adding an error to the error list and show where error was call
+#define ERROR(msg) mError::AddError(\
+    "DEBUG(" + std::string(__FILE__) + std::string(":") + std::to_string(__LINE__) + std::string(")") + std::string(": ") \
+    + msg + std::string(" ") + scanner.Peek().location.ToString());
+    
 Parser::Parser(const std::string &source, const std::string& filename) : scanner(source, filename) { }
 
 ASTNode* Parser::Parse() {
@@ -45,10 +50,10 @@ ASTNode *Parser::Statement() {
     if (
         (node = Declaration()) ||
         (node = IfStatement()) ||
-        // (node = WhileStatement()) ||
+        (node = WhileStatement()) ||
         // (node = ForStatement()) ||
-        (node = ReturnStatement())// ||
-        // (node = BreakStatement()) ||
+        (node = ReturnStatement()) ||
+        (node = BreakStatement()) // ||
         // (node = ContinueStatement()) ||
         // (node = BlockStatement()) ||
         // (node = Expression())
@@ -61,7 +66,7 @@ ASTNode *Parser::Statement() {
         return node;
     }
 
-    mError::AddError("Syntax Error: Unexpected " + scanner.Peek().ToString());
+    ERROR("Syntax Error: Unexpected " + scanner.Peek().ToString());
     
     scanner.Reset();
     return node;
@@ -111,7 +116,7 @@ ASTNode *Parser::VarDeclaration() {
     scanner.Next();
 
     if (!(IS(Identifier))) {
-        mError::AddError("SyntaxError: Expected identifier after '" + mut.value + "' " + mut.location.ToString());
+        ERROR("SyntaxError: Expected identifier after '" + mut.value + "' " + mut.location.ToString());
         scanner.Reset();
         return 0;
     }
@@ -120,7 +125,7 @@ ASTNode *Parser::VarDeclaration() {
     scanner.Next();
 
     if (!(IS(Colon))) {
-        mError::AddError("SyntaxError: Expected ':' after identifier '" + name.value + "' " + name.location.ToString());
+        ERROR("SyntaxError: Expected ':' after identifier '" + name.value + "' " + name.location.ToString());
         scanner.Reset();
         return 0;
     }
@@ -130,7 +135,7 @@ ASTNode *Parser::VarDeclaration() {
     ASTNode *type = Expression();
 
     if (type == nullptr) {
-        mError::AddError("SyntaxError: Expected type after ':' " + scanner.Peek().location.ToString());
+        ERROR("SyntaxError: Expected type after ':' " + scanner.Peek().location.ToString());
         scanner.Reset();
         return 0;
     }
@@ -143,7 +148,7 @@ ASTNode *Parser::VarDeclaration() {
         expression = Expression();
 
         if (expression == nullptr) {
-            mError::AddError("SyntaxError: Expected expression after '=' " + scanner.Peek().location.ToString());
+            ERROR("SyntaxError: Expected expression after '=' " + scanner.Peek().location.ToString());
             scanner.Reset();
             return 0;
         }
@@ -192,7 +197,7 @@ std::vector<ASTNode*> Parser::ExprList() {
 
             ASTNode *expr = nullptr;
             if (!(expr = Expression())) {
-                mError::AddError("SyntaxError: Expected expression after ',' " + scanner.Peek().location.ToString());
+                ERROR("SyntaxError: Expected expression after ',' " + scanner.Peek().location.ToString());
                 scanner.Reset();
 
                 for (ASTNode *node : exprs) {
@@ -225,7 +230,7 @@ std::vector<ASTNode*> Parser::ArgDeclList() {
 
             ASTNode *arg = nullptr;
             if (!(arg = ArgDecl())) {
-                mError::AddError("SyntaxError: Expected argument after ',' " + scanner.Peek().location.ToString());
+                ERROR("SyntaxError: Expected argument after ',' " + scanner.Peek().location.ToString());
                 scanner.Reset();
 
                 for (ASTNode *node : args) {
@@ -243,7 +248,7 @@ std::vector<ASTNode*> Parser::ArgDeclList() {
         
         scanner.Consume();
     }
-
+    
     return args;
 }
 
@@ -255,19 +260,19 @@ ASTNode *Parser::ArgDecl(bool strict) {
     if (!(IS(Identifier))) {
         return 0;
     }
+    scanner.Next();
 
     if (!(IS(Colon))) {
-        if (strict) mError::AddError("SyntaxError: Expected ':' after identifier '" + name.value + "' " + name.location.ToString());
+        if (strict) ERROR("SyntaxError: Expected ':' after identifier '" + name.value + "' " + name.location.ToString());
         scanner.Reset();
         return 0;
     }
-
     scanner.Next();
 
     ASTNode *type = Expression();
 
     if (type == nullptr) {
-        mError::AddError("SyntaxError: Expected type after ':' " + scanner.Peek().location.ToString());
+        ERROR("SyntaxError: Expected type after ':' " + scanner.Peek().location.ToString());
         scanner.Reset();
         return 0;
     }
@@ -280,7 +285,7 @@ ASTNode *Parser::ArgDecl(bool strict) {
         expression = Expression();
 
         if (expression == nullptr) {
-            mError::AddError("SyntaxError: Expected expression after '=' " + scanner.Peek().location.ToString());
+            ERROR("SyntaxError: Expected expression after '=' " + scanner.Peek().location.ToString());
             scanner.Reset();
             return 0;
         }
@@ -325,7 +330,7 @@ ASTNode *Parser::Block() {
     scanner.PopIgnoreNewLine();
 
     if (!(IS(RBrace))) {
-        mError::AddError("SyntaxError: Expected '}' " + scanner.Peek().location.ToString());
+        ERROR("SyntaxError: Expected '}' " + scanner.Peek().location.ToString());
         scanner.Reset();
         return 0;
     }
@@ -543,7 +548,7 @@ ASTNode *Parser::Additive() {
         ASTNode *right = Multiplicative();
 
         if (right == nullptr) {
-            mError::AddError("SyntaxError: Expected expression after operator '" + token.value + "' " + token.location.ToString());
+            ERROR("SyntaxError: Expected expression after operator '" + token.value + "' " + token.location.ToString());
             scanner.Reset();
             return nullptr;
         }
@@ -628,7 +633,7 @@ ASTNode *Parser::Postfix() {
                 ASTNode *index = Expression();
 
                 if (!(IS(RBracket))) {
-                    mError::AddError("SyntaxError: Expected ']'");
+                    ERROR("SyntaxError: Expected ']'");
                     scanner.Reset();
                     return 0;
                 }
@@ -643,7 +648,7 @@ ASTNode *Parser::Postfix() {
                 std::vector<ASTNode*> args = ExprList();
 
                 if (!(IS(RParen))) {
-                    mError::AddError("SyntaxError: Expected ')'");	
+                    ERROR("SyntaxError: Expected ')'");	
                     scanner.Reset();
                     return 0;
                 }
@@ -739,7 +744,7 @@ ASTNode *Parser::Lambda() {
 
     if (!(IS(RParen))) {
         if (params.size() != 0) {
-            mError::AddError("SyntaxError: Expected ')' or parameter");
+            ERROR("SyntaxError: Expected ')' or parameter");
             scanner.Reset();
             return nullptr;
         }
@@ -755,13 +760,13 @@ ASTNode *Parser::Lambda() {
         type = Expression();
 
         if (type == nullptr) {
-            mError::AddError("SyntaxError: Expected expression after '->'");
+            ERROR("SyntaxError: Expected expression after '->'");
             scanner.Reset();
             return nullptr;
         }
 
         if (!(IS(LBrace))) {
-            mError::AddError("SyntaxError: Expected '{'");
+            ERROR("SyntaxError: Expected '{'");
             scanner.Reset();
             return nullptr;
         }
@@ -823,7 +828,7 @@ ASTNode *Parser::IfStatement() {
     node->condition = Expression();
 
     if (node->condition == nullptr) {
-        mError::AddError("SyntaxError: Expected expression after 'if'");
+        ERROR("SyntaxError: Expected expression after 'if'");
         scanner.Reset();
         return nullptr;
     }
@@ -831,7 +836,7 @@ ASTNode *Parser::IfStatement() {
     node->body = Block();
     
     if (node->body == nullptr) {
-        mError::AddError("SyntaxError: Expected block after 'if' expression");
+        ERROR("SyntaxError: Expected block after 'if' expression");
         scanner.Reset();
         return nullptr;
     }
@@ -843,7 +848,7 @@ ASTNode *Parser::IfStatement() {
         elif->condition = Expression();
 
         if (elif->condition == nullptr) {
-            mError::AddError("SyntaxError: Expected expression after 'elif'");
+            ERROR("SyntaxError: Expected expression after 'elif'");
             scanner.Reset();
             return nullptr;
         }
@@ -851,7 +856,7 @@ ASTNode *Parser::IfStatement() {
         elif->body = Block();
 
         if (elif->body == nullptr) {
-            mError::AddError("SyntaxError: Expected block after 'elif' expression");
+            ERROR("SyntaxError: Expected block after 'elif' expression");
             scanner.Reset();
             return nullptr;
         }
@@ -865,7 +870,7 @@ ASTNode *Parser::IfStatement() {
         ASTNode* elseBody = Block();
 
         if (elseBody == nullptr) {
-            mError::AddError("SyntaxError: Expected block after 'else'");
+            ERROR("SyntaxError: Expected block after 'else'");
             scanner.Reset();
             return nullptr;
         }
@@ -873,6 +878,31 @@ ASTNode *Parser::IfStatement() {
         node->elseBody = elseBody;
     }
     
+    scanner.Consume();
+    return (ASTNode*) node;
+}
+
+ASTNode *Parser::WhileStatement() {
+    WhileAST* node = new WhileAST();
+
+    EXPECT(While);
+
+    node->condition = Expression();
+
+    if (node->condition == nullptr) {
+        ERROR("SyntaxError: Expected expression after 'while'");
+        scanner.Reset();
+        return nullptr;
+    }
+
+    node->body = Block();
+
+    if (node->body == nullptr) {
+        ERROR("SyntaxError: Expected block after 'while' expression");
+        scanner.Reset();
+        return nullptr;
+    }
+
     scanner.Consume();
     return (ASTNode*) node;
 }
@@ -889,4 +919,10 @@ ASTNode *Parser::ReturnStatement() {
     }
 
     return new ReturnAST(nullptr);
+}
+
+ASTNode *Parser::BreakStatement() {
+    EXPECT(Break);
+    scanner.Consume();
+    return new BreakAST();
 }

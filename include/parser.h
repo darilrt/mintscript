@@ -45,13 +45,7 @@ public:
 
     ASTNode* ContinueStatement(); // Continue
 
-    ASTNode* BlockStatement(); // { Statement* }
-
     // Other
-
-    ASTNode* Parameters(); // ( MutParameter | LetParameter ) [, ( MutParameter | LetParameter )]*
-
-    ASTNode* Type(); // Identifier
 
     std::vector<ASTNode*> ExprList(); // Expression [, Expression]*
 

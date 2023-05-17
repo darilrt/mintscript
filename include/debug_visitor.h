@@ -54,4 +54,8 @@ public:
     mList Visit(FunctionAST* node);
 
     mList Visit(IfAST* node);
+
+    mList Visit(WhileAST* node);
+
+    mList Visit(BreakAST* node);
 };

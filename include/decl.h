@@ -12,8 +12,8 @@
 class AssignmentAST : public ASTNode {
 public:
     Token type;
-    ASTNode* declaration;
-    ASTNode* expression;
+    ASTNode* declaration = nullptr;
+    ASTNode* expression = nullptr;
     
     AssignmentAST(Token type, ASTNode* declaration, ASTNode* expression) : type(type), declaration(declaration), expression(expression) { }
 
@@ -24,8 +24,8 @@ class VarDeclarationAST : public ASTNode {
 public:
     bool isMutable;
     Token identifier;
-    ASTNode* type;
-    ASTNode* expression;
+    ASTNode* type = nullptr;
+    ASTNode* expression = nullptr;
 
     VarDeclarationAST(bool isMutable, Token identifier, ASTNode* type, ASTNode* expression) : isMutable(isMutable), identifier(identifier), type(type), expression(expression) { }
 
@@ -35,8 +35,8 @@ public:
 class LambdaAST : public ASTNode {
 public:
     std::vector<ASTNode*> parameters;
-    ASTNode* returnType;
-    ASTNode* body;
+    ASTNode* returnType = nullptr;
+    ASTNode* body = nullptr;
 
     LambdaAST(std::vector<ASTNode*> parameters, ASTNode* returnType, ASTNode* body) : parameters(parameters), returnType(returnType), body(body) { }
 
@@ -56,8 +56,8 @@ class ArgDeclAST : public ASTNode {
 public:
     bool isMutable;
     Token identifier;
-    ASTNode* type;
-    ASTNode* defaultValue;
+    ASTNode* type = nullptr;
+    ASTNode* defaultValue = nullptr;
 
     ArgDeclAST(bool isMutable, Token identifier, ASTNode* type, ASTNode* defaultValue) : isMutable(isMutable), identifier(identifier), type(type), defaultValue(defaultValue) { }
 
@@ -67,7 +67,7 @@ public:
 class FunctionAST : public ASTNode {
 public:
     Token name;
-    LambdaAST* lambda;
+    LambdaAST* lambda = nullptr;
 
     FunctionAST(Token name, LambdaAST* lambda) : name(name), lambda(lambda) { }
 
@@ -85,12 +85,46 @@ public:
 
 class IfAST : public ASTNode {
 public:
-    ASTNode* condition;
-    ASTNode* body;
+    ASTNode* condition = nullptr;
+    ASTNode* body = nullptr;
     std::vector<IfAST*> elseIfs;
-    ASTNode* elseBody;
+    ASTNode* elseBody = nullptr;
 
     IfAST() { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class WhileAST : public ASTNode {
+public:
+    ASTNode* condition = nullptr;
+    ASTNode* body = nullptr;
+
+    WhileAST() { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class BreakAST : public ASTNode {
+public:
+    BreakAST() { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class ContinueAST : public ASTNode {
+public:
+    ContinueAST() { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class ForAST : public ASTNode {
+public:
+    ASTNode* variable = nullptr;
+    ASTNode* iterable = nullptr;
+
+    ForAST() { }
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

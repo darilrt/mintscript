@@ -96,10 +96,17 @@ mList EvalVisitor::Visit(IndexExprAST *node) {
 
 mList EvalVisitor::Visit(CallExprAST *node) {
     mList list = node->property->Accept(this);
+
+    if (mError::HasError()) { return {}; }
+
+    if (list.items.size() == 0) {
+		return {};
+	}
+
     mObject* object = list[0];
 
     if (object == nullptr) {
-        return {}; // TODO: Error
+        return {};
     }
 
     mList args;
@@ -130,8 +137,13 @@ mList EvalVisitor::Visit(CallExprAST *node) {
     if (func) {
         if (func->ast) {
             // Load symbol table
-            mSymbolTable* table = func->symbolTable ? func->symbolTable : new mSymbolTable(mSymbolTable::locals);
-            mSymbolTable::locals = table;
+            mSymbolTable* old = mSymbolTable::locals;
+            mSymbolTable::locals = func->symbolTable;
+
+            if (mSymbolTable::locals == nullptr) {
+                std::cout << "Symbol table is null" << std::endl;
+                return {};
+            }
 
             // Load arguments
             if (args.items.size() != func->args.size()) {
@@ -176,7 +188,7 @@ mList EvalVisitor::Visit(CallExprAST *node) {
             }
 
             // Unload symbol table
-            mSymbolTable::locals = mSymbolTable::locals->parent;
+            mSymbolTable::locals = old;
         }
         else {
             result = func->Call(&args, nullptr, nullptr);
@@ -318,7 +330,7 @@ mList EvalVisitor::Visit(AssignmentAST *node) {
 		INCREF(right);
     }
 
-    return mList({ *left->ref });
+    return {};
 }
 
 mList EvalVisitor::Visit(VarDeclarationAST *node) {
@@ -421,6 +433,10 @@ mList EvalVisitor::Visit(LambdaAST *node) {
             argType
         });
     }
+    
+    // Generate symbol table
+    mSymbolTable* table = new mSymbolTable(mSymbolTable::locals);
+    func->symbolTable = table;
 
     return mList({ func });
 }
@@ -430,6 +446,9 @@ mList EvalVisitor::Visit(ArgDeclAST *node) {
 }
 
 mList EvalVisitor::Visit(BlockAST *node) {
+    mSymbolTable* old = mSymbolTable::locals;
+    mSymbolTable::locals = new mSymbolTable(old);
+
     for (auto& stmt : node->statements) {
         if (stmt == nullptr) { continue; }
 
@@ -445,6 +464,9 @@ mList EvalVisitor::Visit(BlockAST *node) {
             }
         }
     }
+
+    delete mSymbolTable::locals;
+    mSymbolTable::locals = old;
     
     return {};
 }
@@ -518,5 +540,67 @@ mList EvalVisitor::Visit(IfAST* node) {
         }
     }
 
+    return {};
+}
+
+static bool breakLoop = false;
+mList EvalVisitor::Visit(WhileAST *node) {
+    mSymbolTable* old = mSymbolTable::locals;
+    mSymbolTable::locals = new mSymbolTable(old);
+
+    do {
+        mList ret = node->condition->Accept(this);
+
+        if (ret.items.size() == 0) { 
+            delete mSymbolTable::locals;
+            mSymbolTable::locals = old;
+            return {}; 
+        }
+
+        mBool* result = (mBool*) ret[0];
+
+        if (result == nullptr) { 
+            delete mSymbolTable::locals;
+            mSymbolTable::locals = old;
+            return {}; 
+        }
+
+        if (result->type != mBool::Type) {
+            mError::AddError("Condition must be a boolean");
+            delete mSymbolTable::locals;
+            mSymbolTable::locals = old;
+            return {};
+        }
+
+        if (!(result)->value) {
+            break;
+        }
+
+        ret = node->body->Accept(this);
+
+        if (breakLoop) {
+            breakLoop = false;
+            break;
+        }
+
+        if (ret.items.size() != 0) { 
+            mObject* retObj = ret[0];
+
+            if (retObj != nullptr) {
+                std::cout << retObj->ToString() << std::endl;
+                delete mSymbolTable::locals;
+                mSymbolTable::locals = old;
+                return mList({ retObj });
+            }
+        }
+    } while (true);
+
+    delete mSymbolTable::locals;
+    mSymbolTable::locals = old;
+    return mList();
+}
+
+mList EvalVisitor::Visit(BreakAST *node) {
+    breakLoop = true;
     return {};
 }

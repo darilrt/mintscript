@@ -23,6 +23,10 @@ class BlockAST;
 class ReturnAST;
 class FunctionAST;
 class IfAST;
+class WhileAST;
+class BreakAST;
+class ContinueAST;
+class ForAST;
 
 class Visitor {
 public:
@@ -73,4 +77,8 @@ public:
     virtual mList Visit(ReturnAST* node) = 0;
     
     virtual mList Visit(IfAST* node) = 0;
+
+    virtual mList Visit(WhileAST* node) = 0;
+
+    virtual mList Visit(BreakAST* node) = 0;
 };
