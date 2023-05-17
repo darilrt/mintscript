@@ -1,7 +1,12 @@
+// Title: Test
 
-fib(n : int) -> int {
-    if n < 2 { n }
-    fib(n - 1) + fib(n - 2)
+callMyFunction(f : Function) {
+    print("returned", f())
 }
 
-print(fib(10))
+a() -> int {
+    print("Hello World!")
+    10
+}
+
+callMyFunction(a) 

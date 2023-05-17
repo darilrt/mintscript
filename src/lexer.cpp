@@ -82,6 +82,39 @@ Token Lexer::NextToken() {
         return GetStringToken();
     }
 
+    if (Peek() == '/') {
+        Next();
+
+        if (Peek() == '/') {
+            while (Peek() != '\n') {
+                Next();
+            }
+
+            return NextToken();
+        }
+        else if (Peek() == '*') {
+            Next();
+            Next();
+
+            while (true) {
+                if (Peek() == '*') {
+                    Next();
+
+                    if (Peek() == '/') {
+                        Next();
+                        break;
+                    }
+                } else {
+                    Next();
+                }
+            }
+
+
+
+            return NextToken();
+        }
+    }
+
     switch (Peek()) {
         CASE('+', 
             OPTION('=', 
