@@ -1,13 +1,7 @@
 
-main() {
-    mut arr : List = [1, 2, 3, 4, 5]
-
-    mut i : int = 0
-
-    while i < 5 {
-        print(arr[i])
-        i = i + 1
-    }
+fib(n : int) -> int {
+    if n < 2 { n }
+    fib(n - 1) + fib(n - 2)
 }
 
-main()
+print(fib(10))

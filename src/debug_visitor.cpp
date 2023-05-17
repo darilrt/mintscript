@@ -144,17 +144,13 @@ mList EvalVisitor::Visit(CallExprAST *node) {
         if (func->ast) {
             // Load symbol table
             mSymbolTable* old = mSymbolTable::locals;
-            mSymbolTable::locals = func->symbolTable;
-
-            if (mSymbolTable::locals == nullptr) {
-                std::cout << "Symbol table is null" << std::endl;
-                return {};
-            }
+            mSymbolTable::locals = new mSymbolTable(old);
 
             // Load arguments
             if (args.items.size() != func->args.size()) {
                 mError::AddError("Expected " + std::to_string(func->args.size()) + " arguments, got " + std::to_string(args.items.size()));
-                mSymbolTable::locals = mSymbolTable::locals->parent;
+                delete mSymbolTable::locals;
+                mSymbolTable::locals = old;
                 return {};
             }
             
@@ -163,13 +159,15 @@ mList EvalVisitor::Visit(CallExprAST *node) {
                 
                 if (i >= func->args.size()) {
                     std::cout << "Too many arguments" << std::endl;
-                    mSymbolTable::locals = mSymbolTable::locals->parent;
+                    delete mSymbolTable::locals;
+                    mSymbolTable::locals = old;
                     return {};
                 }
 
                 if (value->type != func->args[i].type) {
                     std::cout << "Argument type mismatch" << std::endl;
-                    mSymbolTable::locals = mSymbolTable::locals->parent;
+                    delete mSymbolTable::locals;
+                    mSymbolTable::locals = old;
                     return {};
                 }
 
@@ -182,6 +180,8 @@ mList EvalVisitor::Visit(CallExprAST *node) {
             mList ret = lambda->body->Accept(this);
 
             if (ret.items.size() == 0 || mError::HasError()) {
+                delete mSymbolTable::locals;
+                mSymbolTable::locals = old;
                 return {};
             }
 
@@ -189,11 +189,13 @@ mList EvalVisitor::Visit(CallExprAST *node) {
 
             if (result->type != func->returnType) {
                 std::cout << "Return type mismatch" << std::endl;
-                mSymbolTable::locals = mSymbolTable::locals->parent;
+                delete mSymbolTable::locals;
+                mSymbolTable::locals = old;
                 return {};
             }
 
             // Unload symbol table
+            delete mSymbolTable::locals;
             mSymbolTable::locals = old;
         }
         else {
