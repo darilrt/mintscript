@@ -15,6 +15,7 @@ class UnaryExprAST;
 class BinaryExprAST;
 class TernaryExprAST;
 class ParenExprAST;
+class AccessExprAST;
 class AssignmentAST;
 class VarDeclarationAST;
 class LambdaAST;
@@ -60,6 +61,8 @@ public:
     virtual mList Visit(ParenExprAST* node) = 0;
 
     virtual mList Visit(ArrayExprAST* node) = 0;
+
+    virtual mList Visit(AccessExprAST* node) = 0;
 
     // DeclASTs
 

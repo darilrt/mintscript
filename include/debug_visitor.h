@@ -41,6 +41,8 @@ public:
 
     mList Visit(ArrayExprAST* node);
 
+    mList Visit(AccessExprAST* node);
+
     mList Visit(AssignmentAST* node);
 
     mList Visit(VarDeclarationAST* node);

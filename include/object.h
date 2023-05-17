@@ -27,7 +27,13 @@ public:
     virtual mObject* CallMethod(std::string name, mObject* args, mObject* kwargs);
 
     // check if the object has an method
-    virtual bool HasMethod(const std::string& name);
+    bool HasMethod(const std::string& name);
+
+    // get the object's method
+    mObject* GetMethod(const std::string& name);
+
+    // check if the object has an attribute
+    bool HasAttr(const std::string& name);
 
     // reference counting
     void AddRef();

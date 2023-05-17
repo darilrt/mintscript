@@ -610,11 +610,11 @@ ASTNode *Parser::Prefix() {
     return expr;
 }
 
-// Postfix: Factor ('++' | '--' | (('[' Expression ']')* | ('(' Expression ')')*)* )
+// Postfix: Access ('++' | '--' )
 ASTNode *Parser::Postfix() {
     ASTNode *expr = nullptr;
 
-    EXPECTF(expr, Factor);
+    EXPECTF(expr, Call);
 
     if (IS(PlusPlus) || IS(MinusMinus)) {
         Token token = scanner.Peek();
@@ -659,6 +659,52 @@ ASTNode *Parser::Postfix() {
     
     scanner.Consume();
     return expr;
+}
+
+// Call: Access ( '(' ExprList? ')' )*
+ASTNode *Parser::Call() {
+    ASTNode* expr = nullptr;
+
+    EXPECTF(expr, Access);
+
+    while (IS(LParen)) {
+        scanner.Next();
+
+        std::vector<ASTNode*> args = ExprList();
+        
+        if (!(IS(RParen))) {
+            ERROR("SyntaxError: Expected ')'");
+            scanner.Reset();
+            return 0;
+        }
+
+        expr = new CallExprAST(expr, args);
+        scanner.Next();
+    }
+
+    return expr;
+}
+
+// Access: Unary ('.' Identifier)*
+ASTNode *Parser::Access() {
+    ASTNode *node = nullptr;
+
+    EXPECTF(node, Index);
+
+    while (IS(Dot)) {
+        scanner.Next();
+
+        Token token = scanner.Peek();
+        scanner.Next();
+
+        node = new AccessExprAST(node, token);
+    }
+
+    return node;
+}
+
+ASTNode *Parser::Index() {
+    return nullptr;
 }
 
 // Factor: INT | FLOAT | STRING | true | false | null | LambdaDecl | '(' Expression ')'
@@ -787,37 +833,15 @@ ASTNode *Parser::Lambda() {
 
 // Property: IDENTIFIER? ("." IDENTIFIER)*
 ASTNode *Parser::Property() {
-    PropertyExprAST *base = nullptr;
-    PropertyExprAST *expr = nullptr;
+    PropertyExprAST *node = nullptr;
     
-    scanner.PushAndSetIgnoreNewLine(true);
-
     if (IS(Identifier)) {
         GET(name, Identifier);
-        expr = new PropertyExprAST(name.value);
-
-        base = expr;
+        node = new PropertyExprAST(name.value);
     }
     
-    while (IS(Dot)) {
-        scanner.Next();
-        
-        GET(name, Identifier);
-
-        if (expr) {
-            expr->next = new PropertyExprAST(name.value);
-            expr = (PropertyExprAST*) expr->next;
-        }
-        else {
-            expr = new PropertyExprAST("." + name.value);
-            base = expr;
-        }
-    }
-
-    scanner.PopIgnoreNewLine();
-
     scanner.Consume();
-    return (ASTNode*) base;
+    return (ASTNode*) node;
 }
 
 // Array: "[" ExprList "]"

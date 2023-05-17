@@ -16,6 +16,11 @@
 
 #include "debug_visitor.h"
 
+#define ERROR(msg) mError::AddError(\
+    "DEBUG(" + std::string(__FILE__) + std::string(":") + std::to_string(__LINE__) + std::string(")") + std::string(": ") \
+    + msg + std::string(" "));
+    
+
 class mObjectRef : public mObject {
 public:
     mObject **ref;
@@ -313,6 +318,28 @@ mList EvalVisitor::Visit(ArrayExprAST *node) {
     }
 
     return mList({ array });
+}
+
+mList EvalVisitor::Visit(AccessExprAST *node) {
+    mList ret = node->expr->Accept(this);
+
+    if (ret.items.size() == 0) { return {}; }
+
+    mObject* obj = ret[0];
+
+    if (obj == nullptr) { return {}; }
+
+    if (!obj->HasAttr(node->name.value)) {
+        ERROR("Object of type '" + obj->type->name + "' has no attribute '" + node->name.value + "'");
+        return {};
+    }
+
+    obj = obj->fields[node->name.value];
+    mObject** fRef = &obj->fields[node->name.value];
+
+    mObjectRef* ref = new mObjectRef(fRef, obj->type, true);
+    
+    return mList({ obj, ref });
 }
 
 mList EvalVisitor::Visit(AssignmentAST *node) {

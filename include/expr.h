@@ -57,12 +57,10 @@ public:
 class PropertyExprAST : public ASTNode {
 public:
     std::string name;
-    PropertyExprAST* next = nullptr;
 
     ~PropertyExprAST();
 
     PropertyExprAST(const std::string& name) : name(name) {}
-    PropertyExprAST(const std::string& name, PropertyExprAST* next) : name(name), next(next) {}
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
@@ -151,6 +149,18 @@ public:
     ~ArrayExprAST();
 
     ArrayExprAST() {}
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class AccessExprAST : public ASTNode {
+public:
+    ASTNode* expr;
+    Token name;
+
+    ~AccessExprAST();
+
+    AccessExprAST(ASTNode* expr, Token name) : expr(expr), name(name) {}
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

@@ -39,6 +39,10 @@ bool mObject::HasMethod(const std::string& name) {
     return false;
 }
 
+bool mObject::HasAttr(const std::string &name) {
+    return fields.find(name) != fields.end();
+}
+
 void mObject::AddRef() {
     refCount++;
 }

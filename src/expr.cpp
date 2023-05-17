@@ -4,11 +4,7 @@
 
 #include <iostream>
 
-PropertyExprAST::~PropertyExprAST() {
-    if (next != nullptr) {
-        delete next;
-    }
-}
+PropertyExprAST::~PropertyExprAST() { }
 
 IndexExprAST::~IndexExprAST() {
     if (expr != nullptr) {
@@ -67,5 +63,11 @@ ArrayExprAST::~ArrayExprAST() {
         if (expr != nullptr) {
             delete expr;
         }
+    }
+}
+
+AccessExprAST::~AccessExprAST() {
+    if (expr != nullptr) {
+        delete expr;
     }
 }
