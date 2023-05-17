@@ -61,3 +61,11 @@ ParenExprAST::~ParenExprAST() {
         delete expr;
     }
 }
+
+ArrayExprAST::~ArrayExprAST() {
+    for (auto& expr : values) {
+        if (expr != nullptr) {
+            delete expr;
+        }
+    }
+}

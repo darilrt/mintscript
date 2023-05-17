@@ -12,6 +12,8 @@ mType* mList::Type = new mType(
         mList::Type->methods["Pop"] = new mFunction(&mList::Pop);
         mList::Type->methods["Insert"] = new mFunction(&mList::Insert);
         mList::Type->methods["Length"] = new mFunction(&mList::Length);
+
+        mList::Type->methods["mGet"] = new mFunction(&mList::mGet);
     },
     []() -> mObject* {
         return new mList();
@@ -89,6 +91,23 @@ mObject *mList::Length(mObject *_args, mObject *_kwargs, mObject *_self) {
     mList* self = (mList*) _self;
     
     return new mInt(((mList*) self)->items.size());
+}
+
+mObject *mList::mGet(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
+    const mList* kwargs = (mList*) _kwargs;
+    mList* self = (mList*) _self;
+    
+    const mObject* arg1 = args->GetItem(0);
+
+    if (arg1->type != mInt::Type) {
+        // TODO: ERROR
+        return nullptr;
+    }
+
+    mInt* index = (mInt*) arg1;
+
+    return self->items[index->value];
 }
 
 void mList::Release() {

@@ -31,6 +31,14 @@ mObject *mObject::CallMethod(std::string name, mObject *args, mObject *kwargs) {
     return nullptr;
 }
 
+bool mObject::HasMethod(const std::string& name) {
+    if (type != nullptr) {
+        return type->methods.find(name) != type->methods.end();
+    }
+
+    return false;
+}
+
 void mObject::AddRef() {
     refCount++;
 }

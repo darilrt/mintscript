@@ -34,6 +34,8 @@ public:
 
     static mObject* Length(mObject* args, mObject* kwargs, mObject *_self);
 
+    static mObject* mGet(mObject* args, mObject* kwargs, mObject *_self);
+
     void Release();
 
     mObject* operator [] (int index) { return items[index]; }

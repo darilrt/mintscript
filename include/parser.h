@@ -95,6 +95,8 @@ public:
 
     ASTNode* Property(); // .Identifier
 
+    ASTNode* Array(); // [ Expression ]
+
 private:
     Scanner scanner;
 };

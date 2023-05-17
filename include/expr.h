@@ -143,3 +143,14 @@ public:
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
+
+class ArrayExprAST : public ASTNode {
+public:
+    std::vector<ASTNode*> values;
+
+    ~ArrayExprAST();
+
+    ArrayExprAST() {}
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};

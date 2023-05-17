@@ -27,6 +27,7 @@ class WhileAST;
 class BreakAST;
 class ContinueAST;
 class ForAST;
+class ArrayExprAST;
 
 class Visitor {
 public:
@@ -58,6 +59,8 @@ public:
 
     virtual mList Visit(ParenExprAST* node) = 0;
 
+    virtual mList Visit(ArrayExprAST* node) = 0;
+
     // DeclASTs
 
     virtual mList Visit(AssignmentAST* node) = 0;
@@ -81,4 +84,6 @@ public:
     virtual mList Visit(WhileAST* node) = 0;
 
     virtual mList Visit(BreakAST* node) = 0;
+
+    virtual mList Visit(ContinueAST* node) = 0;
 };

@@ -53,10 +53,8 @@ ASTNode *Parser::Statement() {
         (node = WhileStatement()) ||
         // (node = ForStatement()) ||
         (node = ReturnStatement()) ||
-        (node = BreakStatement()) // ||
-        // (node = ContinueStatement()) ||
-        // (node = BlockStatement()) ||
-        // (node = Expression())
+        (node = BreakStatement()) ||
+        (node = ContinueStatement())
     ) { return node; }
     
     if (mError::HasError()) { return nullptr; }
@@ -667,6 +665,8 @@ ASTNode *Parser::Postfix() {
 ASTNode* Parser::Factor() {
     ASTNode *expr = nullptr;
 
+    scanner.Consume();
+
     if (IS(Int)) {
         GET(token, Int);
         expr = new NumberExprAST(std::stoi(token.value));
@@ -715,6 +715,7 @@ ASTNode* Parser::Factor() {
         scanner.Next();
         scanner.Consume();
     }
+    else if (expr = Array()) { }
     else if (expr = Property()) { }
     else { 
         scanner.Reset(); 
@@ -817,6 +818,25 @@ ASTNode *Parser::Property() {
 
     scanner.Consume();
     return (ASTNode*) base;
+}
+
+// Array: "[" ExprList "]"
+ASTNode *Parser::Array() {
+    EXPECT(LBracket);
+
+    ArrayExprAST* node = new ArrayExprAST();
+
+    node->values = ExprList();
+
+    if (!(IS(RBracket))) {
+        ERROR("SyntaxError: Expected ']'");
+        scanner.Reset();
+        return nullptr;
+    }
+    scanner.Next();
+
+    scanner.Consume();
+    return node;
 }
 
 // IfStatement: "if" Expression Block ("elif" Expression Block)* ("else" Block)?
@@ -925,4 +945,10 @@ ASTNode *Parser::BreakStatement() {
     EXPECT(Break);
     scanner.Consume();
     return new BreakAST();
+}
+
+ASTNode *Parser::ContinueStatement() {
+    EXPECT(Continue);
+    scanner.Consume();
+    return new ContinueAST();
 }

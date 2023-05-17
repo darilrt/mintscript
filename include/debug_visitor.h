@@ -39,6 +39,8 @@ public:
 
     mList Visit(ParenExprAST* node);
 
+    mList Visit(ArrayExprAST* node);
+
     mList Visit(AssignmentAST* node);
 
     mList Visit(VarDeclarationAST* node);
@@ -58,4 +60,6 @@ public:
     mList Visit(WhileAST* node);
 
     mList Visit(BreakAST* node);
+
+    mList Visit(ContinueAST* node);
 };

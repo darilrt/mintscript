@@ -30,6 +30,7 @@ public:
 };
 
 mList EvalVisitor::Visit(ASTNode *node) {
+    std::cout << "ASTNode" << std::endl;
     return {};
 }
 
@@ -81,6 +82,11 @@ mList EvalVisitor::Visit(IndexExprAST *node) {
     mObject* object = list[0];
     if (object == nullptr) { return {}; }
 
+    if (!object->HasMethod("mGet")) {
+        mError::AddError("Object does not have method 'mGet'");
+        return {};
+    }
+
     list = node->index->Accept(this);
     mObject* index = list[0];
 
@@ -98,7 +104,7 @@ mList EvalVisitor::Visit(CallExprAST *node) {
     mList list = node->property->Accept(this);
 
     if (mError::HasError()) { return {}; }
-
+    
     if (list.items.size() == 0) {
 		return {};
 	}
@@ -291,6 +297,22 @@ mList EvalVisitor::Visit(ParenExprAST *node) {
 	return list;
 }
 
+mList EvalVisitor::Visit(ArrayExprAST *node) {
+    mList* array = new mList();
+
+    for (auto& expr : node->values) {
+        mList list = expr->Accept(this);
+        if (list.items.size() == 0) { return {}; }
+        mObject* item = list[0];
+
+        if (item == nullptr) { return {}; }
+
+        array->items.push_back(item);
+    }
+
+    return mList({ array });
+}
+
 mList EvalVisitor::Visit(AssignmentAST *node) {
     mList leftRet = node->declaration->Accept(this);
 
@@ -366,16 +388,19 @@ mList EvalVisitor::Visit(VarDeclarationAST *node) {
     if (node->expression != nullptr) {
         ret = node->expression->Accept(this);
         
-        if (ret.items.size() == 0) { value = mNull::Null; }
-        
-        INCREF(value);
-
-        value = ret[0] == nullptr ? mNull::Null : ret[0];
-
-        if (type != value->type) {
-            std::cout << "Cannot assign type '" << value->type->name << "' to type '" << ((mType*) type)->name << "'" << std::endl;
-            return {};
+        if (ret.items.size() == 0) {
+            value = mNull::Null; 
         }
+        else {
+            value = ret[0] == nullptr ? mNull::Null : ret[0];
+
+            if (type != value->type) {
+                std::cout << "Cannot assign type '" << value->type->name << "' to type '" << ((mType*)type)->name << "'" << std::endl;
+                return {};
+            }
+        }
+
+        INCREF(value);
     }
     
     mSymbolTable::locals->Set(name, value, (mType*)type, node->isMutable);
@@ -460,6 +485,8 @@ mList EvalVisitor::Visit(BlockAST *node) {
             mObject* result = res[0];
 
             if (result != nullptr) {
+                delete mSymbolTable::locals;
+                mSymbolTable::locals = old;
                 return mList({ result });
             }
         }
@@ -544,6 +571,8 @@ mList EvalVisitor::Visit(IfAST* node) {
 }
 
 static bool breakLoop = false;
+static bool continueLoop = false;
+
 mList EvalVisitor::Visit(WhileAST *node) {
     mSymbolTable* old = mSymbolTable::locals;
     mSymbolTable::locals = new mSymbolTable(old);
@@ -583,6 +612,11 @@ mList EvalVisitor::Visit(WhileAST *node) {
             break;
         }
 
+        if (continueLoop) {
+            continueLoop = false;
+            continue;
+        }
+
         if (ret.items.size() != 0) { 
             mObject* retObj = ret[0];
 
@@ -602,5 +636,10 @@ mList EvalVisitor::Visit(WhileAST *node) {
 
 mList EvalVisitor::Visit(BreakAST *node) {
     breakLoop = true;
-    return {};
+    return mList({ new mNull() });
+}
+
+mList EvalVisitor::Visit(ContinueAST *node) {
+    continueLoop = true;
+    return mList({ new mNull() });
 }
