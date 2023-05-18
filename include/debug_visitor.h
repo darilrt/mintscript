@@ -23,8 +23,6 @@ public:
 
     mList Visit(NullExprAST* node);
 
-    mList Visit(LambdaExprAST* node);
-
     mList Visit(PropertyExprAST* node);
 
     mList Visit(IndexExprAST* node);

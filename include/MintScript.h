@@ -9,6 +9,7 @@
 #include "mbool.h"
 #include "mnull.h"
 #include "mlist.h"
+#include "method_wrapper.h"
 
 #include "symbol.h"
 #include "object.h"
@@ -25,5 +26,7 @@ void mShutdown();
 void mRunFile(const std::string &path);
 
 void mRunString(const std::string &source);
+
+void mTest();
 
 void mRunInteractive();

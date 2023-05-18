@@ -62,11 +62,6 @@ mList EvalVisitor::Visit(NullExprAST *node) {
     return mList({ mNull::Null });
 }
 
-mList EvalVisitor::Visit(LambdaExprAST *node) {
-    std::cout << "LambdaExprAST" << std::endl;
-    return {};
-}
-
 mList EvalVisitor::Visit(PropertyExprAST *node) {
     mSymbolTable::Symbol* symbol = mSymbolTable::LocalsGetSymbol(node->name);
     
@@ -141,7 +136,7 @@ mList EvalVisitor::Visit(CallExprAST *node) {
         
         args.items.push_back(value);
     }
-
+    
     mFunction* func = dynamic_cast<mFunction*>(object);
     mObject* result = nullptr;
 
@@ -204,7 +199,8 @@ mList EvalVisitor::Visit(CallExprAST *node) {
             mSymbolTable::locals = old;
         }
         else {
-            result = func->Call(&args, nullptr, nullptr);
+            mObject* selfObject = nullptr;
+            result = func->Call(&args, nullptr, selfObject);
         }
     }
     else {
@@ -321,23 +317,30 @@ mList EvalVisitor::Visit(ArrayExprAST *node) {
 }
 
 mList EvalVisitor::Visit(AccessExprAST *node) {
+    mObject* obj;
+    mObjectRef* ref;
     mList ret = node->expr->Accept(this);
 
     if (ret.items.size() == 0) { return {}; }
 
-    mObject* obj = ret[0];
+    obj = ret[0];
 
     if (obj == nullptr) { return {}; }
 
-    if (!obj->HasAttr(node->name.value)) {
+    if (obj->HasAttr(node->name.value)) {
+        obj = obj->GetAttr(node->name.value);
+        mObject** fRef = obj->GetAttrRef(node->name.value);
+        ref = new mObjectRef(fRef, obj->type, true);
+    }
+    else if (obj->HasMethod(node->name.value)) {
+        obj = obj->GetMethod(node->name.value);
+        mObject** fRef = nullptr;
+        ref = new mObjectRef(fRef, obj->type, false);
+    }
+    else {
         ERROR("Object of type '" + obj->type->name + "' has no attribute '" + node->name.value + "'");
         return {};
     }
-
-    obj = obj->fields[node->name.value];
-    mObject** fRef = &obj->fields[node->name.value];
-
-    mObjectRef* ref = new mObjectRef(fRef, obj->type, true);
     
     return mList({ obj, ref });
 }

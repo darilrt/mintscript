@@ -22,7 +22,7 @@ void TestScanner() {
     assert(scanner.Peek().type == Token::Type::Equal);
     assert(scanner.Next().type == Token::Type::Int);
     assert(scanner.Next().type == Token::Type::NewLine);
-
+    
     scanner.Reset();
 
     assert(scanner.Peek().type == Token::Type::Equal);

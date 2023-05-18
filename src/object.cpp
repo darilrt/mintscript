@@ -1,6 +1,7 @@
 #include "object.h"
 #include "context.h"
 #include "types.h"
+#include "method_wrapper.h"
 
 mObject::mObject(mType *type) {
     this->type = type;
@@ -39,8 +40,38 @@ bool mObject::HasMethod(const std::string& name) {
     return false;
 }
 
+mObject *mObject::GetMethod(const std::string &name) {
+    if (type != nullptr) {
+        if (type->methods.find(name) != type->methods.end()) {
+            mMethodWrapper* wrapper = new mMethodWrapper();
+            wrapper->self = this;
+            wrapper->func = (mFunction*) type->methods[name];
+            return wrapper;
+        }
+    }
+
+    return nullptr;
+}
+
 bool mObject::HasAttr(const std::string &name) {
     return fields.find(name) != fields.end();
+}
+
+mObject *mObject::GetAttr(const std::string &name) {
+    if (fields.find(name) != fields.end()) {
+        return fields[name];
+    }
+
+    return nullptr;
+}
+
+mObject **mObject::GetAttrRef(const std::string &name) {
+    if (fields.find(name) != fields.end()) {
+
+        return &fields[name];
+    }
+    
+    return nullptr;
 }
 
 void mObject::AddRef() {

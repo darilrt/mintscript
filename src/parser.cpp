@@ -614,7 +614,7 @@ ASTNode *Parser::Prefix() {
 ASTNode *Parser::Postfix() {
     ASTNode *expr = nullptr;
 
-    EXPECTF(expr, Call);
+    EXPECTF(expr, Access);
 
     if (IS(PlusPlus) || IS(MinusMinus)) {
         Token token = scanner.Peek();
@@ -661,50 +661,70 @@ ASTNode *Parser::Postfix() {
     return expr;
 }
 
-// Call: Access ( '(' ExprList? ')' )*
-ASTNode *Parser::Call() {
-    ASTNode* expr = nullptr;
-
-    EXPECTF(expr, Access);
-
-    while (IS(LParen)) {
-        scanner.Next();
-
-        std::vector<ASTNode*> args = ExprList();
-        
-        if (!(IS(RParen))) {
-            ERROR("SyntaxError: Expected ')'");
-            scanner.Reset();
-            return 0;
-        }
-
-        expr = new CallExprAST(expr, args);
-        scanner.Next();
-    }
-
-    return expr;
-}
-
-// Access: Unary ('.' Identifier)*
+// Access: Unary ( '.' IDENTIFIER | '[' Expression ']' | '(' ExprList ')' )*
 ASTNode *Parser::Access() {
     ASTNode *node = nullptr;
 
-    EXPECTF(node, Index);
+    EXPECTF(node, Factor);
+    
+    while (true) {
+        if (IS(Dot)) {
+            scanner.Next();
+            
+            if (!(IS(Identifier))) {
+                ERROR("SyntaxError: Expected identifier after '.'");
+                scanner.Reset();
+                return 0;
+            }
 
-    while (IS(Dot)) {
-        scanner.Next();
+            Token token = scanner.Peek();
+            scanner.Next();
 
-        Token token = scanner.Peek();
-        scanner.Next();
+            node = new AccessExprAST(node, token);
+        }
+        else if (IS(LBracket)) {
+            scanner.Next();
 
-        node = new AccessExprAST(node, token);
+            ASTNode *index = Expression();
+
+            if (index == nullptr) {
+                ERROR("SyntaxError: Expected expression after '['");
+                scanner.Reset();
+                return 0;
+            }
+            
+            if (!(IS(RBracket))) {
+                ERROR("SyntaxError: Expected ']'");
+                scanner.Reset();
+                return 0;
+            }
+
+            scanner.Next();
+            
+            node = new IndexExprAST(node, index);
+        }
+        else if (IS(LParen)) {
+            scanner.Next();
+
+            std::vector<ASTNode*> args = ExprList();
+
+            if (!(IS(RParen))) {
+                ERROR("SyntaxError: Expected ')'");
+                scanner.Reset();
+                return 0;
+            }
+
+            scanner.Next();
+
+            node = new CallExprAST(node, args);
+        }
+        else {
+            break;
+        }
     }
 
+    scanner.Consume();
     return node;
-}
-
-ASTNode *Parser::Index() {
-    return nullptr;
 }
 
 // Factor: INT | FLOAT | STRING | true | false | null | LambdaDecl | '(' Expression ')'
@@ -926,6 +946,7 @@ ASTNode *Parser::IfStatement() {
     return (ASTNode*) node;
 }
 
+// WhileStatament: "While" Expression Block
 ASTNode *Parser::WhileStatement() {
     WhileAST* node = new WhileAST();
 
@@ -965,12 +986,14 @@ ASTNode *Parser::ReturnStatement() {
     return new ReturnAST(nullptr);
 }
 
+// BreakStatement: "break"
 ASTNode *Parser::BreakStatement() {
     EXPECT(Break);
     scanner.Consume();
     return new BreakAST();
 }
 
+// ContinueStatement: "continue"
 ASTNode *Parser::ContinueStatement() {
     EXPECT(Continue);
     scanner.Consume();

@@ -6,6 +6,7 @@ void BuiltInInit() {
     mException::Type->Init();
     mType::Type->Init();
     mFunction::Type->Init();
+    mMethodWrapper::Type->Init();
     mInt::Type->Init();
     mStr::Type->Init();
     mFloat::Type->Init();

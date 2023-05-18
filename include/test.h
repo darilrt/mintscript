@@ -13,3 +13,5 @@ void TestLexerStrings();
 void TestLexerIdentifiers();
 
 void TestScanner();
+
+void TestParser();

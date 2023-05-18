@@ -35,6 +35,12 @@ public:
     // check if the object has an attribute
     bool HasAttr(const std::string& name);
 
+    // get the object's attribute
+    mObject* GetAttr(const std::string& name);
+
+    // get the object's attribute reference
+    mObject** GetAttrRef(const std::string& name);
+
     // reference counting
     void AddRef();
 

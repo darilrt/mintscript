@@ -7,7 +7,6 @@ class NumberExprAST;
 class StringExprAST;
 class BoolExprAST;
 class NullExprAST;
-class LambdaExprAST;
 class PropertyExprAST;
 class IndexExprAST;
 class CallExprAST;
@@ -43,8 +42,6 @@ public:
     virtual mList Visit(BoolExprAST* node) = 0;
 
     virtual mList Visit(NullExprAST* node) = 0;
-
-    virtual mList Visit(LambdaExprAST* node) = 0;
 
     virtual mList Visit(PropertyExprAST* node) = 0;
 

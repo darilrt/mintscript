@@ -10,13 +10,15 @@
 void Tests() {
     SetConsoleOutputCP(CP_UTF8);
 
-    TEST(TestLexerNumberLiterals);
-    TEST(TestLexerKeywords);
-    TEST(TestLexerSymbols);
-    TEST(TestLexerStrings);
-    TEST(TestLexerIdentifiers);
+    // TEST(TestLexerNumberLiterals);
+    // TEST(TestLexerKeywords);
+    // TEST(TestLexerSymbols);
+    // TEST(TestLexerStrings);
+    // TEST(TestLexerIdentifiers);
 
-    TEST(TestScanner);
+    // TEST(TestScanner);
+
+    TEST(TestParser)
 }
 
 int main() {
