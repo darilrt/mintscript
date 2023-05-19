@@ -11,18 +11,18 @@ BINDIR = build
 # Files
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-EXECUTABLE = $(BINDIR)/zen.exe
+EXECUTABLE = $(BINDIR)/mint.exe
 
 # Targets
 all: $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
 	mkdir -p $(BINDIR)
-	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $@ $(INCLUDES)
+	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $@ $(INCLUDES) -static-libstdc++
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	mkdir -p $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INCLUDES)
+	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INCLUDES) -static-libstdc++
 
 run: $(EXECUTABLE)
 	clear

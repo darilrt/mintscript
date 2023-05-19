@@ -15,7 +15,7 @@ public:
     int refCount = 0; // Reference count for garbage collection.
     mType* type = nullptr; // Type of the object.
     std::map<std::string, mObject*> fields; // Attributes of the object.
-
+    
     mObject(mType* type);
 
     virtual std::string ToString();
@@ -25,7 +25,7 @@ public:
     
     // call method on the object
     virtual mObject* CallMethod(std::string name, mObject* args, mObject* kwargs);
-
+    
     // check if the object has an method
     bool HasMethod(const std::string& name);
 

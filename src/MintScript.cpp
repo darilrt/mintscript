@@ -87,8 +87,8 @@ void mRunString(const std::string &source) {
 }
 
 void mRunInteractive() {
-    std::cout << "MintScript Interpreter v0.1" << std::endl;
-    std::cout << "Type 'exit' to exit" << std::endl;
+    std::cout << "MintScript v0.1" << std::endl;
+    std::cout << "Type 'exit()' to exit" << std::endl;
 
     std::string input;
     

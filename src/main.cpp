@@ -2,11 +2,17 @@
 
 #include <iostream>
 
-int main() {
+int main(int argc, char** argv) {
+    // if file is passed as argument, run it
+    // else run interactive mode
+
     mInit();
-    // mRunInteractive();
-    mRunFile("examples/test.ms");
-    // mTest();
+    if (argc > 1) {
+        mRunFile(argv[1]);
+    } else {
+        mRunInteractive();
+    }
     mShutdown();
+
     return 0;
 }
