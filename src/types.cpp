@@ -2,6 +2,7 @@
 #include "mfn.h"
 #include "symbol.h"
 #include "mnull.h"
+#include "module.h"
 
 mType* mType::Type = nullptr;
 
@@ -41,9 +42,9 @@ void mType::InitType() {
     mType::Type = new mType(
         "type",
         []() {
-            mType::Type->type = mType::Type;
+            mModule::GetModule("reflect")->SetField("Type", mType::Type);
             
-            mSymbolTable::globals->Set("type", mType::Type);
+            mType::Type->type = mType::Type;
             
             mType::Type->SetMethod("mCall", mType::mCall);
         },
@@ -60,7 +61,7 @@ mObject *mType::mCall(mObject *args, mObject *kwargs, mObject *_self) {
 mType* mType::mFieldInfo::Type = new mType(
     "FieldInfo",
     []() -> void {
-        // mSymbolTable::globals->Set("FieldInfo", mType::mFieldInfo::Type);
+        mModule::GetModule("reflect")->SetField("FieldInfo", mType::mFieldInfo::Type);
     },
     []() -> mObject* {
         return new mType::mFieldInfo("", nullptr);

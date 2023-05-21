@@ -16,7 +16,17 @@ mType* mModule::Type = new mType(
     }
 );
 
+std::unordered_map<std::string, mObject*> mModule::modules;
+
 mModule::mModule() : mObject(mModule::Type) { }
+
+mModule::mModule(const std::string &name) : mObject(mModule::Type), name(name) {
+    if (mModule::modules.find(name) != mModule::modules.end()) {
+        throw std::runtime_error("Module already exists: " + name);
+    }
+
+    mModule::modules[name] = this;
+}
 
 std::string ReadFile(const std::filesystem::path& path) {
     std::ifstream file(path);
@@ -73,6 +83,11 @@ mObject *mModule::ImportFile(const std::filesystem::path& path) {
 }
 
 mObject *mModule::Import(const std::string &module_name) {
+    // Check if the module was already imported
+    if (mModule::modules.find(module_name) != mModule::modules.end()) {
+        return mModule::modules[module_name];
+    }
+
     // Get the module path
     std::filesystem::path modulePath = mModule::GetModulePath(module_name);
 
@@ -81,13 +96,43 @@ mObject *mModule::Import(const std::string &module_name) {
         return nullptr;
     }
 
-    // Check if the module was already imported
-    // TODO: Check if the module was already imported
-
     // Read the module
     const std::filesystem::path rootPath = modulePath / "root.mint";
 
     mObject* module = mModule::ImportFile(rootPath.string());
+
+    // Register the module
+    mModule::modules[module_name] = module;
+
+    return module;
+}
+
+mModule *mModule::NewModule(const std::string &module_name) {
+    // Check if the module was already imported
+    if (mModule::modules.find(module_name) != mModule::modules.end()) {
+        throw std::runtime_error("Module already exists: " + module_name);
+    }
+
+    // Create the module
+    mModule* module = new mModule(module_name);
+
+    // Register the module
+    mModule::modules[module_name] = module;
+
+    return module;
+}
+
+mObject *mModule::GetModule(const std::string &module_name) {
+    // Check if the module was already imported
+    if (mModule::modules.find(module_name) != mModule::modules.end()) {
+        return mModule::modules[module_name];
+    }
+
+    // Create the module
+    mModule* module = new mModule(module_name);
+
+    // Register the module
+    mModule::modules[module_name] = module;
     
     return module;
 }
