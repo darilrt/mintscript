@@ -50,7 +50,6 @@ public:
         Let, // let
         Const, // const
         Ref, // ref
-        Module, // module
         Export, // export
         KeywordsEnd, // end of keywords
 

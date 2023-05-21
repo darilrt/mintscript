@@ -18,7 +18,20 @@ mType* mModule::Type = new mType(
 
 mModule::mModule() : mObject(mModule::Type) { }
 
-mObject *mModule::ImportFile(const std::string &path) {
+std::string ReadFile(const std::filesystem::path& path) {
+    std::ifstream file(path);
+
+    if (!file.is_open()) {
+        mError::AddError("Failed to open file: " + path.string());
+        return "";
+    }
+
+    std::string source((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+    return source;
+}
+
+mObject *mModule::ImportFile(const std::filesystem::path& path) {
     std::filesystem::path filePath(MAIN_FILE_PATH / path);
 
     // Check if the file was already imported
@@ -28,15 +41,8 @@ mObject *mModule::ImportFile(const std::string &path) {
     }
 
     // Read the file
-    std::ifstream file(filePath);
-
-    if (!file.is_open()) {
-        mError::AddError("Failed to open file: " + path);
-        return nullptr;
-    }
-
-    std::string source((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
+    std::string source = ReadFile(filePath);
+    
     // Parse the file
     Parser parser(source);
     ASTNode *node = parser.Parse();
@@ -48,7 +54,7 @@ mObject *mModule::ImportFile(const std::string &path) {
     }
     
     if (node == nullptr) {
-        mError::AddError("Failed to parse file: " + path);
+        mError::AddError("Failed to parse file: " + path.string());
         return nullptr;
     }
     
@@ -64,4 +70,42 @@ mObject *mModule::ImportFile(const std::string &path) {
     }
 
     return module;
+}
+
+mObject *mModule::Import(const std::string &module_name) {
+    // Get the module path
+    std::filesystem::path modulePath = mModule::GetModulePath(module_name);
+
+    if (modulePath == "") {
+        mError::AddError("Failed to find module: " + module_name);
+        return nullptr;
+    }
+
+    // Check if the module was already imported
+    // TODO: Check if the module was already imported
+
+    // Read the module
+    const std::filesystem::path rootPath = modulePath / "root.mint";
+
+    mObject* module = mModule::ImportFile(rootPath.string());
+    
+    return module;
+}
+
+std::filesystem::path mModule::GetModulePath(const std::string &module_name) {
+    std::filesystem::path modulePath;
+
+    modulePath = MINT_MODULE_PATH / module_name;
+
+    if (std::filesystem::exists(modulePath) && std::filesystem::is_directory(modulePath)) {
+        return modulePath;
+    }
+
+    modulePath = MAIN_FILE_PATH / module_name;
+
+    if (std::filesystem::exists(modulePath) && std::filesystem::is_directory(modulePath)) {
+        return modulePath;
+    }
+
+    return "";
 }

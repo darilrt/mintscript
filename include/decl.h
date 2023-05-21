@@ -142,18 +142,11 @@ class ImportAST : public ASTNode {
 public:
     bool isPath = false;
     Token path;
-    ASTNode* library;
+    Token alias;
+    std::vector<Token> identifiers;
+    std::vector<ASTNode*> imports;
 
     ImportAST() { }
-
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
-};
-
-class ModuleAST : public ASTNode {
-public:
-    Token name;
-
-    ModuleAST(Token name) : name(name) { }
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

@@ -77,3 +77,6 @@ ExportItemAST::~ExportItemAST() {
         delete expr;
     }
 }
+
+ImportItemAST::~ImportItemAST() {
+}

@@ -1,3 +1,3 @@
-import "test2.mint"
+import module
 
-test()
+print(module.add(1, 2))

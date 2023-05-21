@@ -287,7 +287,6 @@ Token Lexer::GetKeywordToken(const std::string &value) {
     else if (value == "let") { return TOKEN(Let, value); }
     else if (value == "const") { return TOKEN(Const, value); }
     else if (value == "ref") { return TOKEN(Ref, value); }
-    else if (value == "module") { return TOKEN(Module, value); }
     else if (value == "export") { return TOKEN(Export, value); }
 
     return TOKEN(Unknown, value);

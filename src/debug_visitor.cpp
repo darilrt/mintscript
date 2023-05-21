@@ -715,11 +715,6 @@ mList EvalVisitor::Visit(ContinueAST *node) {
     return mList({ new mNull() });
 }
 
-mList EvalVisitor::Visit(ModuleAST *node) {
-    std::cout << "Module" << std::endl;
-    return mList();
-}
-
 mList EvalVisitor::Visit(ImportAST *node) {
     if (node->isPath) {
         const std::string& path = node->path.value;
@@ -737,7 +732,14 @@ mList EvalVisitor::Visit(ImportAST *node) {
 
     }
     else {
+        mObject* module = mModule::Import(node->identifiers[0].value);
 
+        if (module == nullptr) {
+            std::cout << "Failed to import module '" << node->identifiers[0].value << "'" << std::endl;
+            return {};
+        }
+
+        mSymbolTable::locals->Set(node->identifiers[0].value, module, module->type, false);
     }
 
     return {};

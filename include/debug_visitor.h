@@ -74,8 +74,6 @@ public:
 
     mList Visit(ContinueAST* node);
 
-    mList Visit(ModuleAST* node);
-
     mList Visit(ImportAST* node);
 
     mList Visit(ExportAST* node);

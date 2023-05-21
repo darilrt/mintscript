@@ -35,7 +35,6 @@ std::string Token::TypeToString() const {
         case Type::Let: { tokentType = "Let"; break; }
         case Type::Const: { tokentType = "Const"; break; }
         case Type::Ref: { tokentType = "Ref"; break; }
-        case Type::Module: { tokentType = "Module"; break; }
         case Type::Export: { tokentType = "Export"; break; }
         case Type::Plus: { tokentType = "Plus"; break; }
         case Type::Minus: { tokentType = "Minus"; break; }

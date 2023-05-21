@@ -178,3 +178,17 @@ public:
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
+
+class ImportItemAST : public ASTNode {
+public:
+    Token name;
+    Token alias;
+
+    ~ImportItemAST();
+
+    ImportItemAST(Token name) : name(name) {}
+
+    ImportItemAST(Token name, Token alias) : name(name), alias(alias) {}
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};

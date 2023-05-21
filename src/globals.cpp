@@ -2,3 +2,4 @@
 
 const std::string MINT_VERSION = "0.0.1";
 std::filesystem::path MAIN_FILE_PATH = "";
+std::filesystem::path MINT_MODULE_PATH = "";

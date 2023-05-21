@@ -49,14 +49,16 @@ public:
 
     ASTNode* ExportStatement(); // Export Identifier
 
-    ASTNode* ModuleStatement(); // Module Identifier {Statements}
-
     // Other
 
     std::vector<ASTNode*> ExportList();
 
     ASTNode* ExportItem();
 
+    std::vector<ASTNode*> ImportList(); // ImportItem [, ImportItem]*
+
+    ASTNode* ImportItem(); // Identifier [as Identifier]
+    
     std::vector<ASTNode*> ExprList(); // Expression [, Expression]*
 
     std::vector<ASTNode*> ArgDeclList(); // ArgDecl [, ArgDecl]*
