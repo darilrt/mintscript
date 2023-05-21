@@ -38,7 +38,7 @@ ASTNode* Parser::Parse() {
     }
     scanner.PopIgnoreNewLine();
     
-    return new BlockAST(nodes);
+    return new ProgramAST(nodes);
 }
 
 // Statement: NewLine | Declaration | IfStatement | WhileStatement | ForStatement | ReturnStatement | BreakStatement | ContinueStatement | Block | Expression
@@ -54,7 +54,11 @@ ASTNode *Parser::Statement() {
         // (node = ForStatement()) ||
         (node = ReturnStatement()) ||
         (node = BreakStatement()) ||
-        (node = ContinueStatement())
+        (node = ContinueStatement()) ||
+        (node = ImportStatement()) ||
+        (node = ModuleStatement()) ||
+        (node = ExportStatement()) ||
+        (node = Block())
     ) { return node; }
     
     if (mError::HasError()) { return nullptr; }
@@ -178,6 +182,73 @@ ASTNode *Parser::FunctionDeclaration() {
 
     node = new FunctionAST(name, (LambdaAST*) node);
     
+    scanner.Consume();
+    return node;
+}
+
+// ExportList: ExportItem (',' ExportItem)*
+std::vector<ASTNode *> Parser::ExportList() {
+    std::vector<ASTNode *> exports;
+
+    ASTNode *node = nullptr;
+    if (node = ExportItem()) {
+        exports.push_back(node);
+
+        while (IS(Comma)) {
+            scanner.Next();
+
+            ASTNode *exportItem = nullptr;
+            if (!(exportItem = ExportItem())) {
+                ERROR("SyntaxError: Expected item after ',' " + scanner.Peek().location.ToString());
+                scanner.Reset();
+
+                for (ASTNode *node : exports) {
+                    delete node;
+                }
+
+                exports.clear();
+                return exports;
+            }
+
+            exports.push_back(exportItem);
+        }
+    }
+
+    scanner.Consume();
+    return exports;
+}
+
+// ExportItem: Identifier | Expression 'as' Identifier
+ASTNode *Parser::ExportItem() {
+    ASTNode *node = nullptr;
+
+    if (IS(Identifier)) {
+        Token name = scanner.Peek();
+        scanner.Next();
+
+        node = new ExportItemAST(name);
+    }
+    else {
+        EXPECTF(node, Expression);
+
+        if (!(IS(As))) {
+            ERROR("SyntaxError: Expected 'as' after expression " + scanner.Peek().location.ToString());
+            scanner.Reset();
+            return nullptr;
+        }
+
+        scanner.Next();
+
+        if (!(IS(Identifier))) {
+            ERROR("SyntaxError: Expected identifier after 'as' " + scanner.Peek().location.ToString());
+            scanner.Reset();
+            return nullptr;
+        }
+
+        GET(name, Identifier);
+        node = new ExportItemAST(name, node);
+    }
+
     scanner.Consume();
     return node;
 }
@@ -623,39 +694,6 @@ ASTNode *Parser::Postfix() {
 
         expr = new UnaryExprAST(token, expr, false);
     }
-    else {
-        while (IS(LBracket) || IS(LParen)) {
-            while (IS(LBracket)) {
-                scanner.Next();
-
-                ASTNode *index = Expression();
-
-                if (!(IS(RBracket))) {
-                    ERROR("SyntaxError: Expected ']'");
-                    scanner.Reset();
-                    return 0;
-                }
-
-                expr = new IndexExprAST(expr, index);
-                scanner.Next();
-            }
-
-            while (IS(LParen)) {
-                scanner.Next();
-
-                std::vector<ASTNode*> args = ExprList();
-
-                if (!(IS(RParen))) {
-                    ERROR("SyntaxError: Expected ')'");	
-                    scanner.Reset();
-                    return 0;
-                }
-
-                expr = new CallExprAST(expr, args);
-                scanner.Next();
-            }
-        }
-    }
     
     scanner.Consume();
     return expr;
@@ -998,4 +1036,50 @@ ASTNode *Parser::ContinueStatement() {
     EXPECT(Continue);
     scanner.Consume();
     return new ContinueAST();
+}
+
+// ImportStatement: "import" Identifier
+ASTNode *Parser::ImportStatement() {
+    EXPECT(Import);
+
+    ImportAST* node = new ImportAST();
+
+    if (IS(String)) {
+        Token path = scanner.Peek();
+        scanner.Next();
+
+        node->path = path;
+        node->isPath = true;
+    }
+
+    scanner.Consume();
+    return node;
+}
+
+// ExportStatement: "export" '{' Identifier (',' Identifier)* '}'
+ASTNode *Parser::ExportStatement() {
+    EXPECT(Export);
+
+    if (!(IS(LBrace))) {
+        ERROR("SyntaxError: Expected '{'");
+        scanner.Reset();
+        return nullptr;
+    }
+    scanner.Next();
+
+    std::vector<ASTNode*> list = ExportList();
+
+    if (!(IS(RBrace))) {
+        ERROR("SyntaxError: Expected '}'");
+        scanner.Reset();
+        return nullptr;
+    }
+
+    scanner.Next();
+
+    return new ExportAST(list);
+}
+
+ASTNode *Parser::ModuleStatement() {
+    return nullptr;
 }

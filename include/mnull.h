@@ -19,4 +19,7 @@ public:
     static mObject* mEquals(mObject* args, mObject* kwargs, mObject *_self);
 
     void Release();
+
+private:
+    mNull(mType* type) : mObject(type) { }
 };

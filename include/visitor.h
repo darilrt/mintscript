@@ -28,10 +28,16 @@ class BreakAST;
 class ContinueAST;
 class ForAST;
 class ArrayExprAST;
+class ImportAST;
+class ExportAST;
+class ModuleAST;
+class ProgramAST;
 
 class Visitor {
 public:
     virtual mList Visit(ASTNode* node) = 0;
+
+    virtual mList Visit(ProgramAST* node) = 0;
 
     // ExprASTs
     
@@ -86,4 +92,14 @@ public:
     virtual mList Visit(BreakAST* node) = 0;
 
     virtual mList Visit(ContinueAST* node) = 0;
+
+    // virtual mList Visit(ForAST* node) = 0;
+
+    // Modules
+
+    virtual mList Visit(ImportAST* node) = 0;
+
+    virtual mList Visit(ModuleAST* node) = 0;
+
+    virtual mList Visit(ExportAST* node) = 0;
 };

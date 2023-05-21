@@ -67,8 +67,8 @@ public:
 
 class IndexExprAST : public ASTNode {
 public:
-    ASTNode* expr;
-    ASTNode* index;
+    ASTNode* expr = nullptr;
+    ASTNode* index = nullptr;
 
     ~IndexExprAST();
 
@@ -79,7 +79,7 @@ public:
 
 class CallExprAST : public ASTNode {
 public:
-    ASTNode* property;
+    ASTNode* property = nullptr;
     std::vector<ASTNode*> args;
 
     ~CallExprAST();
@@ -94,7 +94,7 @@ public:
 class UnaryExprAST : public ASTNode {
 public:
     Token op;
-    ASTNode* expr;
+    ASTNode* expr = nullptr;
     bool isPrefix;
 
     ~UnaryExprAST();
@@ -108,8 +108,8 @@ public:
 class BinaryExprAST : public ASTNode {
 public:
     Token op;
-    ASTNode* lhs;
-    ASTNode* rhs;
+    ASTNode* lhs = nullptr;
+    ASTNode* rhs = nullptr;
 
     ~BinaryExprAST();
 
@@ -120,9 +120,9 @@ public:
 
 class TernaryExprAST : public ASTNode {
 public:
-    ASTNode* condition;
-    ASTNode* trueExpr;
-    ASTNode* falseExpr;
+    ASTNode* condition = nullptr;
+    ASTNode* trueExpr = nullptr;
+    ASTNode* falseExpr = nullptr;
 
     ~TernaryExprAST();
 
@@ -133,7 +133,7 @@ public:
 
 class ParenExprAST : public ASTNode {
 public:
-    ASTNode* expr;
+    ASTNode* expr = nullptr;
 
     ~ParenExprAST();
 
@@ -155,12 +155,26 @@ public:
 
 class AccessExprAST : public ASTNode {
 public:
-    ASTNode* expr;
+    ASTNode* expr = nullptr;
     Token name;
 
     ~AccessExprAST();
 
     AccessExprAST(ASTNode* expr, Token name) : expr(expr), name(name) {}
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class ExportItemAST : public ASTNode {
+public:
+    Token name;
+    ASTNode* expr = nullptr;
+
+    ~ExportItemAST();
+
+    ExportItemAST(Token name) : name(name) {}
+
+    ExportItemAST(Token name, ASTNode* expr) : name(name), expr(expr) {}
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

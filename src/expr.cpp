@@ -71,3 +71,9 @@ AccessExprAST::~AccessExprAST() {
         delete expr;
     }
 }
+
+ExportItemAST::~ExportItemAST() {
+    if (expr != nullptr) {
+        delete expr;
+    }
+}

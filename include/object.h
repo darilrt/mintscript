@@ -33,13 +33,16 @@ public:
     mObject* GetMethod(const std::string& name);
 
     // check if the object has an attribute
-    bool HasAttr(const std::string& name);
+    bool HasField(const std::string& name);
 
     // get the object's attribute
-    mObject* GetAttr(const std::string& name);
-
+    mObject* GetField(const std::string& name);
+    
     // get the object's attribute reference
-    mObject** GetAttrRef(const std::string& name);
+    mObject** GetFieldRef(const std::string& name);
+
+    // set the object's attribute
+    inline void SetField(const std::string& name, mObject* value) { fields[name] = value; }
 
     // reference counting
     void AddRef();

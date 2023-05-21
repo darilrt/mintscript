@@ -279,7 +279,7 @@ Token Lexer::GetKeywordToken(const std::string &value) {
     else if (value == "ret") { return TOKEN(Return, value); }
     else if (value == "class") { return TOKEN(Class, value); }
     else if (value == "super") { return TOKEN(Super, value); }
-    else if (value == "impl") { return TOKEN(Impl, value); }
+    else if (value == "as") { return TOKEN(As, value); }
     else if (value == "interface") { return TOKEN(Interface, value); }
     else if (value == "enum") { return TOKEN(Enum, value); }
     else if (value == "import") { return TOKEN(Import, value); }

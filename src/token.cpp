@@ -27,7 +27,7 @@ std::string Token::TypeToString() const {
         case Type::Return: { tokentType = "Return"; break; }
         case Type::Class: { tokentType = "Class"; break; }
         case Type::Super: { tokentType = "Super"; break; }
-        case Type::Impl: { tokentType = "Impl"; break; }
+        case Type::As: { tokentType = "As"; break; }
         case Type::Interface: { tokentType = "Interface"; break; }
         case Type::Enum: { tokentType = "Enum"; break; }
         case Type::Import: { tokentType = "Import"; break; }

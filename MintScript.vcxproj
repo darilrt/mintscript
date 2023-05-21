@@ -70,6 +70,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>mint</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>mint</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -105,6 +111,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -120,6 +127,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,8 +144,11 @@
     <ClCompile Include="src\eval.cpp" />
     <ClCompile Include="src\exception.cpp" />
     <ClCompile Include="src\expr.cpp" />
+    <ClCompile Include="src\globals.cpp" />
     <ClCompile Include="src\lexer.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\method_wrapper.cpp" />
+    <ClCompile Include="src\module.cpp" />
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\parser.cpp" />
     <ClCompile Include="src\scanner.cpp" />
@@ -161,10 +172,12 @@
     <ClInclude Include="include\debug_visitor.h" />
     <ClInclude Include="include\decl.h" />
     <ClInclude Include="include\error.h" />
-    <ClInclude Include="include\eval.h" />
     <ClInclude Include="include\exception.h" />
     <ClInclude Include="include\expr.h" />
+    <ClInclude Include="include\globals.h" />
     <ClInclude Include="include\lexer.h" />
+    <ClInclude Include="include\method_wrapper.h" />
+    <ClInclude Include="include\module.h" />
     <ClInclude Include="include\object.h" />
     <ClInclude Include="include\parser.h" />
     <ClInclude Include="include\scanner.h" />

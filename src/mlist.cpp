@@ -8,17 +8,17 @@ mType* mList::Type = new mType(
     []() -> void {
         mSymbolTable::globals->Set("List", mList::Type);
 
-        // attributes
-        // mList::Type->;
-
+        // fields info
+        mList::Type->SetFieldInfo("count", mInt::Type);
+        
         // methods
-        mList::Type->methods["Push"] = new mFunction(&mList::Push);
-        mList::Type->methods["Pop"] = new mFunction(&mList::Pop);
-        mList::Type->methods["Insert"] = new mFunction(&mList::Insert);
-        mList::Type->methods["Length"] = new mFunction(&mList::Length);
+        mList::Type->SetMethod("Push", &mList::Push);
+        mList::Type->SetMethod("Pop", &mList::Pop);
+        mList::Type->SetMethod("Insert", &mList::Insert);
+        mList::Type->SetMethod("Length", &mList::Length);
 
         // operator overloading
-        mList::Type->methods["mGet"] = new mFunction(&mList::mGet);
+        mList::Type->SetMethod("mGet", &mList::mGet);
     },
     []() -> mObject* {
         return new mList();

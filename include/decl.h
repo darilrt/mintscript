@@ -83,6 +83,15 @@ public:
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
+class ProgramAST : public ASTNode {
+public:
+    std::vector<ASTNode*> statements;
+
+    ProgramAST(std::vector<ASTNode*> statements) : statements(statements) { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
 class IfAST : public ASTNode {
 public:
     ASTNode* condition = nullptr;
@@ -125,6 +134,35 @@ public:
     ASTNode* iterable = nullptr;
 
     ForAST() { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class ImportAST : public ASTNode {
+public:
+    bool isPath = false;
+    Token path;
+    ASTNode* library;
+
+    ImportAST() { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class ModuleAST : public ASTNode {
+public:
+    Token name;
+
+    ModuleAST(Token name) : name(name) { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class ExportAST : public ASTNode {
+public:
+    std::vector<ASTNode*> list;
+
+    ExportAST(std::vector<ASTNode*> list) : list(list) { }
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

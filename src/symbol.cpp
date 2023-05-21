@@ -2,6 +2,7 @@
 
 mSymbolTable *mSymbolTable::globals = new mSymbolTable();
 mSymbolTable *mSymbolTable::locals = mSymbolTable::globals;
+std::unordered_map<std::string, mSymbolTable*> mSymbolTable::scopes = { { "global", mSymbolTable::globals } };
 
 mSymbolTable::mSymbolTable() { }
 
@@ -65,7 +66,7 @@ void mSymbolTable::Show() {
 
 mSymbolTable::Symbol* mSymbolTable::LocalsGetSymbol(const std::string &name) {
     mSymbolTable* table = mSymbolTable::locals;
-
+    
     Symbol* it = table->GetSymbol(name);
 
     while (it == nullptr) {
@@ -80,4 +81,12 @@ mSymbolTable::Symbol* mSymbolTable::LocalsGetSymbol(const std::string &name) {
         return nullptr;
 
     return it;
+}
+
+mSymbolTable *mSymbolTable::NewScope(const std::string &name) {
+    mSymbolTable* table = new mSymbolTable(mSymbolTable::globals);
+
+    mSymbolTable::scopes[name] = table;
+
+    return table;
 }

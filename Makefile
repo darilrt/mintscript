@@ -26,7 +26,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 
 run: $(EXECUTABLE)
 	clear
-	$(EXECUTABLE)
+	$(EXECUTABLE) ./examples/test.mint
 
 clean:
 	rm -rf $(OBJDIR)/*.o $(EXECUTABLE)

@@ -19,6 +19,7 @@ public:
 
     static mType* Type;
 
+    std::string name = "";
     ASTNode* ast = nullptr;
     mObject* self = nullptr;
 

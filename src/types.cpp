@@ -1,10 +1,11 @@
 #include "types.h"
 #include "mfn.h"
 #include "symbol.h"
+#include "mnull.h"
 
 mType* mType::Type = nullptr;
 
-mType::mType(std::string name, void (*Init)(), mObject *(*New)()) : name(name), Init(Init), New(New), mObject(nullptr) {
+mType::mType(const std::string& name, void (*Init)(), mObject *(*New)()) : name(name), Init(Init), New(New), mObject(nullptr) {
     if (mType::Type == nullptr && name != "type") {
         mType::InitType();
     }
@@ -12,20 +13,29 @@ mType::mType(std::string name, void (*Init)(), mObject *(*New)()) : name(name), 
     type = mType::Type;
 }
 
-std::string mType::ToString()
-{
+std::string mType::ToString() {
     return "<class '" + name + "'>";
 }
 
 mObject *mType::NewInstance() {
     if (New != nullptr) {
-        return New();
+        mObject* object = New();
+
+        for (auto field : object->type->fieldsInfo) {
+            object->fields[field.first] = mNull::Null;
+        }
+
+        return object;
     }
     
     return nullptr;
 }
 
 void mType::Release() { }
+
+void mType::SetMethod(const std::string& name, mObject *(*func)(mObject *args, mObject *kwargs, mObject *_self)) {
+    methods[name] = new mFunction(func);
+}
 
 void mType::InitType() {
     mType::Type = new mType(
@@ -35,7 +45,7 @@ void mType::InitType() {
             
             mSymbolTable::globals->Set("type", mType::Type);
             
-            mType::Type->methods["mCall"] = new mFunction(&mType::mCall);
+            mType::Type->SetMethod("mCall", mType::mCall);
         },
         []() -> mObject* {
             return mType::Type;
@@ -44,5 +54,19 @@ void mType::InitType() {
 }
 
 mObject *mType::mCall(mObject *args, mObject *kwargs, mObject *_self) {
-    return ((mType*)_self)->New();
+    return ((mType*)_self)->NewInstance();
 }
+
+mType* mType::mFieldInfo::Type = new mType(
+    "FieldInfo",
+    []() -> void {
+        // mSymbolTable::globals->Set("FieldInfo", mType::mFieldInfo::Type);
+    },
+    []() -> mObject* {
+        return new mType::mFieldInfo("", nullptr);
+    }
+);
+
+mType::mFieldInfo::mFieldInfo() : mObject(mType::mFieldInfo::Type) { }
+
+mType::mFieldInfo::mFieldInfo(std::string name, mType *type) : name(name), type(type), mObject(mType::mFieldInfo::Type) { }

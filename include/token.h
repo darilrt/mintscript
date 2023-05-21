@@ -42,7 +42,7 @@ public:
         Return, // ret
         Class, // class
         Super, // super
-        Impl, // impl
+        As, // as
         Interface, // interface
         Enum, // enum
         Import, // import

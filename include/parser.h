@@ -45,7 +45,17 @@ public:
 
     ASTNode* ContinueStatement(); // Continue
 
+    ASTNode* ImportStatement(); // Import Identifier
+
+    ASTNode* ExportStatement(); // Export Identifier
+
+    ASTNode* ModuleStatement(); // Module Identifier {Statements}
+
     // Other
+
+    std::vector<ASTNode*> ExportList();
+
+    ASTNode* ExportItem();
 
     std::vector<ASTNode*> ExprList(); // Expression [, Expression]*
 

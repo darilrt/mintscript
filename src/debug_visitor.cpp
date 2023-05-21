@@ -6,7 +6,7 @@
 #include "mbool.h"
 #include "mnull.h"
 #include "mlist.h"
-
+#include "module.h"
 #include "ast.h"
 #include "expr.h"
 #include "decl.h"
@@ -19,7 +19,6 @@
 #define ERROR(msg) mError::AddError(\
     "DEBUG(" + std::string(__FILE__) + std::string(":") + std::to_string(__LINE__) + std::string(")") + std::string(": ") \
     + msg + std::string(" "));
-    
 
 class mObjectRef : public mObject {
 public:
@@ -34,8 +33,47 @@ public:
     }
 };
 
+EvalVisitor::EvalVisitor() { }
+
+EvalVisitor::~EvalVisitor() { }
+
+mObject* EvalVisitor::Eval(ASTNode *node, mSymbolTable *symbolTable, mModule *module) {
+    EvalVisitor visitor;
+    visitor.module = module;
+    
+    mSymbolTable* old = mSymbolTable::locals;
+    mSymbolTable::locals = symbolTable;
+
+    mList list = node->Accept(&visitor);
+
+    mSymbolTable::locals = old;
+
+    return list.items.size() == 0 ? nullptr : list[0];
+}
+
 mList EvalVisitor::Visit(ASTNode *node) {
     std::cout << "ASTNode" << std::endl;
+    return {};
+}
+
+mList EvalVisitor::Visit(ProgramAST *node) {
+    
+    for (auto& stmt : node->statements) {
+        if (stmt == nullptr) { continue; }
+
+        mList res = stmt->Accept(this);
+
+        if (mError::HasError()) { return {}; }
+
+        if (res.items.size() > 0) {
+            mObject* result = res[0];
+
+            if (result != nullptr) {
+                return {};
+            }
+        }
+    }
+
     return {};
 }
 
@@ -66,7 +104,7 @@ mList EvalVisitor::Visit(PropertyExprAST *node) {
     mSymbolTable::Symbol* symbol = mSymbolTable::LocalsGetSymbol(node->name);
     
     if (symbol == nullptr) {
-        std::cout << "Name '" << node->name << "' is not defined" << std::endl;
+        ERROR("Name '" + node->name + "' is not defined");
         return {};
     }
 
@@ -144,7 +182,7 @@ mList EvalVisitor::Visit(CallExprAST *node) {
         if (func->ast) {
             // Load symbol table
             mSymbolTable* old = mSymbolTable::locals;
-            mSymbolTable::locals = new mSymbolTable(old);
+            mSymbolTable::locals = new mSymbolTable(func->symbolTable);
 
             // Load arguments
             if (args.items.size() != func->args.size()) {
@@ -327,9 +365,9 @@ mList EvalVisitor::Visit(AccessExprAST *node) {
 
     if (obj == nullptr) { return {}; }
 
-    if (obj->HasAttr(node->name.value)) {
-        obj = obj->GetAttr(node->name.value);
-        mObject** fRef = obj->GetAttrRef(node->name.value);
+    if (obj->HasField(node->name.value)) {
+        obj = obj->GetField(node->name.value);
+        mObject** fRef = obj->GetFieldRef(node->name.value);
         ref = new mObjectRef(fRef, obj->type, true);
     }
     else if (obj->HasMethod(node->name.value)) {
@@ -492,9 +530,8 @@ mList EvalVisitor::Visit(LambdaAST *node) {
     }
     
     // Generate symbol table
-    mSymbolTable* table = new mSymbolTable(mSymbolTable::locals);
-    func->symbolTable = table;
-
+    func->symbolTable = new mSymbolTable(mSymbolTable::locals);
+    
     return mList({ func });
 }
 
@@ -546,6 +583,8 @@ mList EvalVisitor::Visit(FunctionAST *node) {
     mObject* func = node->lambda->Accept(this)[0];
 
     if (func == nullptr) { return {}; }
+    
+    ((mFunction*) func)->name = node->name.value;
 
     mSymbolTable::locals->Set(
         node->name.value,
@@ -674,4 +713,64 @@ mList EvalVisitor::Visit(BreakAST *node) {
 mList EvalVisitor::Visit(ContinueAST *node) {
     continueLoop = true;
     return mList({ new mNull() });
+}
+
+mList EvalVisitor::Visit(ModuleAST *node) {
+    std::cout << "Module" << std::endl;
+    return mList();
+}
+
+mList EvalVisitor::Visit(ImportAST *node) {
+    if (node->isPath) {
+        const std::string& path = node->path.value;
+
+        mObject* module = mModule::ImportFile(path);
+
+        if (module == nullptr) {
+            std::cout << "Failed to import module '" << path << "'" << std::endl;
+            return {};
+        }
+
+        for (auto& field : module->fields) {
+            mSymbolTable::locals->Set(field.first, field.second, field.second->type, false);
+        }
+
+    }
+    else {
+
+    }
+
+    return {};
+}
+
+mList EvalVisitor::Visit(ExportAST *node) {
+    if (!module) { return {}; }
+
+    for (ASTNode* node : node->list) {
+        const ExportItemAST* item = (ExportItemAST*) node;
+
+        if (item->expr) {
+            mList ret = item->expr->Accept(this);
+
+            if (ret.items.size() == 0) { return {}; }
+
+            mObject* result = ret[0];
+
+            if (result == nullptr) { return {}; }
+
+            module->fields[item->name.value] = result;
+        }
+        else {
+            mSymbolTable::Symbol* symbol = mSymbolTable::LocalsGetSymbol(item->name.value);
+
+            if (symbol == nullptr) {
+                ERROR("Name '" + item->name.value + "' is not defined");
+                return {};
+            }
+
+            module->fields[item->name.value] = symbol->value;
+        }
+    }
+
+    return mList();
 }

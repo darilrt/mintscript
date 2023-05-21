@@ -6,14 +6,25 @@
 #include "decl.h"
 #include "token.h"
 #include "error.h"
-
+#include "symbol.h"
 #include "mlist.h"
+#include "module.h"
 
 #include <iostream>
 
 class EvalVisitor : public Visitor {
 public:
+    mModule* module = nullptr;
+    
+    EvalVisitor();
+
+    ~EvalVisitor();
+
+    static mObject* Eval(ASTNode* node, mSymbolTable* symbolTable, mModule* module);
+
     mList Visit(ASTNode* node);
+
+    mList Visit(ProgramAST* node);
 
     mList Visit(NumberExprAST* node);
 
@@ -62,4 +73,10 @@ public:
     mList Visit(BreakAST* node);
 
     mList Visit(ContinueAST* node);
+
+    mList Visit(ModuleAST* node);
+
+    mList Visit(ImportAST* node);
+
+    mList Visit(ExportAST* node);
 };

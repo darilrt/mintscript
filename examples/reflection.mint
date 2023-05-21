@@ -9,7 +9,7 @@ class Test {
     }
 }
 
-main () {
+main() {
     let t : Test = Test(10)
 
     // Get the type of t

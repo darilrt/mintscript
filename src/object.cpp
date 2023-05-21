@@ -8,8 +8,7 @@ mObject::mObject(mType *type) {
     this->refCount = 0;
 }
 
-std::string mObject::ToString()
-{
+std::string mObject::ToString() {
     return "object";
 }
 
@@ -53,11 +52,11 @@ mObject *mObject::GetMethod(const std::string &name) {
     return nullptr;
 }
 
-bool mObject::HasAttr(const std::string &name) {
+bool mObject::HasField(const std::string &name) {
     return fields.find(name) != fields.end();
 }
 
-mObject *mObject::GetAttr(const std::string &name) {
+mObject *mObject::GetField(const std::string &name) {
     if (fields.find(name) != fields.end()) {
         return fields[name];
     }
@@ -65,7 +64,7 @@ mObject *mObject::GetAttr(const std::string &name) {
     return nullptr;
 }
 
-mObject **mObject::GetAttrRef(const std::string &name) {
+mObject **mObject::GetFieldRef(const std::string &name) {
     if (fields.find(name) != fields.end()) {
 
         return &fields[name];
