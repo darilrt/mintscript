@@ -739,7 +739,22 @@ mList EvalVisitor::Visit(ImportAST *node) {
             return {};
         }
 
-        mSymbolTable::locals->Set(node->identifiers[0].value, module, module->type, false);
+        mObject* obj = module;
+        Token token = node->identifiers[0];
+        
+        for (int i = 1; i < node->identifiers.size(); i++) {
+            const std::string& name = node->identifiers[i].value;
+
+            if (!obj->HasField(name)) {
+                std::cout << "Module '" << obj->ToString() << "' has no attribute '" << name << "'" << std::endl;
+                return {};
+            }
+
+            obj = obj->GetField(name);
+            token = node->identifiers[i];
+        }
+
+        mSymbolTable::locals->Set(token.value, obj, obj->type, false);
     }
 
     return {};

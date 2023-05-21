@@ -1,3 +1,3 @@
-import module
+import module.add
 
-print(module.add(1, 2))
+print(add(1, 2))

@@ -18,4 +18,6 @@ public:
     static mObject* Import(const std::string &module_name);
 
     static std::filesystem::path GetModulePath(const std::string &module_name);
+
+    std::string ToString() override { return "Module"; }
 };
