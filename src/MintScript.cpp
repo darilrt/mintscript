@@ -19,7 +19,7 @@ void mShutdown() {
 
 void mRunFile(const std::string &path) {
     std::filesystem::path filePath(path);
-    MAIN_FILE_PATH = std::filesystem::absolute(filePath.parent_path());
+    MAIN_FILE_PATH = std::filesystem::absolute(filePath).parent_path();
 
     std::ifstream file(filePath);
 
