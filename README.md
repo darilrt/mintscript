@@ -1,6 +1,6 @@
 # [WIP] MintScript
 
-MintScript is a multipropose interpreted programming language.
+MintScript is a multipurpose interpreted programming language.
 
 # WIP Warning
 
