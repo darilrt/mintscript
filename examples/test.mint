@@ -1,3 +1,3 @@
-import module.add
+import module as math
 
-print(add(10, 20))
+print(math.sum([1, 2, 3, 4]))

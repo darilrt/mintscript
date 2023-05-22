@@ -754,7 +754,10 @@ mList EvalVisitor::Visit(ImportAST *node) {
             token = node->identifiers[i];
         }
 
-        mSymbolTable::locals->Set(token.value, obj, obj->type, false);
+        if (node->alias.value != "")
+            mSymbolTable::locals->Set(node->alias.value, obj, obj->type, false);
+        else
+            mSymbolTable::locals->Set(token.value, obj, obj->type, false);
     }
 
     return {};
