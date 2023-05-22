@@ -79,7 +79,11 @@ Token Lexer::NextToken() {
     }
 
     if (Peek() == '"') {
-        return GetStringToken();
+        return GetStringToken(true);
+    }
+
+    if (Peek() == '\'') {
+        return GetStringToken(false);
     }
 
     if (Peek() == '/') {
@@ -374,22 +378,25 @@ Token Lexer::GetNumberToken() {
     return TOKEN(Int, value);
 }
 
-Token Lexer::GetStringToken() {
+Token Lexer::GetStringToken(bool doubleQuote) {
+    const char quote = doubleQuote ? '"' : '\'';
+
     std::string value = "";
 
     // Skip the opening quote
     Next();
 
-    while (Peek() != '"' && Peek() != EOF) {
+    while (Peek() != quote && Peek() != EOF) {
         if (Peek() == '\\') {
             Next();
-
+            
             switch (Peek()) {
                 case 'n': value += '\n'; break;
                 case 't': value += '\t'; break;
                 case 'r': value += '\r'; break;
                 case '0': value += '\0'; break;
                 case '"': value += '"'; break;
+                case '\'': value += '\''; break;
                 case '\\': value += '\\'; break;
                 default: value += Peek(); break;
             }

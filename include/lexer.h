@@ -18,7 +18,7 @@ public:
     
     Token GetNumberToken();
 
-    Token GetStringToken();
+    Token GetStringToken(bool doubleQuote);
 
 private:
     std::string source;
