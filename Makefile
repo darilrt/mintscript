@@ -31,24 +31,21 @@ run: $(EXECUTABLE)
 clean:
 	rm -rf $(OBJDIR)/*.o $(EXECUTABLE)
 
-# Tests
-TESTDIR = tests
+# Install
 
-TEST_SOURCES = $(wildcard $(TESTDIR)/*.cpp) $(filter-out $(SRCDIR)/main.cpp, $(SOURCES))
-TEST_OBJECTS = $(TEST_SOURCES:$(TESTDIR)/%.cpp=$(OBJDIR)/%.o)
-TEST_EXECUTABLE = $(BINDIR)/test.exe
+# if windows then C:\MintScript\mint.exe else /usr/local/bin/mint
+DESTDIR =
 
-test: $(TEST_EXECUTABLE)
-	clear
-	$(TEST_EXECUTABLE)
+ifeq ($(OS),Windows_NT)
+	EXECUTABLE = $(BINDIR)/mint.exe
+	DESTDIR = C:\MintScript
+else
+	EXECUTABLE = $(BINDIR)/mint
+	DESTDIR = /usr/local/bin/mint
+endif
 
-$(TEST_EXECUTABLE): $(TEST_OBJECTS)
-	mkdir -p $(BINDIR)
-	$(CXX) $(CXXFLAGS) $(TEST_OBJECTS) -o $@ $(INCLUDES)
+install: $(EXECUTABLE)
+	mkdir -p $(DESTDIR)
+	cp $(EXECUTABLE) $(DESTDIR)
 
-$(OBJDIR)/%.o: $(TESTDIR)/%.cpp
-	mkdir -p $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INCLUDES)
-
-clean-test:
-	rm -rf $(OBJDIR)/*.o $(TEST_EXECUTABLE)
+# TODO: Test
