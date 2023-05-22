@@ -1,5 +1,5 @@
-#include "MintScript.h"
 #include "builtin.h"
+#include "MintScript.h"
 
 void BuiltInInit() {
     // Types
@@ -13,7 +13,11 @@ void BuiltInInit() {
     mBool::Type->Init();
     mNull::Type->Init();
     mList::Type->Init();
+    mModule::Type->Init();
     // zDict::Type->Init();
+
+    // Modules
+    os_init();
 
     mSymbolTable::globals->Set("print", new mFunction([](mObject* _args, mObject* _kwargs, mObject* _self) -> mObject* {
         const mList* args = (mList*)_args;
