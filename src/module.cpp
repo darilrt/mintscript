@@ -4,7 +4,7 @@
 #include "error.h"
 #include "parser.h"
 #include "ast.h"
-#include "debug_visitor.h"
+#include "eval_visitor.h"
 #include "globals.h"
 
 mType* mModule::Type = new mType(

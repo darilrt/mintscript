@@ -3,7 +3,7 @@
 #include "ast.h"
 #include "error.h"
 #include "globals.h"
-#include "debug_visitor.h"
+#include "eval_visitor.h"
 
 #include <iostream>
 #include <fstream>

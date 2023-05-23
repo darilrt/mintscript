@@ -16,11 +16,6 @@
 
 #define LOG_PEEK() std::cout << "Peek: " << scanner.Peek().ToString() << std::endl;
 
-// macro for adding an error to the error list and show where error was call
-#define ERROR(msg) mError::AddError(\
-    "DEBUG(" + std::string(__FILE__) + std::string(":") + std::to_string(__LINE__) + std::string(")") + std::string(": ") \
-    + msg + std::string(" ") + scanner.Peek().location.ToString());
-    
 Parser::Parser(const std::string &source, const std::string& filename) : scanner(source, filename) { }
 
 ASTNode* Parser::Parse() {
