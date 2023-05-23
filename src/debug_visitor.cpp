@@ -13,12 +13,7 @@
 #include "token.h"
 #include "error.h"
 #include "symbol.h"
-
 #include "debug_visitor.h"
-
-#define ERROR(msg) mError::AddError(\
-    "DEBUG(" + std::string(__FILE__) + std::string(":") + std::to_string(__LINE__) + std::string(")") + std::string(": ") \
-    + msg + std::string(" "));
 
 class mObjectRef : public mObject {
 public:
@@ -196,14 +191,14 @@ mList EvalVisitor::Visit(CallExprAST *node) {
                 mObject* value = args[i];
                 
                 if (i >= func->args.size()) {
-                    std::cout << "Too many arguments" << std::endl;
+                    ERROR("Expected " + std::to_string(func->args.size()) + " arguments, got " + std::to_string(args.items.size()));
                     delete mSymbolTable::locals;
                     mSymbolTable::locals = old;
                     return {};
                 }
 
                 if (value->type != func->args[i].type) {
-                    std::cout << "Argument type mismatch" << std::endl;
+                    ERROR("Argument " + std::to_string(i) + " must be of type '" + func->args[i].type->name + "'");
                     delete mSymbolTable::locals;
                     mSymbolTable::locals = old;
                     return {};
@@ -226,7 +221,7 @@ mList EvalVisitor::Visit(CallExprAST *node) {
             result = ret[0];
 
             if (result->type != func->returnType) {
-                std::cout << "Return type mismatch" << std::endl;
+                ERROR("Expected return type '" + func->returnType->name + "', got '" + result->type->name + "'");
                 delete mSymbolTable::locals;
                 mSymbolTable::locals = old;
                 return {};
@@ -298,32 +293,37 @@ mList EvalVisitor::Visit(BinaryExprAST *node) {
 
     mList args({ right });
 
-    // Operator overloading
-    // TODO: Move this to a separate function
-    switch (node->op.type) {
-        case Token::Type::Plus:             result = left->CallMethod("mAdd",       &args, nullptr); break; // +
-        case Token::Type::Minus:            result = left->CallMethod("mSub",       &args, nullptr); break; // -
-        case Token::Type::Star:             result = left->CallMethod("mMul",       &args, nullptr); break; // *
-        case Token::Type::Slash:            result = left->CallMethod("mDiv",       &args, nullptr); break; // /
-        case Token::Type::Percent:          result = left->CallMethod("mMod",       &args, nullptr); break; // %
-        case Token::Type::EqualEqual:       result = left->CallMethod("mEq",        &args, nullptr); break; // ==
-        case Token::Type::NotEqual:         result = left->CallMethod("mNeq",       &args, nullptr); break; // !=
-        case Token::Type::Less:             result = left->CallMethod("mLt",        &args, nullptr); break; // <
-        case Token::Type::LessEqual:        result = left->CallMethod("mLe",        &args, nullptr); break; // <=
-        case Token::Type::Greater:          result = left->CallMethod("mGt",        &args, nullptr); break; // >
-        case Token::Type::GreaterEqual:     result = left->CallMethod("mGe",        &args, nullptr); break; // >=
-        case Token::Type::Amp:              result = left->CallMethod("mAnd",       &args, nullptr); break; // &
-        case Token::Type::Pipe:             result = left->CallMethod("mOr",        &args, nullptr); break; // |
-        case Token::Type::Caret:            result = left->CallMethod("mXor",       &args, nullptr); break; // ^ 
-        case Token::Type::LessLess:         result = left->CallMethod("mLShift",    &args, nullptr); break; // <<
-        case Token::Type::GreaterGreater:   result = left->CallMethod("mRShift",    &args, nullptr); break; // >>
-        case Token::Type::AmpAmp:           result = left->CallMethod("mLAnd",      &args, nullptr); break; // &&
-        case Token::Type::PipePipe:         result = left->CallMethod("mLOr",       &args, nullptr); break; // ||
-    }
+    const std::unordered_map<Token::Type, const std::string> methods = {
+        { Token::Type::Plus,            "mAdd"      },
+        { Token::Type::Minus,           "mSub"      },
+        { Token::Type::Star,            "mMul"      },
+        { Token::Type::Slash,           "mDiv"      },
+        { Token::Type::Percent,         "mMod"      },
+        { Token::Type::EqualEqual,      "mEq"       },
+        { Token::Type::NotEqual,        "mNeq"      },
+        { Token::Type::Less,            "mLt"       },
+        { Token::Type::LessEqual,       "mLe"       },
+        { Token::Type::Greater,         "mGt"       },
+        { Token::Type::GreaterEqual,    "mGe"       },
+        { Token::Type::Amp,             "mAnd"      },
+        { Token::Type::Pipe,            "mOr"       },
+        { Token::Type::Caret,           "mXor"      },
+        { Token::Type::LessLess,        "mLShift"   },
+        { Token::Type::GreaterGreater,  "mRShift"   },
+        { Token::Type::AmpAmp,          "mLAnd"     },
+        { Token::Type::PipePipe,        "mLOr"      }
+    };
 
-    if (result == nullptr) {
-        std::cout << "Unsupported operator " << node->op.value;
-        std::cout << " for types '" << left->type->name << "' and '" << right->type->name << "'" << std::endl;
+    const std::string method = methods.at(node->op.type);
+
+    if (left->HasMethod(method)) {
+        result = left->CallMethod(method, &args, nullptr);
+
+        if (mError::HasError()) { return {}; }
+    }
+    else {
+        ERROR("Unsupported operator " + node->op.value + " for type '" + left->type->name + "'" + " and type '" + right->type->name + "'");
+        return {};
     }
     
     return mList({ result });

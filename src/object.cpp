@@ -2,6 +2,7 @@
 #include "context.h"
 #include "types.h"
 #include "method_wrapper.h"
+#include "error.h"
 
 mObject::mObject(mType *type) {
     this->type = type;
@@ -23,11 +24,11 @@ mObject *mObject::CallMethod(std::string name, mObject *args, mObject *kwargs) {
             return type->methods[name]->Call(args, kwargs, this);
         }
 
-        std::cout << "Cannot call method '" << name << "' on object of type '" << type->name << "'." << std::endl;
+        ERROR("Cannot call method '" + name + "' on object of type '" + type->name + "'.");
         return nullptr;
     }
     
-    std::cout << "Cannot call method '" << name << "' on object." << std::endl;
+    ERROR("Cannot call method '" + name + "' on object of type 'object'.");
     return nullptr;
 }
 
