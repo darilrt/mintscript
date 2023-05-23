@@ -1,3 +1,6 @@
-let a : int = b * 2
 
-print("Hello, World!")
+let a: List = [1, "Mundo", "!"]
+
+for i in a {
+    print(i)
+}

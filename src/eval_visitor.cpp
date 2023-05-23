@@ -15,6 +15,14 @@
 #include "symbol.h"
 #include "eval_visitor.h"
 
+#define BEGIN_EVAL() \
+    mSymbolTable* old = mSymbolTable::locals; \
+    mSymbolTable::locals = new mSymbolTable(old);
+
+#define END_EVAL() \
+    delete mSymbolTable::locals; \
+    mSymbolTable::locals = old;
+
 class mObjectRef : public mObject {
 public:
     mObject **ref;
@@ -412,7 +420,7 @@ mList EvalVisitor::Visit(AssignmentAST *node) {
     if (right == nullptr) { return {}; }
 
     if (node->type.type != Token::Type::Equal) {
-        if (left->type != right->type) {
+        if (left->type != right->type && right->type != mNull::Type) {
             std::cout << "Cannot assign type '" << right->type->name << "' to type '" << left->type->name << "'" << std::endl;
 
             return {};
@@ -433,7 +441,7 @@ mList EvalVisitor::Visit(VarDeclarationAST *node) {
         return {};
     }
 
-    mList ret = node->type->Accept(this);
+    mList ret = node->type ? node->type->Accept(this) : mList({ mNull::Type });
 
     if (ret.items.size() == 0) { return {}; }
     
@@ -463,13 +471,12 @@ mList EvalVisitor::Visit(VarDeclarationAST *node) {
         }
         else {
             value = ret[0] == nullptr ? mNull::Null : ret[0];
-
-            if (type != value->type) {
-                std::cout << "Cannot assign type '" << value->type->name << "' to type '" << ((mType*)type)->name << "'" << std::endl;
+            
+            if (type != value->type && value->type != mNull::Type) {
+                ERROR("Cannot assign type '" + value->type->name + "' to type '" + ((mType*)type)->name + "'");
                 return {};
             }
         }
-
         INCREF(value);
     }
     
@@ -676,8 +683,6 @@ mList EvalVisitor::Visit(WhileAST *node) {
             break;
         }
 
-        ret = node->body->Accept(this);
-
         if (breakLoop) {
             breakLoop = false;
             break;
@@ -688,11 +693,12 @@ mList EvalVisitor::Visit(WhileAST *node) {
             continue;
         }
 
+        ret = node->body->Accept(this);
+
         if (ret.items.size() != 0) { 
             mObject* retObj = ret[0];
 
             if (retObj != nullptr) {
-                std::cout << retObj->ToString() << std::endl;
                 delete mSymbolTable::locals;
                 mSymbolTable::locals = old;
                 return mList({ retObj });
@@ -702,7 +708,80 @@ mList EvalVisitor::Visit(WhileAST *node) {
 
     delete mSymbolTable::locals;
     mSymbolTable::locals = old;
-    return mList();
+    return {};
+}
+
+mList EvalVisitor::Visit(ForAST *node) {
+    BEGIN_EVAL();
+
+    mList ret = node->iterable->Accept(this);
+
+    if (ret.items.size() == 0) { 
+        END_EVAL();
+        return {}; 
+    }
+
+    mList* iterable = (mList*) ret[0];
+
+    if (iterable == nullptr) { 
+        ERROR("Iterable cannot be null");
+        END_EVAL();
+        return {}; 
+    }
+
+    if (iterable->type != mList::Type) {
+        ERROR("Iterable must be a list");
+        END_EVAL();
+        return {};
+    }
+
+    // Creteate loop variable
+    node->variable->Accept(this);
+    
+    if (mError::HasError()) { 
+        END_EVAL();
+        return {}; 
+    }
+
+    mSymbolTable::Symbol* symbol = mSymbolTable::LocalsGetSymbol(((VarDeclarationAST*) node->variable)->identifier.value);
+
+    for (int i = 0; i < iterable->items.size(); i++) {
+        mObject* item = iterable->items[i];
+
+        DECREF(symbol->value);
+
+        if (symbol->type != mNull::Type && item->type != symbol->type) {
+            ERROR("Expected type '" + symbol->type->name + "', got '" + item->type->name + "'");
+            END_EVAL();
+            return {};
+        }
+
+        symbol->value = item;
+        
+        if (breakLoop) {
+            breakLoop = false;
+            break;
+        }
+
+        if (continueLoop) {
+            continueLoop = false;
+            continue;
+        }
+
+        ret = node->body->Accept(this);
+
+        if (ret.items.size() != 0) { 
+            mObject* retObj = ret[0];
+
+            if (retObj != nullptr) {
+                END_EVAL();
+                return mList({ retObj });
+            }
+        }
+    }
+    
+    END_EVAL();
+    return {};
 }
 
 mList EvalVisitor::Visit(BreakAST *node) {

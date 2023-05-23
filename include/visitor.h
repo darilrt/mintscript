@@ -31,6 +31,7 @@ class ArrayExprAST;
 class ImportAST;
 class ExportAST;
 class ProgramAST;
+class ForAST;
 
 class Visitor {
 public:
@@ -92,7 +93,7 @@ public:
 
     virtual mList Visit(ContinueAST* node) = 0;
 
-    // virtual mList Visit(ForAST* node) = 0;
+    virtual mList Visit(ForAST* node) = 0;
 
     // Modules
 

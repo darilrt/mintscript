@@ -70,6 +70,8 @@ public:
 
     mList Visit(WhileAST* node);
 
+    mList Visit(ForAST* node);
+
     mList Visit(BreakAST* node);
 
     mList Visit(ContinueAST* node);

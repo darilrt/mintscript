@@ -4,6 +4,7 @@
 #include "ast.h"
 #include "expr.h"
 #include "decl.h"
+#include "mnull.h"
 
 #include "eval.h"
 
@@ -15,6 +16,7 @@
 #define IS(t) scanner.Peek().type == Token::Type::t
 
 #define LOG_PEEK() std::cout << "Peek: " << scanner.Peek().ToString() << std::endl;
+#define RETURN_ON_ERROR() if (mError::HasError()) { scanner.Reset(); return nullptr; }
 
 Parser::Parser(const std::string &source, const std::string& filename) : scanner(source, filename) { }
 
@@ -46,7 +48,7 @@ ASTNode *Parser::Statement() {
         (node = Declaration()) ||
         (node = IfStatement()) ||
         (node = WhileStatement()) ||
-        // (node = ForStatement()) ||
+        (node = ForStatement()) ||
         (node = ReturnStatement()) ||
         (node = BreakStatement()) ||
         (node = ContinueStatement()) ||
@@ -1068,6 +1070,68 @@ ASTNode *Parser::WhileStatement() {
 
     scanner.Consume();
     return (ASTNode*) node;
+}
+
+// ForStataement: "for" (Mut || Let)? Identifier (":" Type) "in" Expression Block
+ASTNode *Parser::ForStatement() {
+    EXPECT(For);
+
+    VarDeclarationAST* var = new VarDeclarationAST(false, Token(), nullptr, new NullExprAST());
+    
+    if (IS(Mut)) { var->isMutable = true; scanner.Next(); }
+    else if (IS(Let)) { var->isMutable = false; scanner.Next(); }
+    
+    if (!(IS(Identifier))) {
+        ERROR("SyntaxError: Expected identifier after 'for'");
+        scanner.Reset();
+        return nullptr;
+    }
+
+    GET(name, Identifier);
+    var->identifier = name;
+
+    if (IS(Colon)) {
+        scanner.Next();
+
+        ASTNode* type = Expression();
+        RETURN_ON_ERROR();
+
+        if (type == nullptr) {
+            ERROR("SyntaxError: Expected type after ':'");
+            scanner.Reset();
+            return nullptr;
+        }
+
+        var->type = type;
+    }
+
+    if (!(IS(In))) {
+        ERROR("SyntaxError: Expected 'in' after identifier");
+        scanner.Reset();
+        return nullptr;
+    }
+    scanner.Next();
+
+    ASTNode* expr = Expression();
+    RETURN_ON_ERROR();
+
+    if (expr == nullptr) {
+        ERROR("SyntaxError: Expected expression after 'in'");
+        scanner.Reset();
+        return nullptr;
+    }
+
+    ASTNode* body = Block();
+
+    RETURN_ON_ERROR();
+
+    if (body == nullptr) {
+        ERROR("SyntaxError: Expected block after 'for' expression");
+        scanner.Reset();
+        return nullptr;
+    }
+
+    return new ForAST(var, expr, body);
 }
 
 // ReturnStatement: "ret" Expression?

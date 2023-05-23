@@ -132,8 +132,11 @@ class ForAST : public ASTNode {
 public:
     ASTNode* variable = nullptr;
     ASTNode* iterable = nullptr;
+    ASTNode* body = nullptr;
 
     ForAST() { }
+
+    ForAST(ASTNode* variable, ASTNode* iterable, ASTNode* body) : variable(variable), iterable(iterable), body(body) { }
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

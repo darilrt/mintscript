@@ -101,11 +101,7 @@ public:
 
     ASTNode* Postfix(); // ++, --
 
-    ASTNode* Call(); // (Arguments)
-
     ASTNode* Access(); // .Identifier
-
-    ASTNode* Index(); // [Expression]
 
     ASTNode* Factor(); // Number, String, Bool, Null, Identifier, (Expression), [Expression], {Expression}
 
