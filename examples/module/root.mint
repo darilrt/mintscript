@@ -1,20 +1,10 @@
 
-sum(list : List) -> int {
-    mut result : int = 0
-
-    mut i : int = 0
-    let len : int = list.Length()
-    while i < len {
-        result = result + list[i]
-        i = i + 1
-    }
-
-    ret result
+max(a: float, b: float) -> float {
+    if a < b { b } else { a }
 }
 
-fibonacci(n : int) -> int {
-    if n < 2 { n }
-    fibonacci(n - 1) + fibonacci(n - 2)
+min(a: float, b: float) -> float {
+    if a < b { a } else { b }
 }
 
-export { sum, fibonacci }
+export { max, min }

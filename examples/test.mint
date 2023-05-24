@@ -1,6 +1,6 @@
+import module as math
 
-let a: List = [1, "Mundo", "!"]
+print("max:", math.max(1f, 2f))
+print("min:", math.min(1f, 2f))
 
-for i in a {
-    print(i)
-}
+print("clamp:", math.max(0f, math.min(-10f, 1f)))
