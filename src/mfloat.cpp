@@ -42,17 +42,17 @@ mObject* mFloat::ToString(mObject* args, mObject* kwargs, mObject *_self) {
 
 mObject* mFloat::mAdd(mObject* _args, mObject* _kwargs, mObject *_self) {
     const mList* args = (mList*)_args;
-    const mList* kwargs = (mList*)_kwargs;
 
-    mFloat* left = (mFloat*) args->GetItem(0);
-    mObject* right = args->GetItem(1);
+    mFloat* self = (mFloat*)_self;
+
+    mObject* right = args->GetItem(0);
 
     if (right->type == mInt::Type) {
-        return new mFloat(left->value + ((mInt*)right)->value);
+        return new mFloat(self->value + ((mInt*)right)->value);
     }
 
     if (right->type == mFloat::Type) {
-        return new mFloat(left->value + ((mFloat*)right)->value);
+        return new mFloat(self->value - ((mFloat*)right)->value);
     }
 
     return nullptr;

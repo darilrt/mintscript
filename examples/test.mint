@@ -1,4 +1,8 @@
+let w: List = [2f, 3f, 1f, 2f] 
+let inputs: List = [0f, 1f]
 
-let a: float = 1f
+let bias: float = 1.5f
 
-print(a)
+let calculate: float = 0f + 2f
+
+print(calculate)
