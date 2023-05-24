@@ -79,4 +79,6 @@ public:
     mList Visit(ImportAST* node);
 
     mList Visit(ExportAST* node);
+
+    mList Visit(ClassAST* node);
 };

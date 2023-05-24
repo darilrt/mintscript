@@ -1,5 +1,6 @@
 #include "mfn.h"
 #include "symbol.h"
+#include "eval_visitor.h"
 
 mType* mFunction::Type = new mType(
     "Function",
@@ -30,5 +31,30 @@ std::string mFunction::ToString() {
 }
 
 mObject *mFunction::Call(mObject *args, mObject *kwargs, mObject *self) {
-    return func(args, kwargs, self);
+    if (ast != nullptr) {
+        LambdaAST* lambda = (LambdaAST*) ast;
+        
+        mSymbolTable* symbolTable = new mSymbolTable(mSymbolTable::locals);
+        mSymbolTable::locals = symbolTable;
+
+        if (self != nullptr) {
+            symbolTable->Set("self", self);
+        }
+
+        EvalVisitor visitor;
+        mList ret = lambda->body->Accept(&visitor);
+
+        delete symbolTable;
+        mSymbolTable::locals = mSymbolTable::locals->parent;
+
+        if (ret.items.size() == 1) {
+            return ret.items[0];
+        }
+    }
+
+    if (func != nullptr) {
+        return func(args, kwargs, self);
+    }
+
+    return nullptr;
 }

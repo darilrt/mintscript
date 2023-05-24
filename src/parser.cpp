@@ -201,8 +201,9 @@ ASTNode *Parser::ClassDeclaration() {
 
     while (!(IS(RBrace))) {
         ASTNode* statement = nullptr;
-
-        if (statement = Statement()) {
+        
+        if ((statement = VarDeclaration()) ||
+            (statement = FunctionDeclaration())) {
             statements.push_back(statement);
         }
 

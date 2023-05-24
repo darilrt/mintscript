@@ -374,9 +374,10 @@ mList EvalVisitor::Visit(AccessExprAST *node) {
     if (obj == nullptr) { return {}; }
 
     if (obj->HasField(node->name.value)) {
-        obj = obj->GetField(node->name.value);
         mObject** fRef = obj->GetFieldRef(node->name.value);
-        ref = new mObjectRef(fRef, obj->type, true);
+        mType::mFieldInfo* fieldInfo = obj->type->GetFieldInfo(node->name.value);
+        ref = new mObjectRef(fRef, fieldInfo->ftype, true);
+        obj = obj->GetField(node->name.value);
     }
     else if (obj->HasMethod(node->name.value)) {
         obj = obj->GetMethod(node->name.value);
@@ -600,7 +601,7 @@ mList EvalVisitor::Visit(FunctionAST *node) {
         false
     );
 
-    return mList();
+    return {};
 }
 
 mList EvalVisitor::Visit(IfAST* node) {
@@ -872,4 +873,50 @@ mList EvalVisitor::Visit(ExportAST *node) {
     }
 
     return mList();
+}
+
+mList EvalVisitor::Visit(ClassAST *node) {
+    const std::string& name = node->name.value;
+
+    if (mSymbolTable::locals->Exists(name, nullptr)) {
+        mError::AddError("Name '" + name + "' is already defined");
+        return {};
+    }
+
+    mType* type = new mType(name);
+
+    for (auto& stmt : node->statements) {
+        VarDeclarationAST* varDecl = dynamic_cast<VarDeclarationAST*>(stmt);
+        
+        if (varDecl) {
+            mList typeRet = varDecl->type->Accept(this);
+            if (typeRet.items.size() == 0) { return {}; }
+
+            mObject* typeVar = typeRet[0];
+            if (typeVar == nullptr) { return {}; }
+
+            if (typeVar->type != mType::Type) {
+                ERROR("Type '" + typeVar->ToString() + "' is not a valid type");
+                return {};
+            }
+
+            type->SetFieldInfo(varDecl->identifier.value, (mType*) typeVar);
+        }
+        else {
+            FunctionAST* funcDecl = dynamic_cast<FunctionAST*>(stmt);
+            if (funcDecl) {
+                mObject* func = funcDecl->lambda->Accept(this)[0];
+
+                if (func == nullptr) { return {}; }
+                
+                ((mFunction*) func)->name = funcDecl->name.value;
+                
+                type->SetMethod(funcDecl->name.value, func);
+            }
+        }
+    }
+
+    mSymbolTable::locals->Set(name, type, mType::Type, false);
+
+    return {};
 }

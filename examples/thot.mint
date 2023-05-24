@@ -1,9 +1,9 @@
 
 // Consulta de un paciente
 class Consulta {
-    mut id : int = 0
-    mut paciente : string = ""
-    mut fecha : string = ""
+    mut id: int = 0
+    mut paciente: string = ""
+    mut fecha: string = ""
 }
 
 // terminal para gestionar las consultas de un consultorio de dentista

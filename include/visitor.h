@@ -32,6 +32,7 @@ class ImportAST;
 class ExportAST;
 class ProgramAST;
 class ForAST;
+class ClassAST;
 
 class Visitor {
 public:
@@ -81,6 +82,8 @@ public:
 
     virtual mList Visit(FunctionAST* node) = 0;
 
+    virtual mList Visit(ClassAST* node) = 0;
+    
     // Statements
 
     virtual mList Visit(ReturnAST* node) = 0;

@@ -1,6 +1,21 @@
-import module as math
 
-print("max:", math.max(1f, 2f))
-print("min:", math.min(1f, 2f))
+class Person {
+    mut name: str
+    mut age: int
+    
+    mConstructor(name: str, age: int) {
+        self.name = name
+        self.age = age
+    }
 
-print("clamp:", math.max(0f, math.min(-10f, 1f)))
+    SayHello() {
+        print("Hello, my name is", self.name, "and I am", self.age, "years old.")
+    }
+}
+
+let d: Person = Person()
+
+d.name = "Dylan"
+d.age = 21
+
+d.SayHello()

@@ -3,15 +3,29 @@
 #include "symbol.h"
 #include "mnull.h"
 #include "module.h"
+#include "mstr.h"
 
 mType* mType::Type = nullptr;
+std::vector<mType*> mType::types;
 
-mType::mType(const std::string& name, void (*Init)(), mObject *(*New)()) : name(name), Init(Init), New(New), mObject(nullptr) {
+mType::mType(const std::string &name) : name(name), Init(nullptr), New(nullptr), mObject(nullptr) {
     if (mType::Type == nullptr && name != "type") {
         mType::InitType();
     }
 
     type = mType::Type;
+    id = mType::types.size();
+    mType::types.push_back(this);
+}
+
+mType::mType(const std::string &name, void (*Init)(), mObject *(*New)()) : name(name), Init(Init), New(New), mObject(nullptr) {
+    if (mType::Type == nullptr && name != "type") {
+        mType::InitType();
+    }
+
+    type = mType::Type;
+    id = mType::types.size();
+    mType::types.push_back(this);
 }
 
 std::string mType::ToString() {
@@ -19,23 +33,35 @@ std::string mType::ToString() {
 }
 
 mObject *mType::NewInstance() {
+    mType* type = nullptr;
+    mObject* object = nullptr;
+
     if (New != nullptr) {
         mObject* object = New();
+        type = object->type;
+    }
+    else {
+        type = mType::types[id];
+        object = new mObject(type);
+    }
 
-        for (auto field : object->type->fieldsInfo) {
-            object->fields[field.first] = mNull::Null;
-        }
-
-        return object;
+    for (auto field : type->fieldsInfo) {
+        object->fields[field.first] = mNull::Null;
     }
     
-    return nullptr;
+    object->fields["mType"] = type;
+    
+    return object;
 }
 
 void mType::Release() { }
 
 void mType::SetMethod(const std::string& name, mObject *(*func)(mObject *args, mObject *kwargs, mObject *_self)) {
     methods[name] = new mFunction(func);
+}
+
+void mType::SetMethod(const std::string &name, mObject *func) {
+    methods[name] = func;
 }
 
 void mType::InitType() {
@@ -70,4 +96,4 @@ mType* mType::mFieldInfo::Type = new mType(
 
 mType::mFieldInfo::mFieldInfo() : mObject(mType::mFieldInfo::Type) { }
 
-mType::mFieldInfo::mFieldInfo(std::string name, mType *type) : name(name), type(type), mObject(mType::mFieldInfo::Type) { }
+mType::mFieldInfo::mFieldInfo(std::string name, mType *type) : name(name), ftype(type), mObject(mType::mFieldInfo::Type) { }
