@@ -1,6 +1,6 @@
 
 max(a: float, b: float) -> float {
-    if a > b { b } else { a }
+    if a < b { b } else { a }
 }
 
 min(a: float, b: float) -> float {
