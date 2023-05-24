@@ -6,8 +6,12 @@
 mType* mFloat::Type = new mType(
     "float",
     []() -> void {
-        mFloat::Type->methods["mAdd"] = new mFunction(&mFloat::mAdd);
         mFloat::Type->methods["ToString"] = new mFunction(&mFloat::ToString);
+
+        mFloat::Type->methods["mAdd"] = new mFunction(&mFloat::mAdd);
+        mFloat::Type->methods["mSub"] = new mFunction(&mFloat::mSub);
+        mFloat::Type->methods["mMul"] = new mFunction(&mFloat::mMul);
+        mFloat::Type->methods["mDiv"] = new mFunction(&mFloat::mDiv);
     },
     []() -> mObject* {
         return new mFloat();
@@ -47,6 +51,60 @@ mObject* mFloat::mAdd(mObject* _args, mObject* _kwargs, mObject *_self) {
 
     if (right->type == mFloat::Type) {
         return new mFloat(left->value + ((mFloat*)right)->value);
+    }
+
+    return nullptr;
+}
+
+mObject *mFloat::mSub(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*)_args;
+
+    mFloat* self = (mFloat*)_self;
+
+    mObject* right = args->GetItem(0);
+
+    if (right->type == mInt::Type) {
+        return new mFloat(self->value - ((mInt*)right)->value);
+    }
+
+    if (right->type == mFloat::Type) {
+        return new mFloat(self->value - ((mFloat*)right)->value);
+    }
+
+    return nullptr;
+}
+
+mObject *mFloat::mMul(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*)_args;
+
+    mFloat* self = (mFloat*)_self;
+
+    mObject* right = args->GetItem(0);
+
+    if (right->type == mInt::Type) {
+        return new mFloat(self->value * ((mInt*)right)->value);
+    }
+
+    if (right->type == mFloat::Type) {
+        return new mFloat(self->value * ((mFloat*)right)->value);
+    }
+
+    return nullptr;
+}
+
+mObject *mFloat::mDiv(mObject *_args, mObject *_kwargs, mObject *_self) {
+    const mList* args = (mList*)_args;
+
+    mFloat* self = (mFloat*)_self;
+
+    mObject* right = args->GetItem(0);
+
+    if (right->type == mInt::Type) {
+        return new mFloat(self->value / ((mInt*)right)->value);
+    }
+
+    if (right->type == mFloat::Type) {
+        return new mFloat(self->value / ((mFloat*)right)->value);
     }
 
     return nullptr;

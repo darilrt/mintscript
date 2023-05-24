@@ -19,4 +19,10 @@ public:
     static mObject* ToString(mObject* args, mObject* kwargs, mObject *_self);
 
     static mObject* mAdd(mObject* args, mObject* kwargs, mObject *_self);
+
+    static mObject* mSub(mObject* args, mObject* kwargs, mObject *_self);
+
+    static mObject* mMul(mObject* args, mObject* kwargs, mObject *_self);
+
+    static mObject* mDiv(mObject* args, mObject* kwargs, mObject *_self);
 };
