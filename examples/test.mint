@@ -1,6 +1,4 @@
 
-let a: List = [1, "Mundo", "!"]
+let a: float = 1f
 
-for i in a {
-    print(i)
-}
+print(a)

@@ -7,11 +7,18 @@ SRCDIR = src
 INCLUDES = -Iinclude
 OBJDIR = obj
 BINDIR = build
+DESTDIR =
 
-# Files
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-EXECUTABLE = $(BINDIR)/mint.exe
+
+ifeq ($(OS),Windows_NT)
+	EXECUTABLE = $(BINDIR)/mint.exe
+	DESTDIR = C:\MintScript
+else
+	EXECUTABLE = $(BINDIR)/mint
+	DESTDIR = /usr/local/bin/mint
+endif
 
 # Targets
 all: $(EXECUTABLE)
@@ -30,19 +37,6 @@ run: $(EXECUTABLE)
 
 clean:
 	rm -rf $(OBJDIR)/*.o $(EXECUTABLE)
-
-# Install
-
-# if windows then C:\MintScript\mint.exe else /usr/local/bin/mint
-DESTDIR =
-
-ifeq ($(OS),Windows_NT)
-	EXECUTABLE = $(BINDIR)/mint.exe
-	DESTDIR = C:\MintScript
-else
-	EXECUTABLE = $(BINDIR)/mint
-	DESTDIR = /usr/local/bin/mint
-endif
 
 install: $(EXECUTABLE)
 	mkdir -p $(DESTDIR)

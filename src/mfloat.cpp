@@ -7,7 +7,7 @@ mType* mFloat::Type = new mType(
     "float",
     []() -> void {
         mSymbolTable::globals->Set("float", mFloat::Type);
-
+        
         mFloat::Type->methods["ToString"] = new mFunction(&mFloat::ToString);
 
         mFloat::Type->methods["mAdd"] = new mFunction(&mFloat::mAdd);
