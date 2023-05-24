@@ -162,3 +162,13 @@ public:
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
+
+class ClassAST : public ASTNode {
+public:
+    Token name;
+    std::vector<ASTNode*> statements;
+
+    ClassAST(Token name, std::vector<ASTNode*> statements) : name(name), statements(statements) { }
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};

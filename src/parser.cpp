@@ -14,6 +14,8 @@
 #define GET(var_name, t) Token var_name = scanner.Peek(); if (var_name.type != Token::Type::t) { scanner.Reset(); return nullptr; } scanner.Next();
 #define EXPECTF(var, f) if (!(var = f())) { scanner.Reset(); return nullptr; }
 #define IS(t) scanner.Peek().type == Token::Type::t
+#define GET_OR_ERROR(var, t, error) Token var = scanner.Peek(); if (var.type != Token::Type::t) { ERROR("SyntaxError: " + error + " " + var.location.ToString()); scanner.Reset(); return nullptr; } scanner.Next();
+#define EXPECT_OR_ERROR(t, error) if (scanner.Peek().type != Token::Type::t) { ERROR("SyntaxError: " + error + " " + scanner.Peek().location.ToString()); scanner.Reset(); return nullptr; } scanner.Next();
 
 #define LOG_PEEK() std::cout << "Peek: " << scanner.Peek().ToString() << std::endl;
 #define RETURN_ON_ERROR() if (mError::HasError()) { scanner.Reset(); return nullptr; }
@@ -76,6 +78,7 @@ ASTNode* Parser::Declaration() {
 
     if ((node = VarDeclaration()) ||
         (node = FunctionDeclaration()) ||
+        (node = ClassDeclaration()) ||
         (node = Assignment())) {
         scanner.Consume();
         return node;
@@ -178,6 +181,56 @@ ASTNode *Parser::FunctionDeclaration() {
 
     node = new FunctionAST(name, (LambdaAST*) node);
     
+    scanner.Consume();
+    return node;
+}
+
+// ClassDeclaration: Class Identifier { Statements }
+ASTNode *Parser::ClassDeclaration() {
+    ASTNode *node = nullptr;
+
+    EXPECT(Class);
+
+    GET_OR_ERROR(name, Identifier, "Expected identifier after 'class'");
+
+    EXPECT_OR_ERROR(LBrace, "Expected '{' after identifier '" + name.value + "'");
+
+    std::vector<ASTNode*> statements;
+
+    scanner.PushAndSetIgnoreNewLine(true);
+
+    while (!(IS(RBrace))) {
+        ASTNode* statement = nullptr;
+
+        if (statement = Statement()) {
+            statements.push_back(statement);
+        }
+
+        if (mError::HasError()) { 
+            scanner.Reset();
+
+            for (ASTNode *node : statements) {
+                delete node;
+            }
+
+            return 0;
+        }
+
+        scanner.SkipNewLine();
+    }
+
+    scanner.PopIgnoreNewLine();
+
+    if (!(IS(RBrace))) {
+        ERROR("SyntaxError: Expected '}' " + scanner.Peek().location.ToString());
+        scanner.Reset();
+        return 0;
+    }
+
+    scanner.Next();
+
+    node = new ClassAST(name, statements);
+
     scanner.Consume();
     return node;
 }
