@@ -21,7 +21,6 @@ public:
 
     std::string name = "";
     ASTNode* ast = nullptr;
-    mObject* self = nullptr;
 
     mObject* (*func)(mObject* args, mObject* kwargs, mObject *self) = nullptr;
     mType* returnType = nullptr;
