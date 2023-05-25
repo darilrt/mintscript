@@ -40,24 +40,22 @@ mObject *mObject::CallMethod(std::string name, mObject *args, mObject *kwargs) {
 }
 
 bool mObject::HasMethod(const std::string& name) {
-    if (type != nullptr) {
-        return type->methods.find(name) != type->methods.end();
-    }
-
-    return false;
+    if (type == nullptr) { return false; }
+    
+    return type->TypeHasMethod(name);
 }
 
 mObject *mObject::GetMethod(const std::string &name) {
-    if (type != nullptr) {
-        if (type->methods.find(name) != type->methods.end()) {
-            mMethodWrapper* wrapper = new mMethodWrapper();
-            wrapper->self = this;
-            wrapper->func = (mFunction*) type->methods[name];
-            return wrapper;
-        }
-    }
+    if (type == nullptr) { return nullptr; }
 
-    return nullptr;
+    mFunction* method = (mFunction*) type->TypeGetMethod(name);
+
+    if (method == nullptr) { return method; }
+
+    mMethodWrapper* wrapper = new mMethodWrapper();
+    wrapper->self = this;
+    wrapper->func = method;
+    return wrapper;
 }
 
 bool mObject::HasField(const std::string &name) {

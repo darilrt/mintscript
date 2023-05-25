@@ -1,12 +1,23 @@
 
-class Animal {
-    mut name: str = "Unknown"
+class Base {
+    let name: str = "Base"
 
-    Speak() {
-        print("I am an animal named", self.name, ".")
+    printName() {
+        print(self.name)
     }
 }
 
-let a: Animal = Animal()
+class Base2 {
+    let name2: str = "Base2"
 
-a.Speak()
+    printName2() {
+        print(self.name2)
+    }
+}
+
+class Derived(Base, Base2) { }
+
+let d: Derived = Derived()
+
+print(d.name)
+print(d.name2)

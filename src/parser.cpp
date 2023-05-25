@@ -185,13 +185,40 @@ ASTNode *Parser::FunctionDeclaration() {
     return node;
 }
 
-// ClassDeclaration: Class Identifier { Statements }
+// ClassDeclaration: Class Identifier "(" (Expression ("," Expression)*)? ")" "{" (VarDeclaration | FunctionDeclaration)* "}"
 ASTNode *Parser::ClassDeclaration() {
     ASTNode *node = nullptr;
 
     EXPECT(Class);
 
     GET_OR_ERROR(name, Identifier, "Expected identifier after 'class'");
+
+    std::vector<ASTNode*> bases;
+
+    if (IS(LParen)) {
+        scanner.Next();
+
+        ASTNode *parent = nullptr;
+
+        EXPECTF(parent, Expression);
+
+        bases.push_back(parent);
+
+        while (IS(Comma)) {
+            scanner.Next();
+
+            EXPECTF(parent, Expression);
+
+            bases.push_back(parent);
+        }
+
+        if (!(IS(RParen))) {
+            ERROR("SyntaxError: Expected ')' after class declaration " + scanner.Peek().location.ToString());
+            scanner.Reset();
+            return 0;
+        }
+        scanner.Next();
+    }
 
     EXPECT_OR_ERROR(LBrace, "Expected '{' after identifier '" + name.value + "'");
 
@@ -240,7 +267,7 @@ ASTNode *Parser::ClassDeclaration() {
 
     scanner.Next();
 
-    node = new ClassAST(name, statements);
+    node = new ClassAST(name, statements, bases);
 
     scanner.Consume();
     return node;

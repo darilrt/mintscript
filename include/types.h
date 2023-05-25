@@ -32,6 +32,7 @@ public:
 
     uint32_t id; // ID of the class.
     std::string name; // Name of the class.
+    std::vector<mType*> bases; // Base classes of the class.
     
     void (*Init)(); // Called when the type is initialized.
     
@@ -46,7 +47,7 @@ public:
 
     std::string ToString();
 
-    mObject* NewInstance();
+    mObject* NewInstance(mObject* object=nullptr);
 
     void Release();
 
@@ -59,6 +60,10 @@ public:
     void SetMethod(const std::string& name, mObject* (*func)(mObject* args, mObject* kwargs, mObject* _self));
 
     void SetMethod(const std::string& name, mObject* func);
+
+    mObject* TypeGetMethod(const std::string& name);
+
+    bool TypeHasMethod(const std::string& name);
     
     static void InitType();
 

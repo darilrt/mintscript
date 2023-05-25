@@ -10,6 +10,7 @@ int main(int argc, char** argv) {
     if (argc > 1) {
         mRunFile(argv[1]);
     } else {
+        mRunFile("examples/test.mint");
         mRunInteractive();
     }
     mShutdown();

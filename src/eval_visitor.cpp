@@ -823,6 +823,25 @@ mList EvalVisitor::Visit(ClassAST *node) {
     }
 
     mType* type = new mType(name);
+    
+    // Add bases to type
+    for (auto baseExpr : node->bases) {
+        mList ret = baseExpr->Accept(this);
+
+        if (ret.items.size() == 0) { return {}; }
+
+        mObject* base = ret[0];
+
+        if (base == nullptr) { return {}; }
+
+        if (base->type != mType::Type) {
+            ERROR("Type '" + base->ToString() + "' is not a valid type");
+            return {};
+        }
+        
+        type->bases.push_back((mType*) base);
+    }
+
     mObject* defaultValue = mNull::Null;
 
     for (auto& stmt : node->statements) {

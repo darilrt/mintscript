@@ -167,8 +167,9 @@ class ClassAST : public ASTNode {
 public:
     Token name;
     std::vector<ASTNode*> statements;
-
-    ClassAST(Token name, std::vector<ASTNode*> statements) : name(name), statements(statements) { }
+    std::vector<ASTNode*> bases;
+    
+    ClassAST(Token name, std::vector<ASTNode*> statements, std::vector<ASTNode*> bases) : name(name), statements(statements), bases(bases) { }
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

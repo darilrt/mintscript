@@ -141,6 +141,7 @@
     <ClCompile Include="src\context.cpp" />
     <ClCompile Include="src\error.cpp" />
     <ClCompile Include="src\eval.cpp" />
+    <ClCompile Include="src\eval_visitor.cpp" />
     <ClCompile Include="src\exception.cpp" />
     <ClCompile Include="src\expr.cpp" />
     <ClCompile Include="src\globals.cpp" />
@@ -149,6 +150,7 @@
     <ClCompile Include="src\method_wrapper.cpp" />
     <ClCompile Include="src\module.cpp" />
     <ClCompile Include="src\object.cpp" />
+    <ClCompile Include="src\os.cpp" />
     <ClCompile Include="src\parser.cpp" />
     <ClCompile Include="src\scanner.cpp" />
     <ClCompile Include="src\symbol.cpp" />
@@ -170,6 +172,7 @@
     <ClInclude Include="include\debug.h" />
     <ClInclude Include="include\decl.h" />
     <ClInclude Include="include\error.h" />
+    <ClInclude Include="include\eval_visitor.h" />
     <ClInclude Include="include\exception.h" />
     <ClInclude Include="include\expr.h" />
     <ClInclude Include="include\globals.h" />
@@ -177,6 +180,7 @@
     <ClInclude Include="include\method_wrapper.h" />
     <ClInclude Include="include\module.h" />
     <ClInclude Include="include\object.h" />
+    <ClInclude Include="include\os.h" />
     <ClInclude Include="include\parser.h" />
     <ClInclude Include="include\scanner.h" />
     <ClInclude Include="include\symbol.h" />

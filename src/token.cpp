@@ -33,7 +33,7 @@ std::string Token::TypeToString() const {
         case Type::Import: { tokentType = "Import"; break; }
         case Type::Mut: { tokentType = "Mut"; break; }
         case Type::Let: { tokentType = "Let"; break; }
-        case Type::Const: { tokentType = "Const"; break; }
+        case Type::Impl: { tokentType = "Impl"; break; }
         case Type::Ref: { tokentType = "Ref"; break; }
         case Type::Export: { tokentType = "Export"; break; }
         case Type::Plus: { tokentType = "Plus"; break; }

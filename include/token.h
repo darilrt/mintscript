@@ -49,7 +49,7 @@ public:
         Import, // import
         Mut, // mut
         Let, // let
-        Const, // const
+        Impl, // impl
         Ref, // ref
         Export, // export
         KeywordsEnd, // end of keywords

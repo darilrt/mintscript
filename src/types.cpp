@@ -34,18 +34,24 @@ std::string mType::ToString() {
     return "<class '" + name + "'>";
 }
 
-mObject *mType::NewInstance() {
+mObject *mType::NewInstance(mObject* _object) {
     mType* type = nullptr;
-    mObject* object = nullptr;
+    mObject* object = _object;
+
+    for (auto base : bases) {
+        object = base->NewInstance(object);
+    }
 
     if (New != nullptr) {
-        mObject* object = New();
         type = object->type;
+        object = object == nullptr ? New() : object;
     }
     else {
         type = mType::types[id];
-        object = new mObject(type);
+        object = object == nullptr ? new mObject(type) : object;
     }
+
+    object->type = type;
 
     for (auto field : type->fieldsInfo) {
         object->fields[field.first] = field.second.defaultValue;
@@ -64,6 +70,36 @@ void mType::SetMethod(const std::string& name, mObject *(*func)(mObject *args, m
 
 void mType::SetMethod(const std::string &name, mObject *func) {
     methods[name] = func;
+}
+
+mObject *mType::TypeGetMethod(const std::string &name) {
+    if (methods.find(name) != methods.end()) {
+        return methods[name];
+    }
+
+    for (auto base : bases) {
+        mObject* method = base->TypeGetMethod(name);
+
+        if (method != nullptr) {
+            return method;
+        }
+    }
+
+    return nullptr;
+}
+
+bool mType::TypeHasMethod(const std::string &name) {
+    if (methods.find(name) != methods.end()) {
+        return true;
+    }
+
+    for (auto base : bases) {
+        if (base->TypeHasMethod(name)) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 void mType::InitType() {
