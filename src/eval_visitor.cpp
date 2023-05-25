@@ -164,14 +164,14 @@ mList EvalVisitor::Visit(CallExprAST *node) {
         if (mError::HasError()) { return {}; }
 
         if (list.items.size() == 0) {
-            mError::AddError("Expected argument");
+            ERROR("Expected argument");
             return {}; // TODO: Error
         }
 
         mObject* value = list[0];
 
         if (value == nullptr) {
-            mError::AddError("Expected argument");
+            ERROR("Expected argument");
             return {}; // TODO: Error
         }
         
@@ -182,67 +182,7 @@ mList EvalVisitor::Visit(CallExprAST *node) {
     mObject* result = nullptr;
 
     if (func) {
-        if (func->ast) {
-            // Load symbol table
-            mSymbolTable* old = mSymbolTable::locals;
-            mSymbolTable::locals = new mSymbolTable(func->symbolTable);
-
-            // Load arguments
-            if (args.items.size() != func->args.size()) {
-                mError::AddError("Expected " + std::to_string(func->args.size()) + " arguments, got " + std::to_string(args.items.size()));
-                delete mSymbolTable::locals;
-                mSymbolTable::locals = old;
-                return {};
-            }
-            
-            for (int i = 0; i < args.items.size(); i++) {
-                mObject* value = args[i];
-                
-                if (i >= func->args.size()) {
-                    ERROR("Expected " + std::to_string(func->args.size()) + " arguments, got " + std::to_string(args.items.size()));
-                    delete mSymbolTable::locals;
-                    mSymbolTable::locals = old;
-                    return {};
-                }
-
-                if (value->type != func->args[i].type) {
-                    ERROR("Argument " + std::to_string(i) + " must be of type '" + func->args[i].type->name + "'");
-                    delete mSymbolTable::locals;
-                    mSymbolTable::locals = old;
-                    return {};
-                }
-
-                mSymbolTable::locals->Set(func->args[i].name, value, func->args[i].type, false);
-            }
-            
-            // Call lambda
-            LambdaAST* lambda = (LambdaAST*) func->ast;
-
-            mList ret = lambda->body->Accept(this);
-
-            if (ret.items.size() == 0 || mError::HasError()) {
-                delete mSymbolTable::locals;
-                mSymbolTable::locals = old;
-                return {};
-            }
-
-            result = ret[0];
-
-            if (result->type != func->returnType) {
-                ERROR("Expected return type '" + func->returnType->name + "', got '" + result->type->name + "'");
-                delete mSymbolTable::locals;
-                mSymbolTable::locals = old;
-                return {};
-            }
-
-            // Unload symbol table
-            delete mSymbolTable::locals;
-            mSymbolTable::locals = old;
-        }
-        else {
-            mObject* selfObject = nullptr;
-            result = func->Call(&args, nullptr, selfObject);
-        }
+        result = func->Call(&args, nullptr, nullptr);
     }
     else {
         result = object->CallMethod("mCall", &args, nullptr);
@@ -422,8 +362,7 @@ mList EvalVisitor::Visit(AssignmentAST *node) {
 
     if (node->type.type != Token::Type::Equal) {
         if (left->type != right->type && right->type != mNull::Type) {
-            std::cout << "Cannot assign type '" << right->type->name << "' to type '" << left->type->name << "'" << std::endl;
-
+            ERROR("Cannot assign type '" + right->type->name + "' to type '" + left->type->name + "'");
             return {};
         }
 
@@ -879,11 +818,12 @@ mList EvalVisitor::Visit(ClassAST *node) {
     const std::string& name = node->name.value;
 
     if (mSymbolTable::locals->Exists(name, nullptr)) {
-        mError::AddError("Name '" + name + "' is already defined");
+        ERROR("Name '" + name + "' is already defined");
         return {};
     }
 
     mType* type = new mType(name);
+    mObject* defaultValue = mNull::Null;
 
     for (auto& stmt : node->statements) {
         VarDeclarationAST* varDecl = dynamic_cast<VarDeclarationAST*>(stmt);
@@ -900,7 +840,22 @@ mList EvalVisitor::Visit(ClassAST *node) {
                 return {};
             }
 
-            type->SetFieldInfo(varDecl->identifier.value, (mType*) typeVar);
+            if (varDecl->expression) {
+                mList ret = varDecl->expression->Accept(this);
+                if (ret.items.size() == 0) { return {}; }
+
+                mObject* result = ret[0];
+                if (result == nullptr) { return {}; }
+
+                if (result->type != typeVar) {
+                    ERROR("Expected type '" + ((mType*) typeVar)->name + "', got '" + result->type->name + "'");
+                    return {};
+                }
+
+                defaultValue = result;
+            }
+
+            type->SetFieldInfo(varDecl->identifier.value, (mType*) typeVar, defaultValue);
         }
         else {
             FunctionAST* funcDecl = dynamic_cast<FunctionAST*>(stmt);

@@ -20,11 +20,14 @@ public:
         static mType* Type;
 
         std::string name;
-        mType* ftype;
+        mType* ftype = nullptr;
+        mObject* defaultValue = nullptr;
 
         mFieldInfo();
         
         mFieldInfo(std::string name, mType* type);
+
+        mFieldInfo(std::string name, mType* type, mObject* defaultValue);
     };
 
     uint32_t id; // ID of the class.
@@ -48,6 +51,8 @@ public:
     void Release();
 
     inline void SetFieldInfo(const std::string& name, mType* type) { fieldsInfo[name] = mFieldInfo(name, type); }
+
+    inline void SetFieldInfo(const std::string& name, mType* type, mObject* defaultValue) { fieldsInfo[name] = mFieldInfo(name, type, defaultValue); }
 
     inline mFieldInfo* GetFieldInfo(const std::string& name) { return &fieldsInfo[name]; }
 

@@ -1,21 +1,12 @@
 
-class Person {
-    mut name: str
-    mut age: int
-    
-    mConstructor(name: str, age: int) {
-        self.name = name
-        self.age = age
-    }
+class Animal {
+    mut name: str = "Unknown"
 
-    SayHello() {
-        print("Hello, my name is", self.name, "and I am", self.age, "years old.")
+    Speak() {
+        print("I am an animal named", self.name, ".")
     }
 }
 
-let d: Person = Person()
+let a: Animal = Animal()
 
-d.name = "Dylan"
-d.age = 21
-
-d.SayHello()
+a.Speak()

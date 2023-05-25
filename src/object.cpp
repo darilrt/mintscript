@@ -3,6 +3,7 @@
 #include "types.h"
 #include "method_wrapper.h"
 #include "error.h"
+#include "mfn.h"
 
 mObject::mObject(mType *type) {
     this->type = type;
@@ -19,17 +20,23 @@ mObject *mObject::Call(mObject *args, mObject *kwargs, mObject* self) {
 }
 
 mObject *mObject::CallMethod(std::string name, mObject *args, mObject *kwargs) {
-    if (type != nullptr) {
-        if (type->methods.find(name) != type->methods.end()) {
-            return type->methods[name]->Call(args, kwargs, this);
-        }
+    // if (type != nullptr) {
+    //     if (type->methods.find(name) != type->methods.end()) {
+    //         return type->methods[name]->Call(args, kwargs, this);
+    //     }
 
-        ERROR("Cannot call method '" + name + "' on object of type '" + type->name + "'.");
+    //     ERROR("Cannot call method '" + name + "' on object of type '" + type->name + "'.");
+    //     return nullptr;
+    // }
+
+    if (!HasMethod(name)) {
+        ERROR("Object of type '" + type->name + "' has no method '" + name + "'.");
         return nullptr;
     }
-    
-    ERROR("Cannot call method '" + name + "' on object of type 'object'.");
-    return nullptr;
+
+    mFunction* method = (mFunction*) GetMethod(name);
+
+    return method->Call(args, kwargs, this);
 }
 
 bool mObject::HasMethod(const std::string& name) {

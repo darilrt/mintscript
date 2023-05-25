@@ -4,6 +4,8 @@
 #include "mnull.h"
 #include "module.h"
 #include "mstr.h"
+#include "mlist.h"
+#include "error.h"
 
 mType* mType::Type = nullptr;
 std::vector<mType*> mType::types;
@@ -46,7 +48,7 @@ mObject *mType::NewInstance() {
     }
 
     for (auto field : type->fieldsInfo) {
-        object->fields[field.first] = mNull::Null;
+        object->fields[field.first] = field.second.defaultValue;
     }
     
     object->fields["mType"] = type;
@@ -80,8 +82,15 @@ void mType::InitType() {
     );
 }
 
-mObject *mType::mCall(mObject *args, mObject *kwargs, mObject *_self) {
-    return ((mType*)_self)->NewInstance();
+mObject *mType::mCall(mObject *_args, mObject *kwargs, mObject *_self) {
+    const mList* args = (mList*) _args;
+    mObject* obj = ((mType*)_self)->NewInstance();
+
+    if (obj->HasMethod("mInit")) {
+        obj->CallMethod("mInit", _args, kwargs);
+    }
+
+    return obj;
 }
 
 mType* mType::mFieldInfo::Type = new mType(
@@ -97,3 +106,5 @@ mType* mType::mFieldInfo::Type = new mType(
 mType::mFieldInfo::mFieldInfo() : mObject(mType::mFieldInfo::Type) { }
 
 mType::mFieldInfo::mFieldInfo(std::string name, mType *type) : name(name), ftype(type), mObject(mType::mFieldInfo::Type) { }
+
+mType::mFieldInfo::mFieldInfo(std::string name, mType *type, mObject *defaultValue) : name(name), ftype(type), defaultValue(defaultValue), mObject(mType::mFieldInfo::Type){ }

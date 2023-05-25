@@ -206,6 +206,16 @@ ASTNode *Parser::ClassDeclaration() {
             (statement = FunctionDeclaration())) {
             statements.push_back(statement);
         }
+        else {
+            ERROR("SyntaxError: Expected statement in class body " + scanner.Peek().location.ToString());
+            scanner.Reset();
+
+            for (ASTNode *node : statements) {
+                delete node;
+            }
+
+            return 0;
+        }
 
         if (mError::HasError()) { 
             scanner.Reset();
@@ -530,7 +540,12 @@ ASTNode* Parser::Expression() {
     ASTNode *expr = nullptr;
     
     scanner.PushAndSetIgnoreNewLine(true);
-    EXPECTF(expr, Conditional);
+
+    if (expr = Conditional()) {
+        scanner.PopIgnoreNewLine();
+        return expr;
+    }
+
     scanner.PopIgnoreNewLine();
 
     return expr;
@@ -859,6 +874,12 @@ ASTNode *Parser::Access() {
         }
         else if (IS(LParen)) {
             scanner.Next();
+
+            if (IS(RParen)) {
+                scanner.Next();
+                node = new CallExprAST(node);
+                continue;
+            }
 
             std::vector<ASTNode*> args = ExprList();
 
