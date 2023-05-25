@@ -2,6 +2,10 @@
 #include "mlist.h"
 #include "mfn.h"
 #include "symbol.h"
+#include "error.h"
+#include "mbool.h"
+#include "mint.h"
+#include "mfloat.h"
 
 mType* mStr::Type = new mType(
     "str",
@@ -42,6 +46,20 @@ mObject *mStr::mAdd(mObject *_args, mObject *_kwargs, mObject *_self) {
     if (other->type == mStr::Type) {
         return new mStr(self->value + other->value);
     }
+
+    if (other->type == mInt::Type) {
+        return new mStr(self->value + std::to_string(((mInt*)other)->value));
+    }
+
+    if (other->type == mFloat::Type) {
+        return new mStr(self->value + std::to_string(((mFloat*)other)->value));
+    }
+
+    if (other->type == mBool::Type) {
+        return new mStr(self->value + (((mBool*)other)->value ? "true" : "false"));
+    }
+
+    ERROR("TypeError: unsupported operand type(s) for +: 'str' and '" + other->type->name + "'");
 
     return nullptr;
 }

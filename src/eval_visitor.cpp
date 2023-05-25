@@ -143,7 +143,7 @@ mList EvalVisitor::Visit(IndexExprAST *node) {
 
 mList EvalVisitor::Visit(CallExprAST *node) {
     mList list = node->property->Accept(this);
-
+    
     if (mError::HasError()) { return {}; }
     
     if (list.items.size() == 0) {
@@ -240,7 +240,7 @@ mList EvalVisitor::Visit(BinaryExprAST *node) {
     if (left == nullptr || right == nullptr) { return {}; }
 
     mList args({ right });
-
+    
     const std::unordered_map<Token::Type, const std::string> methods = {
         { Token::Type::Plus,            "mAdd"      },
         { Token::Type::Minus,           "mSub"      },

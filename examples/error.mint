@@ -1,25 +1,12 @@
-class Error : Exception {
-    let message : str
 
-    Init (message : str) {
-        .message = message
+class Animal {
+     mut name: str = "Animal"
+
+    mInit(name: str) { 
+        self.name = name
     }
 
-    ToString () -> str {
-        return "Error: " + .message
-    }
+    GetName() -> str { self.name }
 }
 
-main () -> void {
-    raise("This is an error")
-
-    try {
-        raise("This is an error")
-    } catch e : Error {
-        print(e)
-    }
-
-    // Custom error
-    let e : Error = Error("This is a custom error")
-    e.Raise()
-}
+export { Animal }

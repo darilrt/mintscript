@@ -1,23 +1,7 @@
+import math
 
-class Base {
-    let name: str = "Base"
+let a: math.Vec2 = math.Vec2(10.2, 20.3)
 
-    printName() {
-        print(self.name)
-    }
-}
+let b: str = a.ToString()
 
-class Base2 {
-    let name2: str = "Base2"
-
-    printName2() {
-        print(self.name2)
-    }
-}
-
-class Derived(Base, Base2) { }
-
-let d: Derived = Derived()
-
-print(d.name)
-print(d.name2)
+print(b)

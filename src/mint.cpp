@@ -4,6 +4,7 @@
 #include "mstr.h"
 #include "mbool.h"
 #include "symbol.h"
+#include "error.h"
 
 #include <sstream>
 #include <cmath>
@@ -76,6 +77,7 @@ mObject *mInt::mAdd(mObject *_args, mObject *_kwargs, mObject *_self) {
         return new mFloat(self->value + ((mFloat*) other)->value);
     }
 
+    ERROR("unsupported operand type(s) for +: 'int' and '" + other->type->name + "'");
     return nullptr;
 }
 
@@ -93,6 +95,7 @@ mObject *mInt::mSub(mObject *_args, mObject *_kwargs, mObject *_self) {
         return new mFloat(self->value - ((mFloat*) other)->value);
     }
 
+    ERROR("unsupported operand type(s) for -: 'int' and '" + other->type->name + "'");
     return nullptr;
 }
 
@@ -110,6 +113,7 @@ mObject *mInt::mMul(mObject *_args, mObject *_kwargs, mObject *_self) {
         return new mFloat(self->value * ((mFloat*) other)->value);
     }
 
+    ERROR("unsupported operand type(s) for *: 'int' and '" + other->type->name + "'");
     return nullptr;
 }
 
@@ -127,6 +131,7 @@ mObject *mInt::mDiv(mObject *_args, mObject *_kwargs, mObject *_self) {
         return new mFloat(self->value / ((mFloat*) other)->value);
     }
 
+    ERROR("unsupported operand type(s) for /: 'int' and '" + other->type->name + "'");
     return nullptr;
 }
 
@@ -144,6 +149,7 @@ mObject *mInt::mMod(mObject *_args, mObject *_kwargs, mObject *_self) {
         return new mFloat(fmod(self->value, ((mFloat*) other)->value));
     }
 
+    ERROR("unsupported operand type(s) for %: 'int' and '" + other->type->name + "'");
     return nullptr;
 }
 

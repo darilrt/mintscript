@@ -5,4 +5,4 @@ fibonacci(n : int) -> int {
     fibonacci(n - 1) + fibonacci(n - 2)
 }
 
-export { (fibonacci) as fib }
+print(fibonacci(10))
