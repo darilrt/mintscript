@@ -17,7 +17,7 @@ ifeq ($(OS),Windows_NT)
 	DESTDIR = C:\MintScript
 else
 	EXECUTABLE = $(BINDIR)/mint
-	DESTDIR = /usr/local/bin/mint
+	DESTDIR = /usr/local/bin
 endif
 
 # Targets
