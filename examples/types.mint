@@ -4,10 +4,10 @@
 mut arr: [..] int = [1, 2, 3]
 
 // Typed Dicts
-mut dict: { int : int } = { 1: 2, 3: 4 }
+mut dict: Dict[str, int] = { "a": 1, "b": 2 }
 
 // Typed tuples
-mut tup: (int, int) = (1, 2)
+mut tup: Tuple[int, int] = (1, 2)
 
 // Typed functions
 add(a: int, b: int) -> int { a + b }
