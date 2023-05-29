@@ -192,3 +192,29 @@ public:
 
     mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
+
+class TypeSignatureAST : public ASTNode {
+public:
+    Token name;
+    std::vector<ASTNode*> types;
+
+    ~TypeSignatureAST();
+
+    TypeSignatureAST(Token name) : name(name) {}
+
+    TypeSignatureAST(Token name, std::vector<ASTNode*> types) : name(name), types(types) {}
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};
+
+class TypeAccessAST : public ASTNode {
+public:
+    TypeSignatureAST* lhs = nullptr;
+    TypeSignatureAST* rhs = nullptr;
+
+    ~TypeAccessAST();
+
+    TypeAccessAST(TypeSignatureAST* lhs, TypeSignatureAST* rhs) : lhs(lhs), rhs(rhs) {}
+
+    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+};

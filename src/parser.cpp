@@ -133,7 +133,7 @@ ASTNode *Parser::VarDeclaration() {
 
     scanner.Next();
 
-    ASTNode *type = Expression();
+    ASTNode *type = Type();
 
     if (type == nullptr) {
         ERROR("SyntaxError: Expected type after ':' " + scanner.Peek().location.ToString());
@@ -560,6 +560,81 @@ ASTNode *Parser::Block() {
     scanner.Next();
     scanner.Consume();
     return new BlockAST(statements);
+}
+
+// Type: TypeSignature ( '.' TypeSignature )*
+ASTNode *Parser::Type(bool strict) {
+    ASTNode *node = nullptr;
+    TypeSignatureAST *lhs = nullptr;
+
+    if (!(lhs = TypeSignature(strict))) {
+        if (strict) { scanner.Reset(); }
+        return nullptr;
+    }
+
+    node = lhs;
+
+    while (IS(Dot)) {
+        scanner.Next();
+
+        TypeSignatureAST *rhs = nullptr;
+        EXPECTF(rhs, TypeSignature);
+
+        node = new TypeAccessAST(lhs, rhs);
+    }
+
+    scanner.Consume();
+    return node;
+}
+
+// TypeSignature: Identifier ( '[' Type ( ',' Type )* ']' )?
+TypeSignatureAST *Parser::TypeSignature(bool strict) {
+    Token name;
+
+    if (strict) {
+        GET_OR_ERROR(_name, Identifier, "Expected identifier");
+        name = _name;
+    }
+    else {
+        name = scanner.Peek();
+
+        if (!(IS(Identifier))) {
+            return nullptr;
+        }
+
+        scanner.Next();
+    }
+
+    std::vector<ASTNode *> types;
+
+    if (IS(LBracket)) {
+        scanner.Next();
+        
+        ASTNode *type = nullptr;
+        EXPECTF(type, Type);
+
+        types.push_back(type);
+
+        while (IS(Comma)) {
+            scanner.Next();
+
+            ASTNode *type = nullptr;
+            EXPECTF(type, Type);
+
+            types.push_back(type);
+        }
+        
+        if (!(IS(RBracket))) {
+            ERROR("SyntaxError: Expected ']' " + scanner.Peek().location.ToString());
+            scanner.Reset();
+            return nullptr;
+        }
+
+        scanner.Next();
+
+    }
+
+    return new TypeSignatureAST(name, types);
 }
 
 // Expression: Factor
@@ -1053,7 +1128,7 @@ ASTNode *Parser::Lambda() {
     return node;
 }
 
-// Property: IDENTIFIER? ("." IDENTIFIER)*
+// Property: IDENTIFIER
 ASTNode *Parser::Property() {
     PropertyExprAST *node = nullptr;
     

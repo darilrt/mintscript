@@ -80,3 +80,22 @@ ExportItemAST::~ExportItemAST() {
 
 ImportItemAST::~ImportItemAST() {
 }
+
+TypeSignatureAST::~TypeSignatureAST() {
+    for (auto& type : types) {
+        if (type != nullptr) {
+            delete type;
+        }
+    }
+    types.clear();
+}
+
+TypeAccessAST::~TypeAccessAST() {
+    if (lhs != nullptr) {
+        delete lhs;
+    }
+
+    if (rhs != nullptr) {
+        delete rhs;
+    }
+}

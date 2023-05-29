@@ -27,10 +27,6 @@ public:
 
     ASTNode* ClassDeclaration(); // Class Identifier {Statements}
 
-    ASTNode* EnumDeclaration(); // Enum Identifier {Statements}
-
-    ASTNode* InterfaceDeclaration(); // Interface Identifier {Statements}
-
     // Statements
 
     ASTNode* IfStatement(); // If (Expression) Statement [Elif (Expression) Statement]* [Else Statement]
@@ -69,6 +65,10 @@ public:
 
     ASTNode* Block(); // { Statement* }
 
+    ASTNode* Type(bool strict=true); // Identifier ( . Identifier )*
+
+    TypeSignatureAST* TypeSignature(bool strict=true); // Property ( [ Type (, Type)* ] )?
+
     // Expression parsing
     
     ASTNode* Expression(); // Assignment, Conditional
@@ -101,7 +101,7 @@ public:
 
     ASTNode* Postfix(); // ++, --
 
-    ASTNode* Access(); // .Identifier
+    ASTNode* Access(); // Unary ( '.' IDENTIFIER | '[' Expression ']' | '(' ExprList ')' )*
 
     ASTNode* Factor(); // Number, String, Bool, Null, Identifier, (Expression), [Expression], {Expression}
 

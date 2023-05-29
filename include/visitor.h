@@ -33,6 +33,8 @@ class ExportAST;
 class ProgramAST;
 class ForAST;
 class ClassAST;
+class TypeSignatureAST;
+class TypeAccessAST;
 
 class Visitor {
 public:
@@ -103,4 +105,10 @@ public:
     virtual mList Visit(ImportAST* node) = 0;
 
     virtual mList Visit(ExportAST* node) = 0;
+
+    // Types
+
+    virtual mList Visit(TypeSignatureAST* node) = 0;
+
+    virtual mList Visit(TypeAccessAST* node) = 0;
 };

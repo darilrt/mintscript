@@ -81,4 +81,8 @@ public:
     mList Visit(ExportAST* node);
 
     mList Visit(ClassAST* node);
+
+    mList Visit(TypeSignatureAST* node);
+
+    mList Visit(TypeAccessAST* node);
 };

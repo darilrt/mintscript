@@ -19,6 +19,3 @@ lambda = (a: int, b: int) -> int { a + b }
 
 // Template functions
 add[T](a: T, b: T) -> T { a + b }
-
-// Template with constraints
-add[T = int | float ](a: T, b: T) -> T { a + b }

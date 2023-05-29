@@ -894,3 +894,42 @@ mList EvalVisitor::Visit(ClassAST *node) {
 
     return {};
 }
+
+mList EvalVisitor::Visit(TypeSignatureAST *node) {
+    mSymbolTable::Symbol* symbol = mSymbolTable::LocalsGetSymbol(node->name.value);
+    
+    if (symbol == nullptr) {
+        ERROR("Name '" + node->name.value + "' is not defined");
+        return {};
+    }
+
+    mObject *result = symbol->value;
+    mObjectRef *ref = new mObjectRef(&symbol->value, symbol->type, symbol->isMutable);
+
+    return mList({ result, ref });
+}
+
+mList EvalVisitor::Visit(TypeAccessAST *node) {
+    mList lhsRet = node->lhs->Accept(this);
+
+    if (lhsRet.items.size() == 0) { return {}; }
+
+    mObject* lhs = lhsRet[0];
+
+    if (lhs == nullptr) { return {}; }
+
+    if (lhs->HasField(node->rhs->name.value)) {
+        mObject** fRef = lhs->GetFieldRef(node->rhs->name.value);
+        mType::mFieldInfo* fieldInfo = lhs->type->GetFieldInfo(node->rhs->name.value);
+        mObjectRef* ref = new mObjectRef(fRef, fieldInfo->ftype, true);
+        mObject* result = lhs->GetField(node->rhs->name.value);
+
+        return mList({ result, ref });
+    }
+    else {
+        ERROR("Object of type '" + lhs->type->name + "' has no attribute '" + node->rhs->name.value + "'");
+        return {};
+    }
+
+    return mList();
+}

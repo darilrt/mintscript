@@ -5,8 +5,8 @@
 
 // Comment
 
-mut var_a : int = 0
-let var_b : str = "Hello"
+mut var_a: int = 0
+let var_b: str = "Hello"
 
 var_a = 2
 
@@ -25,7 +25,7 @@ while var_a < 10 {
     var_a = var_a + 1
 }
 
-foo(a : int, b : int) -> int {
+foo(a: int, b: int) -> int {
     ret a + b
 }
 
