@@ -12,7 +12,7 @@ namespace ir {
 
         // Control flow
         Scope,
-        Branch, While, Break, Continue,
+        While, Break, Continue,
         If,
 
         // Functions
@@ -20,6 +20,9 @@ namespace ir {
 
         // Variables
         Decl, Var, Set,
+
+        // Objects
+        New, Field,
 
         // Operators
         Add, Sub, Mul, Div, Mod,
@@ -64,6 +67,15 @@ namespace ir {
         std::vector<Instruction*> args;
     };
 
+    class Mainfold;
+
+    class Object {
+    public:
+        std::vector<Mainfold> fields;
+
+        Object(int size) { fields.reserve(size); }
+    };
+
     class Mainfold {
     public:
         enum Type {
@@ -73,6 +85,7 @@ namespace ir {
             Bool,
             Object,
             Scope,
+            Field,
             None
         } type;
 
@@ -82,15 +95,19 @@ namespace ir {
             std::string* s;
             bool b;
             Instruction* ir;
+            ir::Object* st;
+            Mainfold* mf;
         } value;
 
         Mainfold() { this->type = None; }
+        Mainfold(Type type) { this->type = type; }
         Mainfold(Type type, int value) { this->type = type; this->value.i = value; }
         Mainfold(Type type, float value) { this->type = type; this->value.f = value; }
         Mainfold(Type type, std::string* value) { this->type = type; this->value.s = value; }
         Mainfold(Type type, bool value) { this->type = type; this->value.b = value; }
         Mainfold(Type type, Instruction* value) { this->type = type; this->value.ir = value; }
-        Mainfold(Type type) { this->type = type; }
+        Mainfold(Type type, ir::Object* value) { this->type = type; this->value.st = value; }
+        Mainfold(Type type, Mainfold* value) { this->type = type; this->value.mf = value; }
     };
 
     class SymbolTable {
@@ -98,9 +115,9 @@ namespace ir {
         SymbolTable() = default;
         SymbolTable(SymbolTable* parent) { this->parent = parent; }
 
-        inline void Set(std::string name, Mainfold value) { symbols[name] = value; }
+        inline void Set(std::string name) { symbols[name] = { Mainfold::None, 0 }; }
 
-        inline Mainfold Get(std::string name);
+        inline Mainfold& Get(std::string name);
 
         inline void SetParent(SymbolTable* parent) { this->parent = parent; }
 

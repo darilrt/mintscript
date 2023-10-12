@@ -1,5 +1,18 @@
 #include "ir.h"
 
+void PrintMainfold(ir::Mainfold mf) {
+    switch (mf.type) {
+        case ir::Mainfold::Int: std::cout << mf.value.i << std::endl; break;
+        case ir::Mainfold::Float: std::cout << mf.value.f << std::endl; break;
+        case ir::Mainfold::String: std::cout << *mf.value.s << std::endl; break;
+        case ir::Mainfold::Bool: std::cout << (mf.value.b ? "true" : "false") << std::endl; break;
+        case ir::Mainfold::None: std::cout << "None\n"; break;
+        case ir::Mainfold::Field: std::cout << "{field." << mf.value.mf << "}\n"; break;
+        case ir::Mainfold::Object: std::cout << "{object." << mf.value.st << "}\n"; break;
+        default: break;
+    }
+}
+
 ir::Instruction::Instruction(Type instruction, std::vector<Instruction *> args) {
     this->instruction = instruction;
     this->args = args;
@@ -33,15 +46,11 @@ void ir::Interpreter::Interpret(std::vector<Instruction *> instructions) {
     for (int i = 0; i < instructions.size(); i++) {
         mf = Interpret(instructions[i]); 
     }
-    
-    switch (mf.type) {
-        case Mainfold::Int: std::cout << mf.value.i << std::endl; break;
-        case Mainfold::Float: std::cout << mf.value.f << std::endl; break;
-        case Mainfold::String: std::cout << *mf.value.s << std::endl; break;
-        case Mainfold::Bool: std::cout << (mf.value.b ? "true" : "false") << std::endl; break;
-        case Mainfold::Object: std::cout << mf.value.i << std::endl; break;
-        default: break;
-    }
+
+    // PrintMainfold(mf);
+
+    context.SetCurrent(nullptr);
+    delete global;
 }
 
 #define ARG(i) Interpret(instruction->GetArg(i))
@@ -51,17 +60,6 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         case IR: { 
             return { Mainfold::Scope, new Instruction(ir::Scope, instruction->GetArgs()) };
         }
-
-        case Set: {
-            context.GetCurrent()->Set(
-                *instruction->value.s, 
-                ARG(0)
-            );
-            
-            return { Mainfold::None };
-        }
-
-        case Var: { return context.GetCurrent()->Get(*instruction->value.s); }
 
         case If: {
             Mainfold ret = { Mainfold::None };
@@ -77,42 +75,42 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         }
 
         case Call: {
-            const std::string name = *instruction->value.s;
+            Mainfold name = ARG(0);
 
-            if (name == "print") {
-                const Mainfold value = ARG(0);
-
-                switch (value.type) {
-                    case Mainfold::Int: std::cout << value.value.i << std::endl; break;
-                    case Mainfold::Float: std::cout << value.value.f << std::endl; break;
-                    case Mainfold::String: std::cout << *value.value.s << std::endl; break;
-                    case Mainfold::Bool: std::cout << (value.value.b ? "true" : "false") << std::endl; break;
-                    case Mainfold::Object: std::cout << value.value.i << std::endl; break;
-                    default: break;
-                }
-            }
-            else {
+            if (name.type != Mainfold::String) {
                 const std::vector<Instruction*> args = instruction->GetArgs();
 
                 std::vector<Mainfold> argv;
-                argv.resize(args.size());
+                argv.resize(args.size() - 1);
 
-                for (int i = 0; i < args.size(); i++) {
-                    argv[i] = Interpret(args[i]);
+                for (int i = 1; i < args.size(); i++) {
+                    argv[i - 1] = Interpret(args[i]);
                 }
 
                 stack.push(argv);
                 
-                Mainfold mf = context.GetCurrent()->Get(name);
+                Mainfold* mf = ARG(0).value.mf;
                 Mainfold ret = { Mainfold::None };
 
-                if (mf.type == Mainfold::Scope) {
-                    ret = Interpret(mf.value.ir);
+                if (mf->type == Mainfold::Scope) {
+                    ret = Interpret(mf->value.ir);
                 }
 
                 stack.pop();
 
                 return ret;
+            }
+            else {
+                if (*name.value.s == "print") {
+                    Mainfold arg = ARG(1);
+
+                    if (arg.type == Mainfold::Field) {
+                        PrintMainfold(*arg.value.mf);
+                    }
+                    else {
+                        PrintMainfold(arg);
+                    }
+                }
             }
 
             return { Mainfold::None };
@@ -146,6 +144,46 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             return mf;
         }
 
+        // Variables
+        case Decl: {
+            context.GetCurrent()->Set(*instruction->value.s);
+            return { Mainfold::None };
+        }
+
+        case Set: {
+            Mainfold* mf = ARG(0).value.mf;
+            Mainfold value = ARG(1);
+            
+            mf->type = value.type;
+            mf->value = value.value;
+
+            return { Mainfold::None };
+        }
+
+        case Var: {
+            return { 
+                Mainfold::Field,
+                &context.GetCurrent()->Get(*instruction->value.s)
+            };
+        }
+
+        // Objects
+        case New: {
+            Object* object = new Object(instruction->value.i);
+            Mainfold mf = { Mainfold::Object, object };
+
+            for (int i = 0; i < instruction->GetArgs().size(); i++) {
+                object->fields.push_back(Interpret(instruction->GetArg(i)));
+            }
+
+            return mf;
+        }
+
+        case Field: {
+            Object* object = ARG(0).value.mf->value.st;
+            return { Mainfold::Field, &object->fields[instruction->value.i] };
+        }
+
         // Operators
         case Add: { return { Mainfold::Int,  { ARG(0).value.i + ARG(1).value.i } }; }
         case Sub: { return { Mainfold::Int,  { ARG(0).value.i - ARG(1).value.i } }; }
@@ -176,13 +214,11 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
     return { Mainfold::None };
 }
 
-inline ir::Mainfold ir::SymbolTable::Get(std::string name) {
+inline ir::Mainfold& ir::SymbolTable::Get(std::string name) {
     if (symbols.find(name) == symbols.end()) {
         if (parent != nullptr) {
             return parent->Get(name);
         }
-        
-        return { Mainfold::None };
     }
 
     return symbols[name];

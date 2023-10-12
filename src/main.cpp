@@ -8,20 +8,30 @@ int main(int argc, char** argv) {
 
     ir::Interpreter interpreter;
     interpreter.Interpret(std::vector<ir::Instruction*> {
-        i(ir::Set, "a", { i(ir::Int, 10, {} ) }),
-        i(ir::Set, "b", { 
-            i(ir::If, {
-                i(ir::Eq, { i(ir::Var, "a", {}), i(ir::Int, 10, {}) }),
-                i(ir::Scope, {
-                    i(ir::Set, "b", { i(ir::Int, 20, {}) }),
-                    i(ir::Set, "a", { i(ir::Int, 30, {}) }),
-                    i(ir::Add, { i(ir::Var, "a", {}), i(ir::Var, "b", {}) }),
-                }),
-                i(ir::Int, 0, {})
+        i(ir::Decl, "person_print", { }),
+        i(ir::Set, {
+            i(ir::Var, "person_print", { }),
+            i(ir::IR, {
+                i(ir::Call, {
+                    i(ir::String, "print", { }),
+                    i(ir::Field, 0, { i(ir::Arg, 0, { }) }),
+                })
             })
         }),
-        
-        i(ir::Call, "print", { i(ir::Var, "b", { }), }),
+
+        i(ir::Decl, "person", { }),
+        i(ir::Set, {
+            i(ir::Var, "person", { }),
+            i(ir::New, 1, { })
+        }),
+        i(ir::Set, {
+            i(ir::Field, 0, { i(ir::Var, "person", { }) }),
+            i(ir::String, "John", { })
+        }),
+        i(ir::Call, {
+            i(ir::Var, "person_print", { }),
+            i(ir::Var, "person", { }),
+        })
     });
 
     return 0;
