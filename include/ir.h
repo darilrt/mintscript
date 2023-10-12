@@ -13,6 +13,7 @@ namespace ir {
         // Control flow
         Scope,
         Branch, While, Break, Continue,
+        If,
 
         // Functions
         Call, Return, Arg,
@@ -51,11 +52,11 @@ namespace ir {
 
         ~Instruction();
 
-        inline Type GetInstruction() const { return instruction; }
+        inline Type GetInstruction() { return instruction; }
         
         inline std::vector<Instruction*> GetArgs() { return args; }
 
-        inline Instruction* GetArg(int index) const { return args[index]; }
+        inline Instruction* GetArg(int index) { return args[index]; }
         
     private:
         Type instruction;
