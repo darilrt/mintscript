@@ -46,8 +46,11 @@ void mRunFile(const std::string &path) {
         return;
     }
 
+    std::cout << "DEBUG: Parsed file: " << path << std::endl; // DEBUG
+    std::cout << node->ToString() << std::endl; // DEBUG
+
     // Evaluate the AST
-    EvalVisitor::Eval(node, mSymbolTable::globals, nullptr);
+    // EvalVisitor::Eval(node, mSymbolTable::globals, nullptr);
 
     // Check for errors
     if (mError::HasError()) {

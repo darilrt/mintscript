@@ -637,7 +637,7 @@ TypeSignatureAST *Parser::TypeSignature(bool strict) {
     return new TypeSignatureAST(name, types);
 }
 
-// Expression: Factor
+// Expression: Conditional
 ASTNode* Parser::Expression() {
     ASTNode *expr = nullptr;
     
@@ -932,7 +932,7 @@ ASTNode *Parser::Postfix() {
     return expr;
 }
 
-// Access: Unary ( '.' IDENTIFIER | '[' Expression ']' | '(' ExprList ')' )*
+// Access: Factor ( '.' IDENTIFIER | '[' Expression ']' | '(' ExprList ')' )*
 ASTNode *Parser::Access() {
     ASTNode *node = nullptr;
 
