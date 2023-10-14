@@ -4,6 +4,7 @@
 #include "error.h"
 #include "globals.h"
 #include "eval_visitor.h"
+#include "ast_visitor.h"
 
 #include <iostream>
 #include <fstream>
@@ -47,10 +48,10 @@ void mRunFile(const std::string &path) {
     }
 
     std::cout << "DEBUG: Parsed file: " << path << std::endl; // DEBUG
-    std::cout << node->ToString() << std::endl; // DEBUG
 
     // Evaluate the AST
     // EvalVisitor::Eval(node, mSymbolTable::globals, nullptr);
+    AstVisitor::Eval(node, mSymbolTable::globals, nullptr);
 
     // Check for errors
     if (mError::HasError()) {
