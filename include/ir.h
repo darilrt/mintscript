@@ -57,7 +57,7 @@ namespace ir {
 
         inline Type GetInstruction() { return instruction; }
         
-        inline std::vector<Instruction*> GetArgs() { return args; }
+        inline std::vector<Instruction*>& GetArgs() { return args; }
 
         inline Instruction* GetArg(int index) { return args[index]; }
         

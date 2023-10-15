@@ -12,13 +12,14 @@ AstVisitor::AstVisitor() { }
 
 AstVisitor::~AstVisitor() { }
 
-mObject* AstVisitor::Eval(ASTNode *node, mSymbolTable *symbolTable, mModule *module) {
-    AstVisitor visitor;
-    visitor.module = module;
+AstVisitor* AstVisitor::Eval(ASTNode *node) {
+    AstVisitor* visitor = new AstVisitor();
     
-    mList list = node->Accept(&visitor);
+    visitor->stack.push(new ir::Instruction(ir::Type::IR, { }));
 
-    return list.items.size() == 0 ? nullptr : list[0];
+    mList list = node->Accept(visitor);
+
+    return visitor;
 }
 
 mList AstVisitor::Visit(ASTNode *node) {
@@ -27,7 +28,23 @@ mList AstVisitor::Visit(ASTNode *node) {
 }
 
 mList AstVisitor::Visit(ProgramAST *node) {
-    std::cout << "ProgramAST" << std::endl;
+    
+    for (auto& stmt : node->statements) {
+        if (stmt == nullptr) { continue; }
+
+        mList res = stmt->Accept(this);
+
+        if (mError::HasError()) { return {}; }
+
+        if (res.items.size() > 0) {
+            mObject* result = res[0];
+
+            if (result != nullptr) {
+                return {};
+            }
+        }
+    }
+
     return {};
 }
 
@@ -36,7 +53,14 @@ mList AstVisitor::Visit(NumberExprAST *node) {
     return {};
 }
 
+#define PUSH_INST stack.top()->GetArgs().push_back
+#define STACK_TOP stack.top()
+#define STACK_POP stack.pop
+#define STACK_PUSH stack.push
+#define i new ir::Instruction
+
 mList AstVisitor::Visit(StringExprAST *node) {
+    PUSH_INST(i(ir::String, node->value, { }));
     return {};
 }
 
@@ -49,6 +73,12 @@ mList AstVisitor::Visit(NullExprAST *node) {
 }
 
 mList AstVisitor::Visit(PropertyExprAST *node) {
+    if (node->name == "print") {
+        PUSH_INST(i(ir::String, node->name, { }));
+    }
+    else {
+        PUSH_INST(i(ir::Var, node->name, { }));
+    }
     return {};
 }
 
@@ -57,6 +87,16 @@ mList AstVisitor::Visit(IndexExprAST *node) {
 }
 
 mList AstVisitor::Visit(CallExprAST *node) {
+    STACK_PUSH(i(ir::Call, { }));
+
+    node->property->Accept(this);
+    
+    for (auto arg : node->args) {
+        arg->Accept(this);
+    }
+
+    instructions.push_back(STACK_TOP);
+
     return {};
 }
 
@@ -89,6 +129,7 @@ mList AstVisitor::Visit(AssignmentAST *node) {
 }
 
 mList AstVisitor::Visit(VarDeclarationAST *node) {
+    std::cout << "VarDeclarationAST" << std::endl;
     return {};
 }
 

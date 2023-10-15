@@ -9,18 +9,22 @@
 #include "symbol.h"
 #include "mlist.h"
 #include "module.h"
+#include "ir.h"
 
 #include <iostream>
+#include <vector>
+#include <stack>
 
 class AstVisitor : public Visitor {
 public:
-    mModule* module = nullptr;
+    std::vector<ir::Instruction*> instructions;
+    std::stack<ir::Instruction*> stack;
     
     AstVisitor();
 
     ~AstVisitor();
 
-    static mObject* Eval(ASTNode* node, mSymbolTable* symbolTable, mModule* module);
+    static AstVisitor* Eval(ASTNode* node);
 
     mList Visit(ASTNode* node);
 
