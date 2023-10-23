@@ -6,5 +6,5 @@ class ASTNode {
 public:
     virtual ~ASTNode() = default;
 
-    virtual sa::Symbol Accept(Visitor* visitor) = 0;
+    virtual sa::Symbol* Accept(Visitor* visitor) = 0;
 };

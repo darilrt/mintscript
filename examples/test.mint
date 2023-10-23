@@ -1,3 +1,3 @@
-let a: int = "asdasd"
+let a: int = "asdsd"
 
-print(a, a, a)
+print(a)

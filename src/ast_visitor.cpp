@@ -32,22 +32,22 @@ AstVisitor* AstVisitor::Eval(ASTNode *node) {
     visitor->table->Set("str", { true, false, nullptr });
     visitor->table->Set("bool", { true, false, nullptr });
 
-    sa::Symbol list = node->Accept(visitor);
+    sa::Symbol* list = node->Accept(visitor);
 
     return visitor;
 }
 
-sa::Symbol AstVisitor::Visit(ASTNode *node) {
+sa::Symbol* AstVisitor::Visit(ASTNode *node) {
     std::cout << "ASTNode" << std::endl;
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(ProgramAST *node) {
+sa::Symbol* AstVisitor::Visit(ProgramAST *node) {
 
     for (auto& stmt : node->statements) {
         if (stmt == nullptr) { continue; }
 
-        sa::Symbol res = stmt->Accept(this);
+        sa::Symbol* res = stmt->Accept(this);
 
         if (mError::HasError()) { return {}; }
     }
@@ -55,32 +55,36 @@ sa::Symbol AstVisitor::Visit(ProgramAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(NumberExprAST *node) {
+sa::Symbol* AstVisitor::Visit(NumberExprAST *node) {
     if (node->type == NumberExprAST::Type::Int) {
         PUSH_INST(i(ir::Int, (int) node->value, { }));
+
+        return table->Get("int");
     }
     else {
         PUSH_INST(i(ir::Float, node->value, { }));
+        
+        return table->Get("float");
     }
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(StringExprAST *node) {
+sa::Symbol* AstVisitor::Visit(StringExprAST *node) {
     PUSH_INST(i(ir::String, node->value, { }));
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(BoolExprAST *node) {
+sa::Symbol* AstVisitor::Visit(BoolExprAST *node) {
     PUSH_INST(i(ir::Bool, node->value, { }));
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(NullExprAST *node) {
+sa::Symbol* AstVisitor::Visit(NullExprAST *node) {
     PUSH_INST(i(ir::Null, { }));
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(PropertyExprAST *node) {
+sa::Symbol* AstVisitor::Visit(PropertyExprAST *node) {
     if (node->name == "print") {
         PUSH_INST(i(ir::String, node->name, { }));
     }
@@ -90,11 +94,11 @@ sa::Symbol AstVisitor::Visit(PropertyExprAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(IndexExprAST *node) {
+sa::Symbol* AstVisitor::Visit(IndexExprAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(CallExprAST *node) {
+sa::Symbol* AstVisitor::Visit(CallExprAST *node) {
     STACK_PUSH_I(i(ir::Call, { }));
 
     node->property->Accept(this);
@@ -108,11 +112,11 @@ sa::Symbol AstVisitor::Visit(CallExprAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(UnaryExprAST *node) {
+sa::Symbol* AstVisitor::Visit(UnaryExprAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(BinaryExprAST *node) {
+sa::Symbol* AstVisitor::Visit(BinaryExprAST *node) {
     ir::Instruction* inst = i(ir::Add, { });
 
     STACK_PUSH_I(inst);
@@ -145,32 +149,39 @@ sa::Symbol AstVisitor::Visit(BinaryExprAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(TernaryExprAST *node) {
+sa::Symbol* AstVisitor::Visit(TernaryExprAST *node) {
     // TODO: Implement
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(ParenExprAST *node) {
+sa::Symbol* AstVisitor::Visit(ParenExprAST *node) {
     node->expr->Accept(this);
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(ArrayExprAST *node) {
+sa::Symbol* AstVisitor::Visit(ArrayExprAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(AccessExprAST *node) {
+sa::Symbol* AstVisitor::Visit(AccessExprAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(AssignmentAST *node) {
+sa::Symbol* AstVisitor::Visit(AssignmentAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(VarDeclarationAST *node) {
+sa::Symbol* AstVisitor::Visit(VarDeclarationAST *node) {
+    sa::Symbol* type = node->type->Accept(this);
+    sa::Symbol* value = node->expression->Accept(this);
+
+    if (type != value) {
+        mError::AddError("Type mismatch");
+        return {};
+    }
+
     PUSH_INST(i(ir::Decl, node->identifier.value, { }));
     table->Set(node->identifier.value, { false, node->isMutable, nullptr });
-
     STACK_PUSH_I(i(ir::Set, {
         i(ir::Var, node->identifier.value, { })
     }));
@@ -180,62 +191,62 @@ sa::Symbol AstVisitor::Visit(VarDeclarationAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(LambdaAST *node) {
+sa::Symbol* AstVisitor::Visit(LambdaAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(ArgDeclAST *node) {
+sa::Symbol* AstVisitor::Visit(ArgDeclAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(BlockAST *node) {
+sa::Symbol* AstVisitor::Visit(BlockAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(ReturnAST *node) {
+sa::Symbol* AstVisitor::Visit(ReturnAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(FunctionAST *node) {
+sa::Symbol* AstVisitor::Visit(FunctionAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(IfAST* node) {
+sa::Symbol* AstVisitor::Visit(IfAST* node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(WhileAST *node) {
+sa::Symbol* AstVisitor::Visit(WhileAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(ForAST *node) {
+sa::Symbol* AstVisitor::Visit(ForAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(BreakAST *node) {
+sa::Symbol* AstVisitor::Visit(BreakAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(ContinueAST *node) {
+sa::Symbol* AstVisitor::Visit(ContinueAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(ImportAST *node) {
+sa::Symbol* AstVisitor::Visit(ImportAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(ExportAST *node) {
+sa::Symbol* AstVisitor::Visit(ExportAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(ClassAST *node) {
+sa::Symbol* AstVisitor::Visit(ClassAST *node) {
     return {};
 }
 
-sa::Symbol AstVisitor::Visit(TypeSignatureAST *node) {
-    return {};
+sa::Symbol* AstVisitor::Visit(TypeSignatureAST *node) {
+    return table->Get(node->name.value);
 }
 
-sa::Symbol AstVisitor::Visit(TypeAccessAST *node) {
-    return {};
+sa::Symbol* AstVisitor::Visit(TypeAccessAST *node) {
+    return node->lhs->Accept(this);
 }
