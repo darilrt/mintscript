@@ -1,1 +1,3 @@
-print("Hello, World!")
+let a: int = "asdasd"
+
+print(a, a, a)

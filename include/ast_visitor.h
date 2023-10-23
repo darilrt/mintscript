@@ -6,9 +6,6 @@
 #include "decl.h"
 #include "token.h"
 #include "error.h"
-#include "symbol.h"
-#include "mlist.h"
-#include "module.h"
 #include "ir.h"
 
 #include <iostream>
@@ -17,8 +14,8 @@
 
 class AstVisitor : public Visitor {
 public:
-    std::vector<ir::Instruction*> instructions;
     std::stack<ir::Instruction*> stack;
+    sa::SymbolTable* table;
     
     AstVisitor();
 
@@ -26,67 +23,67 @@ public:
 
     static AstVisitor* Eval(ASTNode* node);
 
-    mList Visit(ASTNode* node);
+    sa::Symbol Visit(ASTNode* node);
 
-    mList Visit(ProgramAST* node);
+    sa::Symbol Visit(ProgramAST* node);
 
-    mList Visit(NumberExprAST* node);
+    sa::Symbol Visit(NumberExprAST* node);
 
-    mList Visit(StringExprAST* node);
+    sa::Symbol Visit(StringExprAST* node);
 
-    mList Visit(BoolExprAST* node);
+    sa::Symbol Visit(BoolExprAST* node);
 
-    mList Visit(NullExprAST* node);
+    sa::Symbol Visit(NullExprAST* node);
 
-    mList Visit(PropertyExprAST* node);
+    sa::Symbol Visit(PropertyExprAST* node);
 
-    mList Visit(IndexExprAST* node);
+    sa::Symbol Visit(IndexExprAST* node);
 
-    mList Visit(CallExprAST* node);
+    sa::Symbol Visit(CallExprAST* node);
 
-    mList Visit(UnaryExprAST* node);
+    sa::Symbol Visit(UnaryExprAST* node);
 
-    mList Visit(BinaryExprAST* node);
+    sa::Symbol Visit(BinaryExprAST* node);
 
-    mList Visit(TernaryExprAST* node);
+    sa::Symbol Visit(TernaryExprAST* node);
 
-    mList Visit(ParenExprAST* node);
+    sa::Symbol Visit(ParenExprAST* node);
 
-    mList Visit(ArrayExprAST* node);
+    sa::Symbol Visit(ArrayExprAST* node);
 
-    mList Visit(AccessExprAST* node);
+    sa::Symbol Visit(AccessExprAST* node);
 
-    mList Visit(AssignmentAST* node);
+    sa::Symbol Visit(AssignmentAST* node);
 
-    mList Visit(VarDeclarationAST* node);
+    sa::Symbol Visit(VarDeclarationAST* node);
 
-    mList Visit(LambdaAST* node);
+    sa::Symbol Visit(LambdaAST* node);
 
-    mList Visit(ArgDeclAST* node);
+    sa::Symbol Visit(ArgDeclAST* node);
 
-    mList Visit(BlockAST* node);
+    sa::Symbol Visit(BlockAST* node);
 
-    mList Visit(ReturnAST* node);
+    sa::Symbol Visit(ReturnAST* node);
 
-    mList Visit(FunctionAST* node);
+    sa::Symbol Visit(FunctionAST* node);
 
-    mList Visit(IfAST* node);
+    sa::Symbol Visit(IfAST* node);
 
-    mList Visit(WhileAST* node);
+    sa::Symbol Visit(WhileAST* node);
 
-    mList Visit(ForAST* node);
+    sa::Symbol Visit(ForAST* node);
 
-    mList Visit(BreakAST* node);
+    sa::Symbol Visit(BreakAST* node);
 
-    mList Visit(ContinueAST* node);
+    sa::Symbol Visit(ContinueAST* node);
 
-    mList Visit(ImportAST* node);
+    sa::Symbol Visit(ImportAST* node);
 
-    mList Visit(ExportAST* node);
+    sa::Symbol Visit(ExportAST* node);
 
-    mList Visit(ClassAST* node);
+    sa::Symbol Visit(ClassAST* node);
 
-    mList Visit(TypeSignatureAST* node);
+    sa::Symbol Visit(TypeSignatureAST* node);
 
-    mList Visit(TypeAccessAST* node);
+    sa::Symbol Visit(TypeAccessAST* node);
 };

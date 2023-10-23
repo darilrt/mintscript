@@ -35,6 +35,7 @@ namespace ir {
         Float,
         String,
         Bool,
+        Null
     };
 
     class Instruction {
@@ -53,9 +54,13 @@ namespace ir {
         
         Instruction(Type instruction, int value, std::vector<Instruction*> args);
 
+        Instruction(Type instruction, float value, std::vector<Instruction*> args);
+
         ~Instruction();
 
         inline Type GetInstruction() { return instruction; }
+
+        inline void SetInstruction(Type instruction) { this->instruction = instruction; }
         
         inline std::vector<Instruction*>& GetArgs() { return args; }
 
@@ -86,7 +91,7 @@ namespace ir {
             Object,
             Scope,
             Field,
-            None
+            Null
         } type;
 
         union {
@@ -99,7 +104,7 @@ namespace ir {
             Mainfold* mf;
         } value;
 
-        Mainfold() { this->type = None; }
+        Mainfold() { this->type = Null; }
         Mainfold(Type type) { this->type = type; }
         Mainfold(Type type, int value) { this->type = type; this->value.i = value; }
         Mainfold(Type type, float value) { this->type = type; this->value.f = value; }
@@ -115,7 +120,7 @@ namespace ir {
         SymbolTable() = default;
         SymbolTable(SymbolTable* parent) { this->parent = parent; }
 
-        inline void Set(std::string name) { symbols[name] = { Mainfold::None, 0 }; }
+        inline void Set(std::string name) { symbols[name] = { Mainfold::Null, 0 }; }
 
         inline Mainfold& Get(std::string name);
 

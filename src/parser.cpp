@@ -4,7 +4,6 @@
 #include "ast.h"
 #include "expr.h"
 #include "decl.h"
-#include "mnull.h"
 
 #include "eval.h"
 
@@ -1016,7 +1015,7 @@ ASTNode* Parser::Factor() {
     }
     else if (IS(Float)) {
         GET(token, Float);
-        expr = new NumberExprAST(std::stod(token.value));
+        expr = new NumberExprAST(50.1f);
     }
     else if (IS(String)) {
         GET(token, String);

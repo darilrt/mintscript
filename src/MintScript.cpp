@@ -3,7 +3,6 @@
 #include "ast.h"
 #include "error.h"
 #include "globals.h"
-#include "eval_visitor.h"
 #include "ast_visitor.h"
 
 #include <iostream>
@@ -11,7 +10,6 @@
 #include <filesystem>
 
 void mInit() {
-    BuiltInInit();
 }
 
 void mShutdown() {
@@ -54,7 +52,7 @@ void mRunFile(const std::string &path) {
 
     ir::Interpreter interpreter;
     
-    interpreter.Interpret(ast_visitor->instructions);
+    interpreter.Interpret(ast_visitor->stack.top());
 
     // Check for errors
     if (mError::HasError()) {
@@ -66,32 +64,6 @@ void mRunFile(const std::string &path) {
 }
 
 void mRunString(const std::string &source) {
-    Parser parser(source);
-
-    ASTNode *node = parser.Parse();
-
-    if (mError::HasError()) {
-        return;
-    }   
-
-    if (node == nullptr) { return; }
-    
-    // Evaluate the AST
-    mObject* result = EvalVisitor::Eval(node, mSymbolTable::globals, nullptr);
-
-    if (mError::HasError()) {
-        return;
-    }
-
-    if (result) {
-        std::cout << result->ToString() << std::endl;
-    }
-    else {
-        std::cout << "DEBUG: Result null" << std::endl; // DEBUG
-    }
-
-    // Cleanup
-    delete node;
 }
 
 void mRunInteractive() {

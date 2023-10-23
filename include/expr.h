@@ -2,9 +2,9 @@
 
 #include "ast.h"
 #include "token.h"
-#include "mlist.h"
 
 #include <string>
+#include <vector>
 
 class NumberExprAST : public ASTNode {
 public:
@@ -14,12 +14,12 @@ public:
     };
 
     Type type;
-    double value;
+    float value;
 
-    NumberExprAST(double value) : type(Type::Float), value(value) {}
+    NumberExprAST(float value) : type(Type::Float), value(value) {}
     NumberExprAST(int value) : type(Type::Int), value(value) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class StringExprAST : public ASTNode {
@@ -28,7 +28,7 @@ public:
 
     StringExprAST(const std::string& value) : value(value) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class BoolExprAST : public ASTNode {
@@ -37,21 +37,21 @@ public:
 
     BoolExprAST(bool value) : value(value) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class NullExprAST : public ASTNode {
 public:
     NullExprAST() = default;
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class LambdaExprAST : public ASTNode {
 public:
     LambdaExprAST() = default;
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class PropertyExprAST : public ASTNode {
@@ -62,7 +62,7 @@ public:
 
     PropertyExprAST(const std::string& name) : name(name) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class IndexExprAST : public ASTNode {
@@ -74,7 +74,7 @@ public:
 
     IndexExprAST(ASTNode* expr, ASTNode* index) : expr(expr), index(index) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class CallExprAST : public ASTNode {
@@ -88,7 +88,7 @@ public:
 
     CallExprAST(ASTNode* property, std::vector<ASTNode*> args) : property(property), args(args) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class UnaryExprAST : public ASTNode {
@@ -102,7 +102,7 @@ public:
     UnaryExprAST(Token op, ASTNode* expr) : op(op), expr(expr), isPrefix(true) {}
     UnaryExprAST(Token op, ASTNode* expr, bool isPrefix) : op(op), expr(expr), isPrefix(isPrefix) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class BinaryExprAST : public ASTNode {
@@ -115,7 +115,7 @@ public:
 
     BinaryExprAST(Token op, ASTNode* lhs, ASTNode* rhs) : op(op), lhs(lhs), rhs(rhs) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class TernaryExprAST : public ASTNode {
@@ -128,7 +128,7 @@ public:
 
     TernaryExprAST(ASTNode* condition, ASTNode* trueExpr, ASTNode* falseExpr) : condition(condition), trueExpr(trueExpr), falseExpr(falseExpr) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ParenExprAST : public ASTNode {
@@ -139,7 +139,7 @@ public:
 
     ParenExprAST(ASTNode* expr) : expr(expr) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ArrayExprAST : public ASTNode {
@@ -150,7 +150,7 @@ public:
 
     ArrayExprAST() {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class AccessExprAST : public ASTNode {
@@ -162,7 +162,7 @@ public:
 
     AccessExprAST(ASTNode* expr, Token name) : expr(expr), name(name) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ExportItemAST : public ASTNode {
@@ -176,7 +176,7 @@ public:
 
     ExportItemAST(Token name, ASTNode* expr) : name(name), expr(expr) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ImportItemAST : public ASTNode {
@@ -190,7 +190,7 @@ public:
 
     ImportItemAST(Token name, Token alias) : name(name), alias(alias) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class TypeSignatureAST : public ASTNode {
@@ -204,7 +204,7 @@ public:
 
     TypeSignatureAST(Token name, std::vector<ASTNode*> types) : name(name), types(types) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class TypeAccessAST : public ASTNode {
@@ -216,5 +216,5 @@ public:
 
     TypeAccessAST(TypeSignatureAST* lhs, TypeSignatureAST* rhs) : lhs(lhs), rhs(rhs) {}
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Symbol Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
