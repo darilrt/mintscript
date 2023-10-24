@@ -1,5 +1,7 @@
 #pragma once
 
+#include "sa_symbol.h"
+
 class ASTNode;
 class NumberExprAST;
 class StringExprAST;
@@ -33,62 +35,6 @@ class ForAST;
 class ClassAST;
 class TypeSignatureAST;
 class TypeAccessAST;
-
-#include <unordered_map>
-#include <string>
-
-namespace sa {
-    
-    class Symbol {
-    public:
-        bool isType;
-        bool isMutable;
-        std::string name;
-        Symbol* type;
-
-        Symbol() = default;
-        Symbol(bool isType, bool isMutable, Symbol* type) {
-            this->isType = isType;
-            this->isMutable = isMutable;
-            this->type = type;
-        }
-    };
-
-    class SymbolTable {
-    public:
-        SymbolTable() = default;
-        SymbolTable(SymbolTable* parent) { this->parent = parent; }
-
-        inline void Set(std::string name, Symbol symbol) { 
-            symbols[name] = symbol; 
-            symbols[name].name = name;
-        }
-
-        Symbol* Get(std::string name) {
-            auto it = symbols.find(name);
-
-            if (it == symbols.end()) {
-                if (parent != nullptr) {
-                    return parent->Get(name);
-                }
-                else {
-                    return &symbols[name];
-                }
-            }
-
-            return &it->second;
-        }
-
-        inline void SetParent(SymbolTable* parent) { this->parent = parent; }
-
-        inline SymbolTable* GetParent() { return parent; }
-
-    private:
-        SymbolTable* parent = nullptr;
-        std::unordered_map<std::string, Symbol> symbols;
-    };
-
-} // namespace sa
 
 class Visitor {
 public:

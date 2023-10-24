@@ -1,3 +1,3 @@
-let a: float = (true + true + true) * 10
+let a: float = 22.22
 
-print(a)
+print(a.ToStr())

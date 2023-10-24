@@ -20,7 +20,8 @@ static sa::Symbol *t_null = nullptr,
                   *t_int = nullptr,
                   *t_float = nullptr,
                   *t_str = nullptr,
-                  *t_bool = nullptr;
+                  *t_bool = nullptr,
+                  *t_type = nullptr;
 
 inline bool IsPrimitive(sa::Symbol* type) {
     return type == t_int || type == t_float || type == t_str || type == t_bool;
@@ -37,12 +38,17 @@ AstVisitor* AstVisitor::Eval(ASTNode *node) {
 
     visitor->table = new sa::SymbolTable();
     
-    visitor->table->Set("int", { true, false, nullptr });
-    visitor->table->Set("float", { true, false, nullptr });
-    visitor->table->Set("str", { true, false, nullptr });
-    visitor->table->Set("bool", { true, false, nullptr });
-    visitor->table->Set("null", { true, false, nullptr });
-
+    visitor->table->Set("Type", { true, false, nullptr });
+    t_type = visitor->table->Get("Type");
+    t_type->type = t_type;
+    
+    visitor->table->Set("Function", { true, false, t_type });
+    visitor->table->Set("int", { true, false, t_type });
+    visitor->table->Set("float", { true, false, t_type });
+    visitor->table->Set("str", { true, false, t_type });
+    visitor->table->Set("bool", { true, false, t_type });
+    visitor->table->Set("null", { true, false, t_type });
+    
     t_null = visitor->table->Get("null");
     t_int = visitor->table->Get("int");
     t_float = visitor->table->Get("float");
@@ -249,6 +255,8 @@ sa::Symbol* AstVisitor::Visit(ArrayExprAST *node) {
 }
 
 sa::Symbol* AstVisitor::Visit(AccessExprAST *node) {
+    sa::Symbol* type = node->expr->Accept(this);
+    
     return {};
 }
 
