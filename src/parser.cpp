@@ -1015,7 +1015,7 @@ ASTNode* Parser::Factor() {
     }
     else if (IS(Float)) {
         GET(token, Float);
-        expr = new NumberExprAST(50.1f);
+        expr = new NumberExprAST(std::stof(token.value));
     }
     else if (IS(String)) {
         GET(token, String);

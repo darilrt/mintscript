@@ -25,7 +25,8 @@ namespace ir {
         New, Field,
 
         // Operators
-        Add, Sub, Mul, Div, Mod,
+        AddI, SubI, MulI, DivI, ModI,
+        AddF, SubF, MulF, DivF, ModF,
         And, Or, Xor, Not,
         Shl, Shr,
         Eq, Neq, Lt, Gt, Leq, Geq,
@@ -35,7 +36,15 @@ namespace ir {
         Float,
         String,
         Bool,
-        Null
+        Null,
+
+        // Casts
+        IntToFloat,
+        FloatToInt,
+        BoolToInt,
+        IntToBool,
+        FloatToBool,
+        BoolToFloat
     };
 
     class Instruction {

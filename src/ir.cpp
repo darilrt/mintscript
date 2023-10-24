@@ -1,5 +1,7 @@
 #include "ir.h"
 
+#include <cmath>
+
 void PrintMainfold(ir::Mainfold mf) {
     switch (mf.type) {
         case ir::Mainfold::Int: std::cout << mf.value.i; break;
@@ -201,15 +203,18 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         }
 
         // Operators
-        case Add: { return { Mainfold::Int,  { ARG(0).value.i + ARG(1).value.i } }; }
-        case Sub: { return { Mainfold::Int,  { ARG(0).value.i - ARG(1).value.i } }; }
-        case Mul: { return { Mainfold::Int,  { ARG(0).value.i * ARG(1).value.i } }; }
-        case Div: { return { Mainfold::Int,  { ARG(0).value.i / ARG(1).value.i } }; }
-        case Mod: { return { Mainfold::Int,  { ARG(0).value.i % ARG(1).value.i } }; }
-        case And: { return { Mainfold::Bool, { ARG(0).value.b && ARG(1).value.b } }; }
-        case Or:  { return { Mainfold::Bool, { ARG(0).value.b || ARG(1).value.b } }; }
-        case Xor: { return { Mainfold::Bool, { ARG(0).value.b ^ ARG(1).value.b } }; }
-        case Not: { return { Mainfold::Bool, { !ARG(0).value.b } }; }
+        case AddI: { return { Mainfold::Int,  { ARG(0).value.i + ARG(1).value.i } }; }
+        case SubI: { return { Mainfold::Int,  { ARG(0).value.i - ARG(1).value.i } }; }
+        case MulI: { return { Mainfold::Int,  { ARG(0).value.i * ARG(1).value.i } }; }
+        case DivI: { return { Mainfold::Int,  { ARG(0).value.i / ARG(1).value.i } }; }
+        case ModI: { return { Mainfold::Int,  { ARG(0).value.i % ARG(1).value.i } }; }
+
+        case AddF: { return { Mainfold::Float,  { ARG(0).value.f + ARG(1).value.f } }; }
+        case SubF: { return { Mainfold::Float,  { ARG(0).value.f - ARG(1).value.f } }; }
+        case MulF: { return { Mainfold::Float,  { ARG(0).value.f * ARG(1).value.f } }; }
+        case DivF: { return { Mainfold::Float,  { ARG(0).value.f / ARG(1).value.f } }; }
+        case ModF: { return { Mainfold::Float,  { std::fmod(ARG(0).value.f, ARG(1).value.f) } }; }
+        
         case Shl: { return { Mainfold::Int,  { ARG(0).value.i << ARG(1).value.i } }; }
         case Shr: { return { Mainfold::Int,  { ARG(0).value.i >> ARG(1).value.i } }; }
         case Eq:  { return { Mainfold::Bool, { ARG(0).value.i == ARG(1).value.i } }; }
@@ -218,6 +223,19 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         case Gt:  { return { Mainfold::Bool, { ARG(0).value.i > ARG(1).value.i } }; }
         case Leq: { return { Mainfold::Bool, { ARG(0).value.i <= ARG(1).value.i } }; }
         case Geq: { return { Mainfold::Bool, { ARG(0).value.i >= ARG(1).value.i } }; }
+        
+        case And: { return { Mainfold::Bool, { ARG(0).value.b && ARG(1).value.b } }; }
+        case Or:  { return { Mainfold::Bool, { ARG(0).value.b || ARG(1).value.b } }; }
+        case Xor: { return { Mainfold::Bool, { ARG(0).value.b ^ ARG(1).value.b } }; }
+        case Not: { return { Mainfold::Bool, { !ARG(0).value.b } }; }
+
+        // Casts
+        case IntToBool: { return { Mainfold::Bool, { (bool)ARG(0).value.i } }; }
+        case IntToFloat: { return { Mainfold::Float, { (float)ARG(0).value.i } }; }
+        case FloatToInt: { return { Mainfold::Int, { (int)ARG(0).value.f } }; }
+        case FloatToBool: { return { Mainfold::Bool, { (bool)ARG(0).value.f } }; }
+        case BoolToInt: { return { Mainfold::Int, { (int)ARG(0).value.b } }; }
+        case BoolToFloat: { return { Mainfold::Float, { (float)ARG(0).value.b } }; }
         
         // Literals
         case Int: return { Mainfold::Int, { instruction->value.i } };
