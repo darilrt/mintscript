@@ -4,6 +4,31 @@
 
 namespace sa {
     class SymbolTable;
+    class Symbol;
+
+    class Field {
+    public:
+        bool isMutable;
+        std::string name;
+        int offset;
+        Symbol* type;
+
+        Field() = default;
+        Field(bool isMutable, Symbol* type) {
+            this->isMutable = isMutable;
+            this->type = type;
+        }
+    };
+
+    class Method {
+    public:
+        std::string name;
+        Symbol* type;
+        SymbolTable* parameters = nullptr;
+
+        Method() = default;
+        Method(Symbol* type) { this->type = type; }
+    };
 
     class Symbol {
     public:
@@ -11,19 +36,29 @@ namespace sa {
         bool isMutable;
         std::string name;
         Symbol* type;
-        SymbolTable* fields = nullptr;
-        SymbolTable* methods = nullptr;
+        
+        std::unordered_map<std::string, Method> methods;
+        std::unordered_map<std::string, Field> fields;
 
         Symbol() = default;
         Symbol(bool isType, bool isMutable, Symbol* type);
 
-        inline void Method(std::string name, Symbol symbol);
-        inline Symbol* Method(std::string name) { return methods ? methods->Get(name) : nullptr ; }
+        void SetMethod(std::string name, sa::Method symbol);
+        
+        sa::Method* GetMethod(std::string name);
 
-        inline void Field(std::string name, Symbol symbol);
-        inline Symbol* Field(std::string name) { return fields ? fields->Get(name) : nullptr ; }
+        bool HasMethod(std::string name);
 
-        inline Symbol* Get(std::string name) { return fields ? fields->Get(name) : nullptr ; }
+        void AddField(std::string name, sa::Field symbol);
+
+        void SetField(std::string name, sa::Field symbol);
+        
+        sa::Field* GetField(std::string name);
+
+        bool HasField(std::string name);
+
+    private:
+        int lastFieldOffset = 0;
     };
 
     class SymbolTable {
@@ -46,4 +81,5 @@ namespace sa {
         SymbolTable* parent = nullptr;
         std::unordered_map<std::string, Symbol> symbols;
     };
-} // namespace sa
+
+}

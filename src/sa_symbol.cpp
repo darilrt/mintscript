@@ -6,18 +6,42 @@ sa::Symbol::Symbol(bool isType, bool isMutable, Symbol *type)  {
     this->type = type;
 }
 
-inline void sa::Symbol::Method(std::string name, Symbol symbol) {
-    if (methods == nullptr) {
-        methods = new SymbolTable();
-    }
-    methods->Set(name, symbol);
+void sa::Symbol::SetMethod(std::string name, sa::Method symbol) {
+    methods[name] = symbol;
+    methods[name].name = name;
 }
 
-inline void sa::Symbol::Field(std::string name, Symbol symbol) {
-    if (fields == nullptr) {
-        fields = new SymbolTable();
+sa::Method *sa::Symbol::GetMethod(std::string name)  {
+    if (methods.find(name) != methods.end()) {
+        return &methods[name];
     }
-    fields->Set(name, symbol);
+    return nullptr;
+}
+
+bool sa::Symbol::HasMethod(std::string name) {
+    return methods.find(name) != methods.end();
+}
+
+void sa::Symbol::AddField(std::string name, sa::Field symbol) {
+    fields[name] = symbol;
+    fields[name].name = name;
+}
+
+inline void sa::Symbol::SetField(std::string name, sa::Field symbol) {
+    fields[name] = symbol;
+    fields[name].name = name;
+    fields[name].offset = lastFieldOffset++;
+}
+
+sa::Field *sa::Symbol::GetField(std::string name) {
+    if (fields.find(name) != fields.end()) {
+        return &fields[name];
+    }
+    return nullptr;
+}
+
+bool sa::Symbol::HasField(std::string name) {
+    return fields.find(name) != fields.end();
 }
 
 sa::Symbol *sa::SymbolTable::Get(std::string name) {

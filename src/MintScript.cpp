@@ -50,15 +50,15 @@ void mRunFile(const std::string &path) {
     // Evaluate the AST
     AstVisitor* ast_visitor = AstVisitor::Eval(node);
 
-    ir::Interpreter interpreter;
-    
-    interpreter.Interpret(ast_visitor->stack.top());
-
     // Check for errors
     if (mError::HasError()) {
         mError::PrintErrors();
         return;
     }
+
+    ir::Interpreter interpreter;
+    
+    interpreter.Interpret(ast_visitor->stack.top());
     
     delete node;
 }

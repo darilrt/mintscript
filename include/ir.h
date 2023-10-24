@@ -4,6 +4,7 @@
 #include <stack>
 #include <unordered_map>
 #include <vector>
+#include <functional>
 
 namespace ir {
     enum Type {
@@ -16,7 +17,7 @@ namespace ir {
         If,
 
         // Functions
-        Call, Return, Arg,
+        Call, Return, Arg, Native,
 
         // Variables
         Decl, Var, Set,
@@ -47,6 +48,8 @@ namespace ir {
         BoolToFloat
     };
 
+    class Mainfold;
+
     class Instruction {
     public:
         union {
@@ -55,6 +58,7 @@ namespace ir {
             std::string* s;
             bool b;
             Instruction* ir;
+            Mainfold (*native)(std::vector<Mainfold>);
         } value;
 
         Instruction(Type instruction, std::vector<Instruction*> args);
@@ -64,6 +68,8 @@ namespace ir {
         Instruction(Type instruction, int value, std::vector<Instruction*> args);
 
         Instruction(Type instruction, float value, std::vector<Instruction*> args);
+
+        Instruction(Type instruction, Mainfold (*value)(std::vector<Mainfold>), std::vector<Instruction*> args);
 
         ~Instruction();
 
@@ -81,13 +87,11 @@ namespace ir {
         std::vector<Instruction*> args;
     };
 
-    class Mainfold;
-
     class Object {
     public:
         std::vector<Mainfold> fields;
 
-        Object(int size) { fields.reserve(size); }
+        Object(int size) { fields.resize(size); }
     };
 
     class Mainfold {

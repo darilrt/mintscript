@@ -38,6 +38,12 @@ ir::Instruction::Instruction(Type instruction, float value, std::vector<Instruct
     this->value.f = value;
 }
 
+ir::Instruction::Instruction(Type instruction, Mainfold (*value)(std::vector<Mainfold>), std::vector<Instruction*> args); {
+    this->instruction = instruction;
+    this->args = args;
+    this->value.native = value;
+}
+
 ir::Instruction::~Instruction() {
     for (int i = 0; i < args.size(); i++) {
         delete args[i];
@@ -190,9 +196,9 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             Object* object = new Object(instruction->value.i);
             Mainfold mf = { Mainfold::Object, object };
 
-            for (int i = 0; i < instruction->GetArgs().size(); i++) {
-                object->fields.push_back(Interpret(instruction->GetArg(i)));
-            }
+            // for (int i = 0; i < instruction->GetArgs().size(); i++) {
+            //     object->fields.push_back(Interpret(instruction->GetArg(i)));
+            // }
 
             return mf;
         }
