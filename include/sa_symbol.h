@@ -14,10 +14,7 @@ namespace sa {
         Symbol* type;
 
         Field() = default;
-        Field(bool isMutable, Symbol* type) {
-            this->isMutable = isMutable;
-            this->type = type;
-        }
+        Field(bool isMutable, Symbol* type);
     };
 
     class Method {

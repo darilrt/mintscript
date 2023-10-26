@@ -27,7 +27,7 @@ void sa::Symbol::AddField(std::string name, sa::Field symbol) {
     fields[name].name = name;
 }
 
-inline void sa::Symbol::SetField(std::string name, sa::Field symbol) {
+void sa::Symbol::SetField(std::string name, sa::Field symbol) {
     fields[name] = symbol;
     fields[name].name = name;
     fields[name].offset = lastFieldOffset++;
@@ -51,4 +51,9 @@ sa::Symbol *sa::SymbolTable::Get(std::string name) {
         return parent->Get(name);
     }
     return nullptr;
+}
+
+sa::Field::Field(bool isMutable, Symbol *type)  {
+    this->isMutable = isMutable;
+    this->type = type;
 }

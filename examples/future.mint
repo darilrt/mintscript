@@ -1,4 +1,7 @@
 
+// Array
+let a: [..] int = [1, 2, 3]
+
 // Ternary Operator
 let a: int = if true { 1 } else { 2 }
 

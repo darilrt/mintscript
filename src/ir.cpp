@@ -2,19 +2,6 @@
 
 #include <cmath>
 
-void PrintMainfold(ir::Mainfold mf) {
-    switch (mf.type) {
-        case ir::Mainfold::Int: std::cout << mf.value.i; break;
-        case ir::Mainfold::Float: std::cout << mf.value.f; break;
-        case ir::Mainfold::String: std::cout << *mf.value.s; break;
-        case ir::Mainfold::Bool: std::cout << (mf.value.b ? "true" : "false"); break;
-        case ir::Mainfold::Null: std::cout << "Null"; break;
-        case ir::Mainfold::Field: std::cout << "{field." << mf.value.mf << "}"; break;
-        case ir::Mainfold::Object: std::cout << "{object." << mf.value.st << "}"; break;
-        default: break;
-    }
-}
-
 ir::Instruction::Instruction(Type instruction, std::vector<Instruction *> args) {
     this->instruction = instruction;
     this->args = args;
@@ -38,7 +25,7 @@ ir::Instruction::Instruction(Type instruction, float value, std::vector<Instruct
     this->value.f = value;
 }
 
-ir::Instruction::Instruction(Type instruction, Mainfold (*value)(std::vector<Mainfold>), std::vector<Instruction*> args); {
+ir::Instruction::Instruction(Type instruction, Mainfold (*value)(std::vector<Mainfold>), std::vector<Instruction*> args) {
     this->instruction = instruction;
     this->args = args;
     this->value.native = value;
@@ -107,36 +94,15 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
                 if (mf->type == Mainfold::Scope) {
                     ret = Interpret(mf->value.ir);
                 }
+                else if (mf->type == Mainfold::Native) {
+                    ret = mf->value.native(argv);
+                }
 
                 stack.pop();
 
                 return ret;
             }
-            else {
-                if (*name.value.s == "print") {
-                    if (instruction->GetArgs().size() == 1) {
-                        std::cout << "Expected at least one argument to print" << std::endl;
-
-                        return { Mainfold::Null };
-                    }
-
-                    for (int i = 1; i < instruction->GetArgs().size(); i++) {
-                        Mainfold mf = Interpret(instruction->GetArg(i));
-                        
-                        if (mf.type == Mainfold::Field) {
-                            PrintMainfold(*mf.value.mf);
-                        }
-                        else {
-                            PrintMainfold(mf);
-                        }
-
-                        std::cout << " ";
-                    }
-
-                    std::cout << std::endl;
-                }
-            }
-
+            
             return { Mainfold::Null };
         }
 
@@ -166,6 +132,10 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             delete scope;
 
             return mf;
+        }
+
+        case Native: {
+            return { Mainfold::Native, instruction->value.native };
         }
 
         // Variables

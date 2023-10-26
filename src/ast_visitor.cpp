@@ -4,6 +4,8 @@
 #include "token.h"
 #include "ast_visitor.h"
 
+#include <sstream>
+
 #define PUSH_INST stack.top()->GetArgs().push_back
 #define STACK_TOP stack.top()
 #define STACK_POP stack.pop
@@ -14,7 +16,7 @@
         stack.top()->GetArgs().push_back(__inst); \
         stack.push(__inst); \
     }
-#define i new ir::Instruction
+#define ins new ir::Instruction
 
 static sa::Symbol *t_null = nullptr,
                   *t_int = nullptr,
@@ -27,7 +29,30 @@ inline bool IsPrimitive(sa::Symbol* type) {
     return type == t_int || type == t_float || type == t_str || type == t_bool;
 }
 
-void LoadBuiltInTypes(sa::SymbolTable* table, std::stack<ir::Instruction*> stack) {
+void PrintMainfold(ir::Mainfold mf) {
+    switch (mf.type) {
+        case ir::Mainfold::Int: std::cout << mf.value.i; break;
+        case ir::Mainfold::Float: std::cout << mf.value.f; break;
+        case ir::Mainfold::String: std::cout << *mf.value.s; break;
+        case ir::Mainfold::Bool: std::cout << (mf.value.b ? "true" : "false"); break;
+        case ir::Mainfold::Null: std::cout << "Null"; break;
+        case ir::Mainfold::Field: std::cout << "{field." << mf.value.mf << "}"; break;
+        case ir::Mainfold::Object: std::cout << "{object." << mf.value.st << "}"; break;
+        case ir::Mainfold::Native: std::cout << "{native." << mf.value.native << "}"; break;
+        case ir::Mainfold::Scope: std::cout << "{scope." << mf.value.ir << "}"; break;
+        default: break;
+    }
+}
+
+void LoadBuiltInTypes(sa::SymbolTable* table, std::stack<ir::Instruction*>& stack) {
+    auto PUSH_NATIVE = [&](std::string label, ir::Mainfold (*lambda)(std::vector<ir::Mainfold>) ) {
+        stack.top()->GetArgs().push_back(new ir::Instruction(ir::Decl, label, { })); \
+        stack.top()->GetArgs().push_back(new ir::Instruction(ir::Set, { \
+            new ir::Instruction(ir::Var, label, { }), \
+            new ir::Instruction(ir::Native, lambda, { }) \
+        }));
+    };
+
     table->Set("Type", { true, false, nullptr });
     t_type = table->Get("Type");
     t_type->type = t_type;
@@ -52,13 +77,35 @@ void LoadBuiltInTypes(sa::SymbolTable* table, std::stack<ir::Instruction*> stack
     t_float->SetMethod("ToStr", { t_str });
     t_float->GetMethod("ToStr")->name = "mfloat_strToStr";
 
-    STACK_PUSH(i(ir::Decl, "mfloat_strToStr", { }));
-    STACK_PUSH(i(ir::Set, {
-        i(ir::Var, "mfloat_strToStr", { }),
-        i(ir::Native, [](std::vector<ir::Mainfold> args) -> ir::Mainfold {
-            return { ir::Mainfold::String, "Hello, World!" };
-        }, { })
-    }));
+    PUSH_NATIVE("mfloat_strToStr",
+        [](std::vector<ir::Mainfold> args) -> ir::Mainfold {
+
+            std::cout << "asdasdsa" << std::endl;
+            ir::Mainfold* self = args.at(0).value.mf;
+
+            std::ostringstream ss;
+            ss << self->value.f;
+            std::string* str = new std::string(ss.str());
+            
+            return { ir::Mainfold::String, str };
+        }
+    );
+    
+    table->Set("print", { false, false, table->Get("Function") });
+    PUSH_NATIVE("print",
+        [](std::vector<ir::Mainfold> args) -> ir::Mainfold {
+            for (ir::Mainfold arg : args) {
+                if (arg.type == ir::Mainfold::Field) {
+                    PrintMainfold(*arg.value.mf);
+                }
+                else {
+                    PrintMainfold(arg);
+                }
+            }
+
+            return { ir::Mainfold::Null };
+        }
+    );
 }
 
 AstVisitor::AstVisitor() { }
@@ -68,7 +115,7 @@ AstVisitor::~AstVisitor() { }
 AstVisitor* AstVisitor::Eval(ASTNode *node) {
     AstVisitor* visitor = new AstVisitor();
     
-    visitor->stack.push(new ir::Instruction(ir::Type::Scope, { }));
+    visitor->stack.push(ins(ir::Scope, { }));
 
     visitor->table = new sa::SymbolTable();
 
@@ -99,41 +146,41 @@ sa::Symbol* AstVisitor::Visit(ProgramAST *node) {
 
 sa::Symbol* AstVisitor::Visit(NumberExprAST *node) {
     if (node->type == NumberExprAST::Type::Int) {
-        PUSH_INST(i(ir::Int, (int) node->value, { }));
+        PUSH_INST(ins(ir::Int, (int) node->value, { }));
         return t_int;
     }
     else {
-        PUSH_INST(i(ir::Float, node->value, { }));
+        PUSH_INST(ins(ir::Float, node->value, { }));
         return t_float;
     }
     return t_null;
 }
 
 sa::Symbol* AstVisitor::Visit(StringExprAST *node) {
-    PUSH_INST(i(ir::String, node->value, { }));
+    PUSH_INST(ins(ir::String, node->value, { }));
     return t_str;
 }
 
 sa::Symbol* AstVisitor::Visit(BoolExprAST *node) {
-    PUSH_INST(i(ir::Bool, node->value, { }));
+    PUSH_INST(ins(ir::Bool, node->value, { }));
     return t_bool;
 }
 
 sa::Symbol* AstVisitor::Visit(NullExprAST *node) {
-    PUSH_INST(i(ir::Null, { }));
+    PUSH_INST(ins(ir::Null, { }));
     return t_null;
 }
 
 sa::Symbol* AstVisitor::Visit(PropertyExprAST *node) {
-    if (node->name == "print") {
-        PUSH_INST(i(ir::String, node->name, { }));
+    PUSH_INST(ins(ir::Var, node->name, { }));
+    sa::Symbol* sym = table->Get(node->name);
+
+    if (sym == nullptr) {
+        mError::AddError("Symbol '" + node->name + "' not found");
+        return t_null;
     }
-    else {
-        PUSH_INST(i(ir::Var, node->name, { }));
-        sa::Symbol* sym = table->Get(node->name);
-        return sym->type;
-    }
-    return t_null;
+
+    return sym->type;
 }
 
 sa::Symbol* AstVisitor::Visit(IndexExprAST *node) {
@@ -142,15 +189,25 @@ sa::Symbol* AstVisitor::Visit(IndexExprAST *node) {
 }
 
 sa::Symbol* AstVisitor::Visit(CallExprAST *node) {
-    STACK_PUSH_I(i(ir::Call, { }));
+    ir::Instruction* inst = ins(ir::Call, { });
+
+    STACK_PUSH(inst);
 
     node->property->Accept(this);
-    
+
+    std::vector<ir::Instruction*>& args = inst->GetArg(0)->GetArgs();
+
+    if (args.size() > 0) {
+        PUSH_INST(args[0]);
+    }
+
     for (auto arg : node->args) {
         arg->Accept(this);
     }
 
     STACK_POP();
+
+    PUSH_INST(inst);
 
     return {};
 }
@@ -161,7 +218,7 @@ sa::Symbol* AstVisitor::Visit(UnaryExprAST *node) {
 }
 
 sa::Symbol* AstVisitor::Visit(BinaryExprAST *node) {
-    ir::Instruction* inst = i(ir::AddI, { });
+    ir::Instruction* inst = ins(ir::AddI, { });
 
     STACK_PUSH_I(inst);
     sa::Symbol* lhst = node->lhs->Accept(this);
@@ -198,26 +255,26 @@ sa::Symbol* AstVisitor::Visit(BinaryExprAST *node) {
 
         if (type == t_float) {
             if (lhst == t_int) {
-                inst->GetArgs()[0] = i(
+                inst->GetArgs()[0] = ins(
                     ir::IntToFloat,
                     { inst->GetArgs()[0] }
                 );
             }
             else if (lhst == t_bool) {
-                inst->GetArgs()[0] = i(
+                inst->GetArgs()[0] = ins(
                     ir::BoolToFloat,
                     { inst->GetArgs()[0] }
                 );
             }
 
             if (rhst == t_int) {
-                inst->GetArgs()[1] = i(
+                inst->GetArgs()[1] = ins(
                     ir::IntToFloat,
                     { inst->GetArgs()[1] }
                 );
             }
             else if (rhst == t_bool) {
-                inst->GetArgs()[1] = i(
+                inst->GetArgs()[1] = ins(
                     ir::BoolToFloat,
                     { inst->GetArgs()[1] }
                 );
@@ -225,25 +282,25 @@ sa::Symbol* AstVisitor::Visit(BinaryExprAST *node) {
         }
         else if (type == t_int) {
             if (lhst == t_bool) {
-                inst->GetArgs()[0] = i(
+                inst->GetArgs()[0] = ins(
                     ir::BoolToInt,
                     { inst->GetArgs()[0] }
                 );
             }
 
             if (rhst == t_bool) {
-                inst->GetArgs()[1] = i(
+                inst->GetArgs()[1] = ins(
                     ir::BoolToInt,
                     { inst->GetArgs()[1] }
                 );
             }
         }
         else {
-            inst->GetArgs()[0] = i(
+            inst->GetArgs()[0] = ins(
                 ir::BoolToInt,
                 { inst->GetArgs()[0] }
             );
-            inst->GetArgs()[1] = i(
+            inst->GetArgs()[1] = ins(
                 ir::BoolToInt,
                 { inst->GetArgs()[1] }
             );
@@ -276,17 +333,20 @@ sa::Symbol* AstVisitor::Visit(ArrayExprAST *node) {
 }
 
 sa::Symbol* AstVisitor::Visit(AccessExprAST *node) {
-    ir::Instruction* inst = i(ir::Field, { });
+    ir::Instruction* inst = ins(ir::Field, { });
 
     STACK_PUSH(inst);
     sa::Symbol* type = node->expr->Accept(this);
     STACK_POP();
     
     if (type->HasMethod(node->name.value)) {
-        PUSH_INST(i(ir::String, "print", { }));
+        const sa::Method* method = type->GetMethod(node->name.value);
+        PUSH_INST(ins(ir::Var, method->name, { inst->GetArg(0) }));
+        delete inst;
+        return method->type;
     }
     else if (type->HasField(node->name.value)) {
-        PUSH_INST(i(
+        PUSH_INST(ins(
             ir::Field, 
             type->GetField(node->name.value)->offset, 
             { inst->GetArg(0) }
@@ -294,7 +354,6 @@ sa::Symbol* AstVisitor::Visit(AccessExprAST *node) {
     }
     else {
         mError::AddError("'" + node->name.value + "' is not a member of '" + type->name + "'");
-        return t_null;
     }
 
     delete inst;
@@ -315,10 +374,10 @@ sa::Symbol* AstVisitor::Visit(VarDeclarationAST *node) {
         return {};
     }
 
-    PUSH_INST(i(ir::Decl, node->identifier.value, { }));
+    PUSH_INST(ins(ir::Decl, node->identifier.value, { }));
     table->Set(node->identifier.value, { false, node->isMutable, type });
-    STACK_PUSH_I(i(ir::Set, {
-        i(ir::Var, node->identifier.value, { })
+    STACK_PUSH_I(ins(ir::Set, {
+        ins(ir::Var, node->identifier.value, { })
     }));
     node->expression->Accept(this);
     STACK_POP();

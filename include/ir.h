@@ -104,6 +104,7 @@ namespace ir {
             Object,
             Scope,
             Field,
+            Native,
             Null
         } type;
 
@@ -115,6 +116,7 @@ namespace ir {
             Instruction* ir;
             ir::Object* st;
             Mainfold* mf;
+            Mainfold (*native)(std::vector<Mainfold>);
         } value;
 
         Mainfold() { this->type = Null; }
@@ -126,6 +128,7 @@ namespace ir {
         Mainfold(Type type, Instruction* value) { this->type = type; this->value.ir = value; }
         Mainfold(Type type, ir::Object* value) { this->type = type; this->value.st = value; }
         Mainfold(Type type, Mainfold* value) { this->type = type; this->value.mf = value; }
+        Mainfold(Type type, Mainfold (*value)(std::vector<Mainfold>)) { this->type = type; this->value.native = value; }
     };
 
     class SymbolTable {
