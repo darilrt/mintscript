@@ -45,8 +45,6 @@ void mRunFile(const std::string &path) {
         return;
     }
 
-    std::cout << "DEBUG: Parsed file: " << path << std::endl; // DEBUG
-
     // Evaluate the AST
     AstVisitor* ast_visitor = AstVisitor::Eval(node);
 
@@ -58,6 +56,7 @@ void mRunFile(const std::string &path) {
 
     ir::Interpreter interpreter;
     
+    interpreter.Print(ast_visitor->stack.top());
     interpreter.Interpret(ast_visitor->stack.top());
     
     delete node;

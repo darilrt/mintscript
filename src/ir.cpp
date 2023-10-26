@@ -37,21 +37,6 @@ ir::Instruction::~Instruction() {
     }
 }
 
-void ir::Interpreter::Interpret(std::vector<Instruction *> instructions) {
-    Mainfold mf = { Mainfold::Null };
-
-    SymbolTable* global = new SymbolTable();
-    context.Add(global);
-    context.SetCurrent(global);
-
-    for (int i = 0; i < instructions.size(); i++) {
-        mf = Interpret(instructions[i]); 
-    }
-
-    context.SetCurrent(nullptr);
-    delete global;
-}
-
 #define ARG(i) Interpret(instruction->GetArg(i))
 
 ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
@@ -223,6 +208,97 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
     }
 
     return { Mainfold::Null };
+}
+
+void ir::Interpreter::Print(Instruction *instruction, int indent) {
+    const std::string indentStr = std::string(indent, ' ');
+
+    switch (instruction->GetInstruction()) {
+        case IR: {
+            std::cout << indentStr << "IR {" << std::endl;
+            for (int i = 0; i < instruction->GetArgs().size(); i++) {
+                Print(instruction->GetArg(i), indent + 1);
+            }
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        case If: {
+            std::cout << indentStr << "If {" << std::endl;
+            Print(instruction->GetArg(0), indent + 1);
+            Print(instruction->GetArg(1), indent + 1);
+            if (instruction->GetArgs().size() > 2) {
+                Print(instruction->GetArg(2), indent + 1);
+            }
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        case Call: {
+            std::cout << indentStr << "Call {" << std::endl;
+            Print(instruction->GetArg(0), indent + 1);
+            for (int i = 1; i < instruction->GetArgs().size(); i++) {
+                Print(instruction->GetArg(i), indent + 1);
+            }
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        case Arg: {
+            std::cout << indentStr << "Arg(" << instruction->value.i << ") {" << std::endl;
+            Print(instruction->GetArg(0), indent + 1);
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        case Scope: {
+            std::cout << indentStr << "Scope {" << std::endl;
+            for (int i = 0; i < instruction->GetArgs().size(); i++) {
+                Print(instruction->GetArg(i), indent + 1);
+            }
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        case Native: {
+            std::cout << indentStr << "Native(" << instruction->value.native << ")" << std::endl;
+            break;
+        }
+
+        // Variables
+
+        case Decl: {
+            std::cout << indentStr << "Decl(" << *instruction->value.s << ")" << std::endl;
+            break;
+        }
+
+        case Set: {
+            std::cout << indentStr << "Set {" << std::endl;
+            Print(instruction->GetArg(0), indent + 1);
+            Print(instruction->GetArg(1), indent + 1);
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        case Var: {
+            std::cout << indentStr << "Var(" << *instruction->value.s << ")" << std::endl;
+            break;
+        }
+
+        // Objects
+
+        case New: {
+            std::cout << indentStr << "New(" << instruction->value.i << ")" << std::endl;
+            break;
+        }
+
+        case Field: {
+            std::cout << indentStr << "Field(" << instruction->value.i << ") { "  << " }" << std::endl;
+            break;
+        }
+
+        // Operators
+    }
 }
 
 inline ir::Mainfold& ir::SymbolTable::Get(std::string name) {

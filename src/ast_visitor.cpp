@@ -36,10 +36,10 @@ void PrintMainfold(ir::Mainfold mf) {
         case ir::Mainfold::String: std::cout << *mf.value.s; break;
         case ir::Mainfold::Bool: std::cout << (mf.value.b ? "true" : "false"); break;
         case ir::Mainfold::Null: std::cout << "Null"; break;
-        case ir::Mainfold::Field: std::cout << "{field." << mf.value.mf << "}"; break;
-        case ir::Mainfold::Object: std::cout << "{object." << mf.value.st << "}"; break;
-        case ir::Mainfold::Native: std::cout << "{native." << mf.value.native << "}"; break;
-        case ir::Mainfold::Scope: std::cout << "{scope." << mf.value.ir << "}"; break;
+        case ir::Mainfold::Field: std::cout << "{ field." << mf.value.mf << " }"; break;
+        case ir::Mainfold::Object: std::cout << "{ object." << mf.value.st << " }"; break;
+        case ir::Mainfold::Native: std::cout << "{ native }"; break;
+        case ir::Mainfold::Scope: std::cout << "{ scope." << mf.value.ir << " }"; break;
         default: break;
     }
 }
@@ -346,11 +346,14 @@ sa::Symbol* AstVisitor::Visit(AccessExprAST *node) {
         return method->type;
     }
     else if (type->HasField(node->name.value)) {
+        sa::Field* field = type->GetField(node->name.value);
         PUSH_INST(ins(
-            ir::Field, 
-            type->GetField(node->name.value)->offset, 
+            ir::Field,
+            field->offset, 
             { inst->GetArg(0) }
         ));
+        delete inst;
+        return field->type;
     }
     else {
         mError::AddError("'" + node->name.value + "' is not a member of '" + type->name + "'");

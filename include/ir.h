@@ -109,10 +109,10 @@ namespace ir {
         } type;
 
         union {
+            bool b;
             int i;
             float f;
             std::string* s;
-            bool b;
             Instruction* ir;
             ir::Object* st;
             Mainfold* mf;
@@ -166,9 +166,9 @@ namespace ir {
 
     class Interpreter {
     public:
-        void Interpret(std::vector<Instruction*> instructions);
-
         Mainfold Interpret(Instruction* instruction);
+
+        void Print(Instruction* instruction, int indent = 0);
         
     private:
         Context context;
