@@ -1,2 +1,6 @@
 
-print("Hello, World!")
+foo() {
+    print("foo")
+}
+
+foo()

@@ -460,14 +460,16 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
             argDecl->type->Accept(this)
         });
     }
-
+    
     sa::Type* retsym = node->lambda->body->Accept(this);
 
-    sa::Type* rettype = node->lambda->returnType->Accept(this);
+    if (node->lambda->returnType) {
+        sa::Type* rettype = node->lambda->returnType->Accept(this);
 
-    if (retsym != rettype) {
-        mError::AddError("Function '" + node->name.value + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
-        return {};
+        if (retsym != rettype) {
+            mError::AddError("Function '" + node->name.value + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
+            return t_null;
+        }
     }
 
     PopScope();
