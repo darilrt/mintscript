@@ -103,7 +103,7 @@ void AstVisitor::PopScope() {
     delete oldTable;
 }
 
-AstVisitor::AstVisitor() {}
+AstVisitor::AstVisitor() { }
 
 AstVisitor::~AstVisitor() { }
 
@@ -169,8 +169,6 @@ sa::Type* AstVisitor::Visit(NullExprAST *node) {
 sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
     sa::Symbol* sym = table->Get(node->name);
 
-    PUSH_INST(ins(ir::Var, sym->name, { }));
-
     if (sym == nullptr) {
         sa::Type* typ = table->GetType(node->name);
 
@@ -181,7 +179,9 @@ sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
 
         return t_type;
     }
-
+    
+    PUSH_INST(ins(ir::Var, sym->name, { }));
+    
     return sym->type;
 }
 

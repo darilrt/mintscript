@@ -1,6 +1,2 @@
 
-foo() {
-    print("foo")
-}
-
-foo()
+print(int)
