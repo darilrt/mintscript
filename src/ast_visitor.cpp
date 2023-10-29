@@ -18,14 +18,14 @@
     }
 #define ins new ir::Instruction
 
-static sa::Symbol *t_null = nullptr,
+static sa::Type *t_null = nullptr,
                   *t_int = nullptr,
                   *t_float = nullptr,
                   *t_str = nullptr,
                   *t_bool = nullptr,
                   *t_type = nullptr;
 
-inline bool IsPrimitive(sa::Symbol* type) {
+inline bool IsPrimitive(sa::Type* type) {
     return type == t_int || type == t_float || type == t_str || type == t_bool;
 }
 
@@ -53,46 +53,28 @@ void LoadBuiltInTypes(sa::SymbolTable* table, std::stack<ir::Instruction*>& stac
         }));
     };
 
-    table->Set("Type", { true, false, nullptr });
-    t_type = table->Get("Type");
-    t_type->type = t_type;
+    table->SetType("Type", { "Type" });
+    t_type = table->GetType("Type");
     
-    table->Set("Function", { true, false, t_type });
+    table->SetType("Function", { "Function" });
     
-    table->Set("int", { true, false, t_type });
-    t_int = table->Get("int");
+    table->SetType("int", { "int" });
+    t_int = table->GetType("int");
     
-    table->Set("float", { true, false, t_type });
-    t_float = table->Get("float");
+    table->SetType("float", { "float" });
+    t_float = table->GetType("float");
     
-    table->Set("str", { true, false, t_type });
-    t_str = table->Get("str");
+    table->SetType("str", { "str" });
+    t_str = table->GetType("str");
     
-    table->Set("bool", { true, false, t_type });
-    t_bool = table->Get("bool");
+    table->SetType("bool", { "bool" });
+    t_bool = table->GetType("bool");
     
-    table->Set("null", { true, false, t_type });
-    t_null = table->Get("null");
+    table->SetType("null", { "null" });
+    t_null = table->GetType("null");
 
-    t_float->SetMethod("ToStr", { t_str });
-    t_float->GetMethod("ToStr")->name = "mfloat_strToStr";
-
-    PUSH_NATIVE("mfloat_strToStr",
-        [](std::vector<ir::Mainfold> args) -> ir::Mainfold {
-
-            std::cout << "asdasdsa" << std::endl;
-            ir::Mainfold* self = args.at(0).value.mf;
-
-            std::ostringstream ss;
-            ss << self->value.f;
-            std::string* str = new std::string(ss.str());
-            
-            return { ir::Mainfold::String, str };
-        }
-    );
-    
-    table->Set("print", { false, false, table->Get("Function") });
-    PUSH_NATIVE("print",
+    table->SetSymbol("print", { false, "f_print", table->GetType("Function") });
+    PUSH_NATIVE("f_print",
         [](std::vector<ir::Mainfold> args) -> ir::Mainfold {
             for (ir::Mainfold arg : args) {
                 if (arg.type == ir::Mainfold::Field) {
@@ -103,12 +85,25 @@ void LoadBuiltInTypes(sa::SymbolTable* table, std::stack<ir::Instruction*>& stac
                 }
             }
 
+            std::cout << "\n";
+
             return { ir::Mainfold::Null };
         }
     );
 }
 
-AstVisitor::AstVisitor() { }
+void AstVisitor::PushScope() {
+    sa::SymbolTable* newTable = new sa::SymbolTable(table);
+    table = newTable;
+}
+
+void AstVisitor::PopScope() {
+    sa::SymbolTable* oldTable = table;
+    table = table->GetParent();
+    delete oldTable;
+}
+
+AstVisitor::AstVisitor() {}
 
 AstVisitor::~AstVisitor() { }
 
@@ -121,22 +116,22 @@ AstVisitor* AstVisitor::Eval(ASTNode *node) {
 
     LoadBuiltInTypes(visitor->table, visitor->stack);
     
-    sa::Symbol* list = node->Accept(visitor);
+    sa::Type* list = node->Accept(visitor);
 
     return visitor;
 }
 
-sa::Symbol* AstVisitor::Visit(ASTNode *node) {
+sa::Type* AstVisitor::Visit(ASTNode *node) {
     std::cout << "ASTNode" << std::endl;
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(ProgramAST *node) {
+sa::Type* AstVisitor::Visit(ProgramAST *node) {
 
     for (auto& stmt : node->statements) {
         if (stmt == nullptr) { continue; }
 
-        sa::Symbol* res = stmt->Accept(this);
+        sa::Type* res = stmt->Accept(this);
 
         if (mError::HasError()) { return {}; }
     }
@@ -144,7 +139,7 @@ sa::Symbol* AstVisitor::Visit(ProgramAST *node) {
     return t_null;
 }
 
-sa::Symbol* AstVisitor::Visit(NumberExprAST *node) {
+sa::Type* AstVisitor::Visit(NumberExprAST *node) {
     if (node->type == NumberExprAST::Type::Int) {
         PUSH_INST(ins(ir::Int, (int) node->value, { }));
         return t_int;
@@ -156,42 +151,49 @@ sa::Symbol* AstVisitor::Visit(NumberExprAST *node) {
     return t_null;
 }
 
-sa::Symbol* AstVisitor::Visit(StringExprAST *node) {
+sa::Type* AstVisitor::Visit(StringExprAST *node) {
     PUSH_INST(ins(ir::String, node->value, { }));
     return t_str;
 }
 
-sa::Symbol* AstVisitor::Visit(BoolExprAST *node) {
+sa::Type* AstVisitor::Visit(BoolExprAST *node) {
     PUSH_INST(ins(ir::Bool, node->value, { }));
     return t_bool;
 }
 
-sa::Symbol* AstVisitor::Visit(NullExprAST *node) {
+sa::Type* AstVisitor::Visit(NullExprAST *node) {
     PUSH_INST(ins(ir::Null, { }));
     return t_null;
 }
 
-sa::Symbol* AstVisitor::Visit(PropertyExprAST *node) {
-    PUSH_INST(ins(ir::Var, node->name, { }));
+sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
     sa::Symbol* sym = table->Get(node->name);
 
+    PUSH_INST(ins(ir::Var, sym->name, { }));
+
     if (sym == nullptr) {
-        mError::AddError("Symbol '" + node->name + "' not found");
-        return t_null;
+        sa::Type* typ = table->GetType(node->name);
+
+        if (typ == nullptr) {
+            mError::AddError("Symbol '" + node->name + "' not found");
+            return t_null;
+        }
+
+        return t_type;
     }
 
     return sym->type;
 }
 
-sa::Symbol* AstVisitor::Visit(IndexExprAST *node) {
+sa::Type* AstVisitor::Visit(IndexExprAST *node) {
     throw std::runtime_error("IndexExprAST not implemented");
     return t_null;
 }
 
-sa::Symbol* AstVisitor::Visit(CallExprAST *node) {
+sa::Type* AstVisitor::Visit(CallExprAST *node) {
     ir::Instruction* inst = ins(ir::Call, { });
 
-    STACK_PUSH(inst);
+    STACK_PUSH_I(inst);
 
     node->property->Accept(this);
 
@@ -207,23 +209,30 @@ sa::Symbol* AstVisitor::Visit(CallExprAST *node) {
 
     STACK_POP();
 
-    PUSH_INST(inst);
 
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(UnaryExprAST *node) {
+sa::Type* AstVisitor::Visit(UnaryExprAST *node) {
     throw std::runtime_error("UnaryExprAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(BinaryExprAST *node) {
+sa::Type* AstVisitor::Visit(BinaryExprAST *node) {
     ir::Instruction* inst = ins(ir::AddI, { });
 
     STACK_PUSH_I(inst);
-    sa::Symbol* lhst = node->lhs->Accept(this);
-    sa::Symbol* rhst = node->rhs->Accept(this);
+    sa::Type* lhst = node->lhs->Accept(this);
+    sa::Type* rhst = node->rhs->Accept(this);
     STACK_POP();
+
+    if (inst->GetArg(0)->GetInstruction() == ir::Var || inst->GetArg(0)->GetInstruction() == ir::Field) {
+        inst->GetArgs()[0] = ins(ir::Val, { inst->GetArg(0) });
+    }
+
+    if (inst->GetArg(1)->GetInstruction() == ir::Var || inst->GetArg(1)->GetInstruction() == ir::Field) {
+        inst->GetArgs()[1] = ins(ir::Val, { inst->GetArg(1) });
+    }
 
     if (
         node->op.type == Token::Type::NotEqual ||
@@ -248,7 +257,7 @@ sa::Symbol* AstVisitor::Visit(BinaryExprAST *node) {
         return t_bool;
     }
 
-    sa::Symbol* type = lhst;
+    sa::Type* type = lhst;
 
     if (IsPrimitive(lhst) && IsPrimitive(rhst)) {
         type = (lhst == t_float || rhst == t_float) ? t_float : t_int;
@@ -319,24 +328,25 @@ sa::Symbol* AstVisitor::Visit(BinaryExprAST *node) {
     return type;
 }
 
-sa::Symbol* AstVisitor::Visit(TernaryExprAST *node) {
-    // TODO: Implement
+sa::Type* AstVisitor::Visit(TernaryExprAST *node) {
+    throw std::runtime_error("TernaryExprAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(ParenExprAST *node) {
+sa::Type* AstVisitor::Visit(ParenExprAST *node) {
     return node->expr->Accept(this);
 }
 
-sa::Symbol* AstVisitor::Visit(ArrayExprAST *node) {
+sa::Type* AstVisitor::Visit(ArrayExprAST *node) {
+    throw std::runtime_error("ArrayExprAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(AccessExprAST *node) {
+sa::Type* AstVisitor::Visit(AccessExprAST *node) {
     ir::Instruction* inst = ins(ir::Field, { });
 
     STACK_PUSH(inst);
-    sa::Symbol* type = node->expr->Accept(this);
+    sa::Type* type = node->expr->Accept(this);
     STACK_POP();
     
     if (type->HasMethod(node->name.value)) {
@@ -363,106 +373,154 @@ sa::Symbol* AstVisitor::Visit(AccessExprAST *node) {
     return t_null;
 }
 
-sa::Symbol* AstVisitor::Visit(AssignmentAST *node) {
+sa::Type* AstVisitor::Visit(AssignmentAST *node) {
     throw std::runtime_error("AssignmentAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(VarDeclarationAST *node) {
-    sa::Symbol* type = node->type->Accept(this);
-    sa::Symbol* value = node->expression->Accept(this);
+sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
+    sa::Type* type = node->type->Accept(this);
+    sa::Type* value = node->expression->Accept(this);
 
     if (type != value) {
         mError::AddError("Type mismatch");
         return {};
     }
 
-    PUSH_INST(ins(ir::Decl, node->identifier.value, { }));
-    table->Set(node->identifier.value, { false, node->isMutable, type });
+    const std::string vname = "v_" + node->identifier.value;
+
+    PUSH_INST(ins(ir::Decl, vname, { }));
+    table->SetSymbol(vname, { node->isMutable, vname, type });
     STACK_PUSH_I(ins(ir::Set, {
-        ins(ir::Var, node->identifier.value, { })
+        ins(ir::Var, vname, { })
     }));
     node->expression->Accept(this);
     STACK_POP();
 
-    return {};
+    return t_null;
 }
 
-sa::Symbol* AstVisitor::Visit(LambdaAST *node) {
+sa::Type* AstVisitor::Visit(LambdaAST *node) {
     throw std::runtime_error("LambdaAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(ArgDeclAST *node) {
+sa::Type* AstVisitor::Visit(ArgDeclAST *node) {
     throw std::runtime_error("ArgDeclAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(BlockAST *node) {
+sa::Type* AstVisitor::Visit(BlockAST *node) {
+    sa::Type* res = t_null;
+
     for (auto& stmt : node->statements) {
         if (stmt == nullptr) { continue; }
 
-        sa::Symbol* res = stmt->Accept(this);
+        res = stmt->Accept(this);
 
         if (mError::HasError()) { return t_null; }
     }
-    return {};
+
+    return res;
 }
 
-sa::Symbol* AstVisitor::Visit(ReturnAST *node) {
+sa::Type* AstVisitor::Visit(ReturnAST *node) {
     throw std::runtime_error("ReturnAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(FunctionAST *node) {
-    throw std::runtime_error("FunctionAST not implemented");
-    return {};
+sa::Type* AstVisitor::Visit(FunctionAST *node) {
+    const std::string fname = "f_" + node->name.value;
+
+    table->SetSymbol(node->name.value, { false, fname, table->GetType("Function") });
+    
+    PUSH_INST(ins(ir::Decl, fname, { }));
+
+    STACK_PUSH_I(ins(ir::Set, {
+        ins(ir::Var, fname, { }),
+    }));
+
+    STACK_PUSH_I(ins(ir::IR, { }));
+
+    PushScope();
+
+    for (int i = 0; i < node->lambda->parameters.size(); i++) {
+        ArgDeclAST* argDecl = (ArgDeclAST*) node->lambda->parameters[i];
+        const std::string argName = "v_" + argDecl->identifier.value;
+        
+        PUSH_INST(ins(ir::Decl, argName, { }));
+        PUSH_INST(ins(ir::Set, {
+            ins(ir::Var, argName, { }),
+            ins(ir::Arg, i, { })
+        }));
+        
+        table->SetSymbol(argDecl->identifier.value, { 
+            false,
+            argName, 
+            argDecl->type->Accept(this)
+        });
+    }
+
+    sa::Type* retsym = node->lambda->body->Accept(this);
+
+    sa::Type* rettype = node->lambda->returnType->Accept(this);
+
+    if (retsym != rettype) {
+        mError::AddError("Function '" + node->name.value + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
+        return {};
+    }
+
+    PopScope();
+    STACK_POP();
+    STACK_POP();
+ 
+    return t_null;
 }
 
-sa::Symbol* AstVisitor::Visit(IfAST* node) {
+sa::Type* AstVisitor::Visit(IfAST* node) {
     throw std::runtime_error("IfAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(WhileAST *node) {
+sa::Type* AstVisitor::Visit(WhileAST *node) {
     throw std::runtime_error("WhileAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(ForAST *node) {
+sa::Type* AstVisitor::Visit(ForAST *node) {
     throw std::runtime_error("ForAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(BreakAST *node) {
+sa::Type* AstVisitor::Visit(BreakAST *node) {
     throw std::runtime_error("BreakAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(ContinueAST *node) {
+sa::Type* AstVisitor::Visit(ContinueAST *node) {
     throw std::runtime_error("ContinueAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(ImportAST *node) {
+sa::Type* AstVisitor::Visit(ImportAST *node) {
     throw std::runtime_error("ImportAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(ExportAST *node) {
+sa::Type* AstVisitor::Visit(ExportAST *node) {
     throw std::runtime_error("ExportAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(ClassAST *node) {
+sa::Type* AstVisitor::Visit(ClassAST *node) {
     throw std::runtime_error("ClassAST not implemented");
     return {};
 }
 
-sa::Symbol* AstVisitor::Visit(TypeSignatureAST *node) {
-    return table->Get(node->name.value);
+sa::Type* AstVisitor::Visit(TypeSignatureAST *node) {
+    return table->GetType(node->name.value);
 }
 
-sa::Symbol* AstVisitor::Visit(TypeAccessAST *node) {
+sa::Type* AstVisitor::Visit(TypeAccessAST *node) {
     return node->lhs->Accept(this);
 }

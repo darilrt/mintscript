@@ -146,6 +146,10 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             };
         }
 
+        case Val: {
+            return *ARG(0).value.mf;
+        }
+
         // Objects
         case New: {
             Object* object = new Object(instruction->value.i);
@@ -245,9 +249,7 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
         }
 
         case Arg: {
-            std::cout << indentStr << "Arg(" << instruction->value.i << ") {" << std::endl;
-            Print(instruction->GetArg(0), indent + 1);
-            std::cout << indentStr << "}" << std::endl;
+            std::cout << indentStr << "Arg(" << instruction->value.i << ")" << std::endl;
             break;
         }
 
@@ -285,6 +287,13 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
             break;
         }
 
+        case Val: {
+            std::cout << indentStr << "Val {" << std::endl;
+            Print(instruction->GetArg(0), indent + 1);
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
         // Objects
 
         case New: {
@@ -298,6 +307,24 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
         }
 
         // Operators
+
+        case AddI: {
+            std::cout << indentStr << "AddI {" << std::endl;
+            Print(instruction->GetArg(0), indent + 1);
+            Print(instruction->GetArg(1), indent + 1);
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        // Literals
+        
+        case Int: { std::cout << indentStr << "Int(" << instruction->value.i << ")" << std::endl; break; }
+        case Float: { std::cout << indentStr << "Float(" << instruction->value.f << ")" << std::endl; break; }
+        case String: { std::cout << indentStr << "String(" << *instruction->value.s << ")" << std::endl; break; }
+        case Bool: { std::cout << indentStr << "Bool(" << instruction->value.b << ")" << std::endl; break; }
+        case Null: { std::cout << indentStr << "Null" << std::endl; break; }
+        
+        default: break;
     }
 }
 

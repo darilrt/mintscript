@@ -20,7 +20,7 @@ namespace ir {
         Call, Return, Arg, Native,
 
         // Variables
-        Decl, Var, Set,
+        Decl, Var, Set, Val,
 
         // Objects
         New, Field,

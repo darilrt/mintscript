@@ -16,6 +16,10 @@ class AstVisitor : public Visitor {
 public:
     std::stack<ir::Instruction*> stack;
     sa::SymbolTable* table;
+
+    void PushScope();
+
+    void PopScope();
     
     AstVisitor();
 
@@ -23,67 +27,67 @@ public:
 
     static AstVisitor* Eval(ASTNode* node);
 
-    sa::Symbol* Visit(ASTNode* node);
+    sa::Type* Visit(ASTNode* node);
 
-    sa::Symbol* Visit(ProgramAST* node);
+    sa::Type* Visit(ProgramAST* node);
 
-    sa::Symbol* Visit(NumberExprAST* node);
+    sa::Type* Visit(NumberExprAST* node);
 
-    sa::Symbol* Visit(StringExprAST* node);
+    sa::Type* Visit(StringExprAST* node);
 
-    sa::Symbol* Visit(BoolExprAST* node);
+    sa::Type* Visit(BoolExprAST* node);
 
-    sa::Symbol* Visit(NullExprAST* node);
+    sa::Type* Visit(NullExprAST* node);
 
-    sa::Symbol* Visit(PropertyExprAST* node);
+    sa::Type* Visit(PropertyExprAST* node);
 
-    sa::Symbol* Visit(IndexExprAST* node);
+    sa::Type* Visit(IndexExprAST* node);
 
-    sa::Symbol* Visit(CallExprAST* node);
+    sa::Type* Visit(CallExprAST* node);
 
-    sa::Symbol* Visit(UnaryExprAST* node);
+    sa::Type* Visit(UnaryExprAST* node);
 
-    sa::Symbol* Visit(BinaryExprAST* node);
+    sa::Type* Visit(BinaryExprAST* node);
 
-    sa::Symbol* Visit(TernaryExprAST* node);
+    sa::Type* Visit(TernaryExprAST* node);
 
-    sa::Symbol* Visit(ParenExprAST* node);
+    sa::Type* Visit(ParenExprAST* node);
 
-    sa::Symbol* Visit(ArrayExprAST* node);
+    sa::Type* Visit(ArrayExprAST* node);
 
-    sa::Symbol* Visit(AccessExprAST* node);
+    sa::Type* Visit(AccessExprAST* node);
 
-    sa::Symbol* Visit(AssignmentAST* node);
+    sa::Type* Visit(AssignmentAST* node);
 
-    sa::Symbol* Visit(VarDeclarationAST* node);
+    sa::Type* Visit(VarDeclarationAST* node);
 
-    sa::Symbol* Visit(LambdaAST* node);
+    sa::Type* Visit(LambdaAST* node);
 
-    sa::Symbol* Visit(ArgDeclAST* node);
+    sa::Type* Visit(ArgDeclAST* node);
 
-    sa::Symbol* Visit(BlockAST* node);
+    sa::Type* Visit(BlockAST* node);
 
-    sa::Symbol* Visit(ReturnAST* node);
+    sa::Type* Visit(ReturnAST* node);
 
-    sa::Symbol* Visit(FunctionAST* node);
+    sa::Type* Visit(FunctionAST* node);
 
-    sa::Symbol* Visit(IfAST* node);
+    sa::Type* Visit(IfAST* node);
 
-    sa::Symbol* Visit(WhileAST* node);
+    sa::Type* Visit(WhileAST* node);
 
-    sa::Symbol* Visit(ForAST* node);
+    sa::Type* Visit(ForAST* node);
 
-    sa::Symbol* Visit(BreakAST* node);
+    sa::Type* Visit(BreakAST* node);
 
-    sa::Symbol* Visit(ContinueAST* node);
+    sa::Type* Visit(ContinueAST* node);
 
-    sa::Symbol* Visit(ImportAST* node);
+    sa::Type* Visit(ImportAST* node);
 
-    sa::Symbol* Visit(ExportAST* node);
+    sa::Type* Visit(ExportAST* node);
 
-    sa::Symbol* Visit(ClassAST* node);
+    sa::Type* Visit(ClassAST* node);
 
-    sa::Symbol* Visit(TypeSignatureAST* node);
+    sa::Type* Visit(TypeSignatureAST* node);
 
-    sa::Symbol* Visit(TypeAccessAST* node);
+    sa::Type* Visit(TypeAccessAST* node);
 };

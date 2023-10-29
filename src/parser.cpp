@@ -490,7 +490,7 @@ ASTNode *Parser::ArgDecl(bool strict) {
     }
     scanner.Next();
 
-    ASTNode *type = Expression();
+    ASTNode *type = Type();
 
     if (type == nullptr) {
         ERROR("SyntaxError: Expected type after ':' " + scanner.Peek().location.ToString());
@@ -1100,7 +1100,7 @@ ASTNode *Parser::Lambda() {
     if (IS(Arrow)) {
         scanner.Next();
 
-        type = Expression();
+        type = Type();
 
         if (type == nullptr) {
             ERROR("SyntaxError: Expected expression after '->'");

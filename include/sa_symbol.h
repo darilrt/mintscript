@@ -4,41 +4,37 @@
 
 namespace sa {
     class SymbolTable;
-    class Symbol;
+    class Type;
 
     class Field {
     public:
         bool isMutable;
         std::string name;
         int offset;
-        Symbol* type;
+        Type* type;
 
         Field() = default;
-        Field(bool isMutable, Symbol* type);
+        Field(bool isMutable, Type* type);
     };
 
     class Method {
     public:
         std::string name;
-        Symbol* type;
+        Type* type;
         SymbolTable* parameters = nullptr;
 
         Method() = default;
-        Method(Symbol* type) { this->type = type; }
+        Method(Type* type) { this->type = type; }
     };
 
-    class Symbol {
+    class Type {
     public:
-        bool isType;
-        bool isMutable;
         std::string name;
-        Symbol* type;
-        
         std::unordered_map<std::string, Method> methods;
         std::unordered_map<std::string, Field> fields;
 
-        Symbol() = default;
-        Symbol(bool isType, bool isMutable, Symbol* type);
+        Type() = default;
+        Type(const std::string& name);
 
         void SetMethod(std::string name, sa::Method symbol);
         
@@ -58,15 +54,21 @@ namespace sa {
         int lastFieldOffset = 0;
     };
 
+    class Symbol {
+    public:
+        bool isMutable;
+        std::string name;
+        Type* type;
+
+        Symbol() = default;
+    };
+
     class SymbolTable {
     public:
         SymbolTable() = default;
         SymbolTable(SymbolTable* parent) { this->parent = parent; }
 
-        inline void Set(std::string name, Symbol symbol) { 
-            symbols[name] = symbol; 
-            symbols[name].name = name;
-        }
+        inline void SetSymbol(std::string name, Symbol symbol) { symbols[name] = symbol; }
 
         Symbol* Get(std::string name);
 
@@ -74,8 +76,13 @@ namespace sa {
 
         inline SymbolTable* GetParent() { return parent; }
 
+        inline void SetType(std::string name, Type symbol) { types[name] = symbol; }
+
+        Type* GetType(std::string name);
+
     private:
         SymbolTable* parent = nullptr;
+        std::unordered_map<std::string, Type> types;
         std::unordered_map<std::string, Symbol> symbols;
     };
 

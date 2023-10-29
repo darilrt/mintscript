@@ -6,7 +6,7 @@ class Eval {
 public:
     Eval(ASTNode* ast) : ast(ast) { }
 
-    sa::Symbol Evaluate();
+    sa::Type Evaluate();
 
 private:
     ASTNode* ast;

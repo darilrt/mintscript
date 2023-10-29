@@ -1,46 +1,44 @@
 #include "sa_symbol.h"
 
-sa::Symbol::Symbol(bool isType, bool isMutable, Symbol *type)  {
-    this->isType = isType;
-    this->isMutable = isMutable;
-    this->type = type;
+sa::Type::Type(const std::string &name) {
+    this->name = name;
 }
 
-void sa::Symbol::SetMethod(std::string name, sa::Method symbol) {
+void sa::Type::SetMethod(std::string name, sa::Method symbol) {
     methods[name] = symbol;
     methods[name].name = name;
 }
 
-sa::Method *sa::Symbol::GetMethod(std::string name)  {
+sa::Method *sa::Type::GetMethod(std::string name)  {
     if (methods.find(name) != methods.end()) {
         return &methods[name];
     }
     return nullptr;
 }
 
-bool sa::Symbol::HasMethod(std::string name) {
+bool sa::Type::HasMethod(std::string name) {
     return methods.find(name) != methods.end();
 }
 
-void sa::Symbol::AddField(std::string name, sa::Field symbol) {
+void sa::Type::AddField(std::string name, sa::Field symbol) {
     fields[name] = symbol;
     fields[name].name = name;
 }
 
-void sa::Symbol::SetField(std::string name, sa::Field symbol) {
+void sa::Type::SetField(std::string name, sa::Field symbol) {
     fields[name] = symbol;
     fields[name].name = name;
     fields[name].offset = lastFieldOffset++;
 }
 
-sa::Field *sa::Symbol::GetField(std::string name) {
+sa::Field *sa::Type::GetField(std::string name) {
     if (fields.find(name) != fields.end()) {
         return &fields[name];
     }
     return nullptr;
 }
 
-bool sa::Symbol::HasField(std::string name) {
+bool sa::Type::HasField(std::string name) {
     return fields.find(name) != fields.end();
 }
 
@@ -53,7 +51,16 @@ sa::Symbol *sa::SymbolTable::Get(std::string name) {
     return nullptr;
 }
 
-sa::Field::Field(bool isMutable, Symbol *type)  {
+sa::Type *sa::SymbolTable::GetType(std::string name) {
+    if (types.find(name) != types.end()) {
+        return &types[name];
+    } else if (parent != nullptr) {
+        return parent->GetType(name);
+    }
+    return nullptr;
+}
+
+sa::Field::Field(bool isMutable, Type *type)  {
     this->isMutable = isMutable;
     this->type = type;
 }
