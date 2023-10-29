@@ -41,3 +41,7 @@ Type "exit()" to exit
 >> print("Hello, World!")
 Hello, World!
 ```
+
+# Documentation
+
+Get started with MintScript by reading the [documentation](MINTSCRIPT.md).
