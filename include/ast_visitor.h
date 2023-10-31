@@ -16,6 +16,7 @@ class AstVisitor : public Visitor {
 public:
     std::stack<ir::Instruction*> stack;
     sa::SymbolTable* table;
+    std::stack<std::string> nameStack;
 
     void PushScope();
 

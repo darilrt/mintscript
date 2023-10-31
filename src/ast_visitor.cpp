@@ -40,7 +40,7 @@ void PrintMainfold(ir::Mainfold mf) {
         case ir::Mainfold::Object: std::cout << "{ object." << mf.value.st << " }"; break;
         case ir::Mainfold::Native: std::cout << "{ native }"; break;
         case ir::Mainfold::Scope: std::cout << "{ scope." << mf.value.ir << " }"; break;
-        default: break;
+        default: std::cout << "Unknown Mainfold type " << mf.type; break;
     }
 }
 
@@ -72,6 +72,17 @@ void LoadBuiltInTypes(sa::SymbolTable* table, std::stack<ir::Instruction*>& stac
     
     table->SetType("null", { "null" });
     t_null = table->GetType("null");
+    
+    t_type->SetMethod("int", { "f_int_int", t_str });
+    PUSH_NATIVE("f_int_int",
+        [](std::vector<ir::Mainfold> args) -> ir::Mainfold {
+            if (args.size() == 1) {
+                return { ir::Mainfold::Int, (int) args[0].value.i };
+            }
+
+            return { ir::Mainfold::Int, 0 };
+        }
+    );
 
     table->SetSymbol("print", { false, "f_print", table->GetType("Function") });
     PUSH_NATIVE("f_print",
@@ -177,11 +188,11 @@ sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
             return t_null;
         }
 
+        PUSH_INST(ins(ir::Var, node->name, { }));
         return t_type;
     }
     
     PUSH_INST(ins(ir::Var, sym->name, { }));
-    
     return sym->type;
 }
 
@@ -195,7 +206,14 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
 
     STACK_PUSH_I(inst);
 
-    node->property->Accept(this);
+    sa::Type* ptype = node->property->Accept(this);
+
+    if (ptype == t_type) {
+        const std::string name = *inst->GetArg(0)->value.s;
+        delete inst->GetArg(0)->value.s;
+        
+        inst->GetArg(0)->value.s = new std::string("f_" + name + "_" + name);
+    }
 
     std::vector<ir::Instruction*>& args = inst->GetArg(0)->GetArgs();
 
@@ -204,13 +222,17 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
     }
 
     for (auto arg : node->args) {
-        arg->Accept(this);
+        sa::Type* type = arg->Accept(this);
+
+        if (type == t_type) {
+            mError::AddError("Cannot pass type as argument");
+            return t_null;
+        }
     }
 
     STACK_POP();
 
-
-    return {};
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(UnaryExprAST *node) {
@@ -430,7 +452,8 @@ sa::Type* AstVisitor::Visit(ReturnAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(FunctionAST *node) {
-    const std::string fname = "f_" + node->name.value;
+    const std::string parentName = nameStack.size() > 0 ? nameStack.top() + "_" : "";
+    const std::string fname = "f_" + parentName + node->name.value;
 
     table->SetSymbol(node->name.value, { false, fname, table->GetType("Function") });
     
@@ -444,7 +467,24 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 
     PushScope();
 
-    for (int i = 0; i < node->lambda->parameters.size(); i++) {
+    int i = 0;
+
+    if (parentName != "" && nameStack.top() == node->name.value) {
+        sa::Type* clazz = table->GetType(nameStack.top());
+        PUSH_INST(ins(ir::Decl, "v_this", { }));
+        PUSH_INST(ins(ir::Set, {
+            ins(ir::Var, "v_this", { }),
+            ins(ir::New, (int) clazz->fields.size(), { })
+        }));
+
+        table->SetSymbol("this", { 
+            false,
+            "v_this",
+            clazz
+        });
+    }
+
+    for (; i < node->lambda->parameters.size(); i++) {
         ArgDeclAST* argDecl = (ArgDeclAST*) node->lambda->parameters[i];
         const std::string argName = "v_" + argDecl->identifier.value;
         
@@ -460,8 +500,12 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
             argDecl->type->Accept(this)
         });
     }
-    
+
     sa::Type* retsym = node->lambda->body->Accept(this);
+    
+    if (parentName != "" && nameStack.top() == node->name.value) {
+        PUSH_INST(ins(ir::Var, "v_this", { }));
+    }
 
     if (node->lambda->returnType) {
         sa::Type* rettype = node->lambda->returnType->Accept(this);
@@ -515,8 +559,19 @@ sa::Type* AstVisitor::Visit(ExportAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(ClassAST *node) {
-    throw std::runtime_error("ClassAST not implemented");
-    return {};
+    table->SetType(node->name.value, { node->name.value });
+
+    nameStack.push(node->name.value);
+
+    for (auto& stmt : node->statements) {
+        if (stmt == nullptr) { continue; }
+
+        sa::Type* res = stmt->Accept(this);
+    }
+
+    nameStack.pop();
+
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(TypeSignatureAST *node) {

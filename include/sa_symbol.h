@@ -25,6 +25,7 @@ namespace sa {
 
         Method() = default;
         Method(Type* type) { this->type = type; }
+        Method(std::string name, Type* type) { this->name = name; this->type = type; }
     };
 
     class Type {
