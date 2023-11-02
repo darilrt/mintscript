@@ -1,5 +1,8 @@
 #include "sa_symbol.h"
 
+sa::Type::Type() {
+}
+
 sa::Type::Type(const std::string &name) {
     this->name = name;
 }
@@ -56,6 +59,19 @@ sa::Type *sa::SymbolTable::GetType(std::string name) {
         return &types[name];
     } else if (parent != nullptr) {
         return parent->GetType(name);
+    }
+    return nullptr;
+}
+
+sa::Type *sa::SymbolTable::GetTypeVariant(std::string name, std::vector<sa::Type*> _types) {
+    if (types.find(name) != types.end()) {
+        sa::Type* type = &types[name];
+
+        if (type->variants.find(_types) != type->variants.end()) {
+            return &type->variants[_types];
+        }
+    } else if (parent != nullptr) {
+        return parent->GetTypeVariant(name, _types);
     }
     return nullptr;
 }

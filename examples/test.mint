@@ -8,6 +8,7 @@ class Animal {
     Eat() {
         print("Animal eat")
     }
+    
 }
 
 let a: Animal = Animal()

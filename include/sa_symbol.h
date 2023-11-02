@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <string>
+#include <vector>
 
 namespace sa {
     class SymbolTable;
@@ -33,8 +34,9 @@ namespace sa {
         std::string name;
         std::unordered_map<std::string, Method> methods;
         std::unordered_map<std::string, Field> fields;
+        std::unordered_map<std::vector<Type*>, Type> variants;
 
-        Type() = default;
+        Type();
         Type(const std::string& name);
 
         void SetMethod(std::string name, sa::Method symbol);
@@ -80,6 +82,8 @@ namespace sa {
         inline void SetType(std::string name, Type symbol) { types[name] = symbol; }
 
         Type* GetType(std::string name);
+
+        Type* GetTypeVariant(std::string name, std::vector<sa::Type*> types);
 
     private:
         SymbolTable* parent = nullptr;
