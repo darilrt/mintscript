@@ -19,11 +19,13 @@
 #define ins new ir::Instruction
 
 static sa::Type *t_null = nullptr,
-                  *t_int = nullptr,
-                  *t_float = nullptr,
-                  *t_str = nullptr,
-                  *t_bool = nullptr,
-                  *t_type = nullptr;
+                *t_int = nullptr,
+                *t_float = nullptr,
+                *t_str = nullptr,
+                *t_bool = nullptr,
+                *t_type = nullptr,
+                *t_function = nullptr,
+                *t_void = nullptr;
 
 inline bool IsPrimitive(sa::Type* type) {
     return type == t_int || type == t_float || type == t_str || type == t_bool;
@@ -57,6 +59,7 @@ void LoadBuiltInTypes(sa::SymbolTable* table, std::stack<ir::Instruction*>& stac
     t_type = table->GetType("Type");
     
     table->SetType("Function", { "Function" });
+    t_function = table->GetType("Function");
     
     table->SetType("int", { "int" });
     t_int = table->GetType("int");
@@ -72,19 +75,11 @@ void LoadBuiltInTypes(sa::SymbolTable* table, std::stack<ir::Instruction*>& stac
     
     table->SetType("null", { "null" });
     t_null = table->GetType("null");
-    
-    t_type->SetMethod("int", { "f_int_int", t_str });
-    PUSH_NATIVE("f_int_int",
-        [](std::vector<ir::Mainfold> args) -> ir::Mainfold {
-            if (args.size() == 1) {
-                return { ir::Mainfold::Int, (int) args[0].value.i };
-            }
 
-            return { ir::Mainfold::Int, 0 };
-        }
-    );
+    table->SetType("void", { "void" });
+    t_void = table->GetType("void");
 
-    table->SetSymbol("print", { false, "f_print", table->GetType("Function") });
+    table->SetSymbol("print", { false, "f_print", t_function->GetVariant({ t_void }) });
     PUSH_NATIVE("f_print",
         [](std::vector<ir::Mainfold> args) -> ir::Mainfold {
             for (ir::Mainfold arg : args) {
@@ -207,12 +202,22 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
     STACK_PUSH_I(inst);
 
     sa::Type* ptype = node->property->Accept(this);
+    sa::Type* type = t_null;
 
     if (ptype == t_type) {
         const std::string name = *inst->GetArg(0)->value.s;
-        delete inst->GetArg(0)->value.s;
-        
-        inst->GetArg(0)->value.s = new std::string("f_" + name + "_" + name);
+        type = table->GetType(name);
+
+        if (type == nullptr) {
+            mError::AddError("Type '" + name + "' not found");
+            return t_null;
+        }
+
+        inst->SetInstruction(ir::New);
+        inst->value.i = (int) type->fields.size();
+    }
+    else if (ptype->IsVariantOf(table->GetType("Function"))) {
+        type = ptype->typeParameters[0];
     }
 
     std::vector<ir::Instruction*>& args = inst->GetArg(0)->GetArgs();
@@ -232,7 +237,7 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
 
     STACK_POP();
 
-    return t_null;
+    return type;
 }
 
 sa::Type* AstVisitor::Visit(UnaryExprAST *node) {
@@ -402,12 +407,6 @@ sa::Type* AstVisitor::Visit(AssignmentAST *node) {
 
 sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
     sa::Type* type = node->type->Accept(this);
-    sa::Type* value = node->expression->Accept(this);
-
-    if (type != value) {
-        mError::AddError("Type mismatch");
-        return {};
-    }
 
     const std::string vname = "v_" + node->identifier.value;
 
@@ -416,7 +415,14 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
     STACK_PUSH_I(ins(ir::Set, {
         ins(ir::Var, vname, { })
     }));
-    node->expression->Accept(this);
+    
+    sa::Type* value = node->expression->Accept(this);
+
+    if (type != value) {
+        mError::AddError("Type mismatch");
+        return {};
+    }
+
     STACK_POP();
 
     return t_null;
@@ -455,7 +461,36 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
     const std::string parentName = nameStack.size() > 0 ? nameStack.top() + "_" : "";
     const std::string fname = "f_" + parentName + node->name.value;
 
-    table->SetSymbol(node->name.value, { false, fname, table->GetType("Function") });
+    sa::Type* clazz = t_null;
+
+    if (parentName != "" && nameStack.top() == node->name.value) {
+        clazz = table->GetType(nameStack.top());
+        
+        if (clazz == nullptr) {
+            mError::AddError("Class '" + nameStack.top() + "' not found");
+            return t_null;
+        }
+
+        table->SetSymbol(node->name.value, { 
+            false, 
+            fname,
+            table->GetTypeVariant("Function", { clazz })
+        });
+
+        if (node->lambda->returnType) {
+            mError::AddError("Constructor cannot have return type");
+            return t_null;
+        }
+    }
+    else {
+        table->SetSymbol(node->name.value, { 
+            false, 
+            fname, 
+            table->GetTypeVariant("Function", { 
+                node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null
+            })
+        });
+    }
     
     PUSH_INST(ins(ir::Decl, fname, { }));
 
@@ -470,7 +505,6 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
     int i = 0;
 
     if (parentName != "" && nameStack.top() == node->name.value) {
-        sa::Type* clazz = table->GetType(nameStack.top());
         PUSH_INST(ins(ir::Decl, "v_this", { }));
         PUSH_INST(ins(ir::Set, {
             ins(ir::Var, "v_this", { }),

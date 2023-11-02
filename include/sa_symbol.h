@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
+#include <list>
 
 namespace sa {
     class SymbolTable;
@@ -34,10 +35,13 @@ namespace sa {
         std::string name;
         std::unordered_map<std::string, Method> methods;
         std::unordered_map<std::string, Field> fields;
-        std::unordered_map<std::vector<Type*>, Type> variants;
+        std::vector<Type*> variants;
+        std::vector<Type*> typeParameters;
+        Type* parent = nullptr;
 
         Type();
         Type(const std::string& name);
+        ~Type() = default;
 
         void SetMethod(std::string name, sa::Method symbol);
         
@@ -52,6 +56,12 @@ namespace sa {
         sa::Field* GetField(std::string name);
 
         bool HasField(std::string name);
+
+        bool IsVariantOf(Type* type);
+
+        Type* GetVariant(std::vector<sa::Type*> types);
+
+        std::string ToString();
 
     private:
         int lastFieldOffset = 0;

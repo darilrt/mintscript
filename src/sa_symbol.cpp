@@ -1,6 +1,9 @@
 #include "sa_symbol.h"
 
+#include <iostream>
+
 sa::Type::Type() {
+    name = "";
 }
 
 sa::Type::Type(const std::string &name) {
@@ -45,6 +48,54 @@ bool sa::Type::HasField(std::string name) {
     return fields.find(name) != fields.end();
 }
 
+bool sa::Type::IsVariantOf(Type *type) {
+    if (this == type) {
+        return true;
+    }
+    if (parent != nullptr) {
+        return parent == type || parent->IsVariantOf(type);
+    }
+    return false;
+}
+
+sa::Type* sa::Type::GetVariant(std::vector<sa::Type*> types) {
+    for (sa::Type* variant : variants) {
+        bool match = true;
+        for (int i = 0; i < variant->typeParameters.size(); i++) {
+            if (variant->typeParameters[i] != types[i]) {
+                match = false;
+                break;
+            }
+        }
+        if (match) {
+            return variant;
+        }
+    }
+
+    sa::Type* variant = new sa::Type();
+    variant->name = name;
+    variant->typeParameters = types;
+    variant->parent = this;
+    variants.push_back(variant);
+
+    return variant;
+}
+
+std::string sa::Type::ToString() {
+    std::string str = name;
+    if (typeParameters.size() > 0) {
+        str += "[";
+        for (int i = 0; i < typeParameters.size(); i++) {
+            if (i > 0) {
+                str += ", ";
+            }
+            str += typeParameters[i]->ToString();
+        }
+        str += "]";
+    }
+    return str;
+}
+
 sa::Symbol *sa::SymbolTable::Get(std::string name) {
     if (symbols.find(name) != symbols.end()) {
         return &symbols[name];
@@ -65,11 +116,7 @@ sa::Type *sa::SymbolTable::GetType(std::string name) {
 
 sa::Type *sa::SymbolTable::GetTypeVariant(std::string name, std::vector<sa::Type*> _types) {
     if (types.find(name) != types.end()) {
-        sa::Type* type = &types[name];
-
-        if (type->variants.find(_types) != type->variants.end()) {
-            return &type->variants[_types];
-        }
+        return types[name].GetVariant(_types);
     } else if (parent != nullptr) {
         return parent->GetTypeVariant(name, _types);
     }
