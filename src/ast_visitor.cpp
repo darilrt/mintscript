@@ -219,6 +219,10 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
     else if (ptype->IsVariantOf(table->GetType("Function"))) {
         type = ptype->typeParameters[0];
     }
+    else {
+        mError::AddError("Cannot call '" + ptype->name + "'");
+        return t_null;
+    }
 
     std::vector<ir::Instruction*>& args = inst->GetArg(0)->GetArgs();
 
@@ -411,7 +415,7 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
     const std::string vname = "v_" + node->identifier.value;
 
     PUSH_INST(ins(ir::Decl, vname, { }));
-    table->SetSymbol(vname, { node->isMutable, vname, type });
+    table->SetSymbol(node->identifier.value, { node->isMutable, vname, type });
     STACK_PUSH_I(ins(ir::Set, {
         ins(ir::Var, vname, { })
     }));
