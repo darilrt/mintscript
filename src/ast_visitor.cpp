@@ -467,7 +467,7 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 
     sa::Type* clazz = t_null;
 
-    if (parentName != "" && nameStack.top() == node->name.value) {
+    if (parentName != "") {
         clazz = table->GetType(nameStack.top());
         
         if (clazz == nullptr) {
@@ -475,11 +475,19 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
             return t_null;
         }
 
-        table->SetSymbol(node->name.value, { 
-            false, 
-            fname,
-            table->GetTypeVariant("Function", { clazz })
-        });
+        if (nameStack.top() == node->name.value) {
+            table->SetSymbol(node->name.value, { 
+                false, 
+                fname,
+                table->GetTypeVariant("Function", { clazz })
+            });
+        }
+        else {
+            clazz->SetMethod(
+                node->name.value,
+                { fname, table->GetTypeVariant("Function", { clazz }) }
+            );
+        }
 
         if (node->lambda->returnType) {
             mError::AddError("Constructor cannot have return type");

@@ -12,7 +12,6 @@ sa::Type::Type(const std::string &name) {
 
 void sa::Type::SetMethod(std::string name, sa::Method symbol) {
     methods[name] = symbol;
-    methods[name].name = name;
 }
 
 sa::Method *sa::Type::GetMethod(std::string name)  {
