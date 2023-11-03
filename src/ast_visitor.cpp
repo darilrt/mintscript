@@ -387,6 +387,7 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
         return method->type;
     }
     else if (type->HasField(node->name.value)) {
+        std::cout << inst->GetArg(0)->value.s << std::endl;
         sa::Field* field = type->GetField(node->name.value);
         PUSH_INST(ins(
             ir::Field,
@@ -405,11 +406,52 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(AssignmentAST *node) {
-    throw std::runtime_error("AssignmentAST not implemented");
+    ir::Instruction* inst = ins(ir::Set, { });
+
+    STACK_PUSH_I(inst);
+    sa::Type* type = node->declaration->Accept(this);
+    sa::Type* expr = node->expression->Accept(this);
+
+    if (type != expr) {
+        mError::AddError("Type mismatch");
+        return {};
+    }
+    STACK_POP();
+
     return {};
 }
 
 sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
+    const std::string parentName = nameStack.size() > 0 ? nameStack.top() + "_" : "";
+
+    sa::Type* clazz = t_null;
+
+    if (parentName != "") {
+        clazz = table->GetType(nameStack.top());
+        
+        if (clazz == nullptr) {
+            mError::AddError("Class '" + nameStack.top() + "' not found");
+            return t_null;
+        }
+
+        clazz->SetField(node->identifier.value, { node->isMutable, node->type->Accept(this) });
+
+        if (node->expression) {
+            sa::Type* value = node->expression->Accept(this);
+
+            if (clazz->GetField(node->identifier.value)->type != value) {
+                mError::AddError("Type mismatch");
+                return {};
+            }
+        }
+        else if (!node->isMutable) {
+            mError::AddError("Cannot declare immutable variable without value");
+            return {};
+        }
+
+        return t_null;
+    }
+
     sa::Type* type = node->type->Accept(this);
 
     const std::string vname = "v_" + node->identifier.value;
@@ -525,11 +567,13 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 
     int i = 0;
 
-    if (parentName != "" && nameStack.top() == node->name.value) {
+    if (parentName != "") {
         PUSH_INST(ins(ir::Decl, "v_this", { }));
         PUSH_INST(ins(ir::Set, {
             ins(ir::Var, "v_this", { }),
-            ins(ir::New, (int) clazz->fields.size(), { })
+            nameStack.top() == node->name.value ? 
+                ins(ir::New, (int) clazz->fields.size(), { }) : 
+                ins(ir::Arg, i++, { })
         }));
 
         table->SetSymbol("this", { 
@@ -630,7 +674,14 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(TypeSignatureAST *node) {
-    return table->GetType(node->name.value);
+    sa::Type* type = table->GetType(node->name.value);
+
+    if (type == nullptr) {
+        mError::AddError("Invalid type '" + node->name.value + "'");
+        return t_null;
+    }
+    
+    return type;
 }
 
 sa::Type* AstVisitor::Visit(TypeAccessAST *node) {

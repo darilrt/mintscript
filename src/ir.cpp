@@ -32,9 +32,6 @@ ir::Instruction::Instruction(Type instruction, Mainfold (*value)(std::vector<Mai
 }
 
 ir::Instruction::~Instruction() {
-    for (int i = 0; i < args.size(); i++) {
-        delete args[i];
-    }
 }
 
 #define ARG(i) Interpret(instruction->GetArg(i))
@@ -302,7 +299,9 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
         }
 
         case Field: {
-            std::cout << indentStr << "Field(" << instruction->value.i << ") { "  << " }" << std::endl;
+            std::cout << indentStr << "Field(" << instruction->value.i << ") { \n";
+            Print(instruction->GetArg(0), indent + 1);
+            std::cout << indentStr << "}" << std::endl;
             break;
         }
 
