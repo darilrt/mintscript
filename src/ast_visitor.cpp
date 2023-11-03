@@ -420,11 +420,20 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
         ins(ir::Var, vname, { })
     }));
     
-    sa::Type* value = node->expression->Accept(this);
+    if (node->expression) {
+        sa::Type* value = node->expression->Accept(this);
 
-    if (type != value) {
-        mError::AddError("Type mismatch");
+        if (type != value) {
+            mError::AddError("Type mismatch");
+            return {};
+        }
+    }
+    else if (!node->isMutable) {
+        mError::AddError("Cannot declare immutable variable without value");
         return {};
+    }
+    else {
+        PUSH_INST(ins(ir::Null, { }));
     }
 
     STACK_POP();
