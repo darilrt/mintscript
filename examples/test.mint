@@ -2,18 +2,15 @@
 class Animal {
     mut name: str
 
-    SayHello() {
-        print(this.name)
+    Animal(name: str) {
+        this.name = name
     }
 
+    Speak() {
+        print(this.name)
+    }
 }
 
-Hello(b: Animal) {
-    print(b.name)
-}
+let a: Animal = Animal("Hello")
 
-let a: Animal = Animal()
-
-a.name = "Dog"
-
-Hello(a)
+a.Speak()

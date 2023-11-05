@@ -213,8 +213,15 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
             return t_null;
         }
 
-        inst->SetInstruction(ir::New);
-        inst->value.i = (int) type->fields.size();
+        if (type->HasMethod(name)) {
+            delete inst->GetArg(0)->value.s;
+            inst->GetArg(0)->value.s = new std::string(type->GetMethod(name)->name);
+            inst->GetArgs().push_back(ins(ir::New, (int) type->fields.size(), { }));
+        }
+        else {
+            inst->SetInstruction(ir::New);
+            inst->value.i = (int) type->fields.size();
+        }
     }
     else if (ptype->IsVariantOf(table->GetType("Function"))) {
         type = ptype->typeParameters[0];
@@ -527,16 +534,17 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
         }
 
         if (nameStack.top() == node->name.value) {
-            table->SetSymbol(node->name.value, { 
-                false, 
-                fname,
-                table->GetTypeVariant("Function", { clazz })
-            });
+            clazz->SetMethod(
+                node->name.value,
+                { fname, table->GetTypeVariant("Function", { clazz }) }
+            );
         }
         else {
             clazz->SetMethod(
                 node->name.value,
-                { fname, table->GetTypeVariant("Function", { clazz }) }
+                { fname, table->GetTypeVariant("Function", {
+                    node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null
+                }) }
             );
         }
 
@@ -571,9 +579,7 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
         PUSH_INST(ins(ir::Decl, "v_this", { }));
         PUSH_INST(ins(ir::Set, {
             ins(ir::Var, "v_this", { }),
-            nameStack.top() == node->name.value ? 
-                ins(ir::New, (int) clazz->fields.size(), { }) : 
-                ins(ir::Arg, i++, { })
+            ins(ir::Arg, i++, { })
         }));
 
         table->SetSymbol("this", { 

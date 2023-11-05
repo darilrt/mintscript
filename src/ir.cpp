@@ -66,6 +66,10 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
                 for (int i = 1; i < args.size(); i++) {
                     argv[i - 1] = Interpret(args[i]);
+
+                    if (argv[i - 1].type == Mainfold::Field) {
+                        argv[i - 1] = *argv[i - 1].value.mf;
+                    }
                 }
 
                 stack.push(argv);
@@ -88,7 +92,9 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             return { Mainfold::Null };
         }
 
-        case Arg: { return stack.top()[instruction->value.i]; }
+        case Arg: {
+            return stack.top()[instruction->value.i]; 
+        }
 
         case Scope: {
             SymbolTable* scope = new SymbolTable(context.GetCurrent());
