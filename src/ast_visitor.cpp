@@ -668,10 +668,28 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
 
     nameStack.push(node->name.value);
 
+
+
     for (auto& stmt : node->statements) {
         if (stmt == nullptr) { continue; }
 
-        sa::Type* res = stmt->Accept(this);
+        VarDeclarationAST* varDecl = dynamic_cast<VarDeclarationAST*>(stmt);
+
+        if (varDecl != nullptr) { // Field
+            
+
+            continue;
+        }
+        
+        FunctionAST* funcDecl = dynamic_cast<FunctionAST*>(stmt);
+        
+        if (varDecl != nullptr) { // Method
+
+            continue;
+        }
+        
+        mError::AddError("Invalid statement in class '" + node->name.value + "'");
+        return t_null;
     }
 
     nameStack.pop();
