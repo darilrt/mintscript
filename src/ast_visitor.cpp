@@ -474,7 +474,7 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
 
         if (type != value) {
             mError::AddError("Type mismatch");
-            return {};
+            return t_null;
         }
     }
     else if (!node->isMutable) {
@@ -665,10 +665,9 @@ sa::Type* AstVisitor::Visit(ExportAST *node) {
 
 sa::Type* AstVisitor::Visit(ClassAST *node) {
     table->SetType(node->name.value, { node->name.value });
+    sa::Type* type = table->GetType(node->name.value);
 
     nameStack.push(node->name.value);
-
-
 
     for (auto& stmt : node->statements) {
         if (stmt == nullptr) { continue; }
@@ -676,20 +675,107 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
         VarDeclarationAST* varDecl = dynamic_cast<VarDeclarationAST*>(stmt);
 
         if (varDecl != nullptr) { // Field
-            
+            const std::string fieldName = varDecl->identifier.value;
+
+            type->SetField(fieldName, { varDecl->isMutable, varDecl->type->Accept(this) });
 
             continue;
         }
         
         FunctionAST* funcDecl = dynamic_cast<FunctionAST*>(stmt);
         
-        if (varDecl != nullptr) { // Method
+        if (funcDecl != nullptr) { // Method
+            const std::string methodName = funcDecl->name.value;
+
+            type->SetMethod(
+                methodName, 
+                { 
+                    "f_" + type->name + "_" + methodName, 
+                    table->GetTypeVariant("Function", { 
+                        type->name == methodName ? 
+                            type :
+                            funcDecl->lambda->returnType ? funcDecl->lambda->returnType->Accept(this) : t_null 
+                    })
+                }
+            );
 
             continue;
         }
         
         mError::AddError("Invalid statement in class '" + node->name.value + "'");
         return t_null;
+    }
+
+    for (auto& stmt : node->statements) {
+        if (stmt == nullptr) { continue; }
+
+        FunctionAST* funcDecl = dynamic_cast<FunctionAST*>(stmt);
+        
+        if (funcDecl != nullptr) { // Method
+            const std::string methodName = funcDecl->name.value;
+
+            sa::Method* method = type->GetMethod(methodName);
+
+            std::string fname = "f_" + type->name + "_" + methodName;
+
+            PUSH_INST(ins(ir::Decl, fname, { }));
+            STACK_PUSH_I(ins(ir::Set, {
+                ins(ir::Var, fname, { }),
+            }));
+            STACK_PUSH_I(ins(ir::IR, { }));
+            PushScope();
+
+            int i = 0;
+
+            table->SetSymbol("this", { 
+                false,
+                "v_this",
+                type
+            });
+
+            PUSH_INST(ins(ir::Decl, "v_this", { }));
+            PUSH_INST(ins(ir::Set, {
+                ins(ir::Var, "v_this", { }),
+                ins(ir::Arg, i++, { })
+            }));
+
+            for (; i <= funcDecl->lambda->parameters.size(); i++) {
+                ArgDeclAST* argDecl = (ArgDeclAST*) funcDecl->lambda->parameters[i - 1];
+                const std::string argName = "v_" + argDecl->identifier.value;
+                
+                table->SetSymbol(argDecl->identifier.value, { 
+                    false,
+                    argName, 
+                    argDecl->type->Accept(this)
+                });
+
+                PUSH_INST(ins(ir::Decl, argName, { }));
+                PUSH_INST(ins(ir::Set, {
+                    ins(ir::Var, argName, { }),
+                    ins(ir::Arg, i, { })
+                }));
+            }
+
+            sa::Type* retsym = funcDecl->lambda->body->Accept(this);
+
+            if (funcDecl->lambda->returnType) {
+                sa::Type* rettype = method->type;
+
+                if (retsym != rettype) {
+                    mError::AddError("Function '" + methodName + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
+                    return t_null;
+                }
+            }
+
+            if (type->name == methodName) {
+                PUSH_INST(ins(ir::Var, "v_this", { }));
+            }
+
+            PopScope();
+            STACK_POP();
+            STACK_POP();
+
+        }
     }
 
     nameStack.pop();

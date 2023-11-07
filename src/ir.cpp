@@ -66,10 +66,6 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
                 for (int i = 1; i < args.size(); i++) {
                     argv[i - 1] = Interpret(args[i]);
-
-                    if (argv[i - 1].type == Mainfold::Field) {
-                        argv[i - 1] = *argv[i - 1].value.mf;
-                    }
                 }
 
                 stack.push(argv);
@@ -135,6 +131,10 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         case Set: {
             Mainfold* mf = ARG(0).value.mf;
             Mainfold value = ARG(1);
+
+            if (value.type == Mainfold::Field) {
+                value = *value.value.mf;
+            }
             
             mf->type = value.type;
             mf->value = value.value;
