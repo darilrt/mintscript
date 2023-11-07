@@ -1,16 +1,11 @@
+print("Start")
 
-class Animal {
-    mut name: str
-
-    Animal(name: str) {
-        this.name = name
-    }
-
-    Speak() {
-        print(this.name)
-    }
+if 0 {
+    print("if")
 }
-
-let a: Animal = Animal("Hello")
-
-a.Speak()
+elif 0 {
+    print("elif")
+}
+else {
+    print("else")
+}

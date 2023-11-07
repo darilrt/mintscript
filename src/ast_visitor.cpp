@@ -394,7 +394,6 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
         return method->type;
     }
     else if (type->HasField(node->name.value)) {
-        std::cout << inst->GetArg(0)->value.s << std::endl;
         sa::Field* field = type->GetField(node->name.value);
         PUSH_INST(ins(
             ir::Field,
@@ -629,8 +628,74 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(IfAST* node) {
-    throw std::runtime_error("IfAST not implemented");
-    return {};
+    STACK_PUSH_I(ins(ir::If, { }));
+
+    sa::Type* type = node->condition->Accept(this);
+
+    // Add body {
+    STACK_PUSH_I(ins(ir::Scope, { }));
+    PushScope();
+
+    sa::Type* res = node->body->Accept(this);
+
+    if (mError::HasError()) { return t_null; }
+
+    PopScope();
+    STACK_POP();
+    // }
+
+    // Add else {
+    if (node->elseIfs.size() == 0 && node->elseBody != nullptr) {
+        STACK_PUSH_I(ins(ir::Scope, { }));
+        PushScope();
+
+        sa::Type* res = node->elseBody->Accept(this);
+
+        if (mError::HasError()) { return t_null; }
+
+        PopScope();
+        STACK_POP();
+    }
+
+    if (node->elseIfs.size() > 0) {
+        ir::Instruction* _if = STACK_TOP;
+
+        for (auto elif : node->elseIfs) {
+            STACK_PUSH_I(ins(ir::If, { }));
+            _if = STACK_TOP;
+
+            sa::Type* type = elif->condition->Accept(this);
+
+            // Add body {
+            STACK_PUSH_I(ins(ir::Scope, { }));
+            PushScope();
+
+            sa::Type* res = elif->body->Accept(this);
+
+            if (mError::HasError()) { return t_null; }
+
+            PopScope();
+            STACK_POP();
+            STACK_POP();
+        }
+
+        if (node->elseBody) {
+            STACK_PUSH(_if);
+            STACK_PUSH_I(ins(ir::Scope, { }));
+            PushScope();
+
+            sa::Type* res = node->elseBody->Accept(this);
+
+            if (mError::HasError()) { return t_null; }
+
+            PopScope();
+            STACK_POP();
+            STACK_POP();
+        }
+    }
+
+    STACK_POP();
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(WhileAST *node) {
