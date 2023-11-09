@@ -13,7 +13,7 @@ namespace ir {
 
         // Control flow
         Scope,
-        While, Break, Continue,
+        Loop, Break, Continue,
         If,
 
         // Functions

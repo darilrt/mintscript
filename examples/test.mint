@@ -1,17 +1,6 @@
-print("Start")
+mut i: int = 10
 
-if 0 {
-    print("if")
-}
-elif 0 {
-    print("elif")
-}
-elif 0 {
-    print("elif 2")
-}
-elif 0 {
-    print("elif 2")
-}
-else {
-    print("else")
+while i >= 0 {
+    print(i)
+    i = i - 1
 }

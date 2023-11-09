@@ -55,6 +55,16 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             return ret;
         }
 
+        case Loop: {
+            Mainfold ret = { Mainfold::Null };
+
+            while (ARG(0).value.b) {
+                ret = Interpret(instruction->GetArg(1));
+            }
+
+            return ret;
+        }
+
         case Call: {
             Mainfold name = ARG(0);
 
@@ -237,6 +247,14 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
             if (instruction->GetArgs().size() > 2) {
                 Print(instruction->GetArg(2), indent + 1);
             }
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        case Loop: {
+            std::cout << indentStr << "Loop {" << std::endl;
+            Print(instruction->GetArg(0), indent + 1);
+            Print(instruction->GetArg(1), indent + 1);
             std::cout << indentStr << "}" << std::endl;
             break;
         }

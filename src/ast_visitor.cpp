@@ -697,8 +697,25 @@ sa::Type* AstVisitor::Visit(IfAST* node) {
 }
 
 sa::Type* AstVisitor::Visit(WhileAST *node) {
-    throw std::runtime_error("WhileAST not implemented");
-    return {};
+
+    STACK_PUSH_I(ins(ir::Loop, { }));
+
+    sa::Type* type = node->condition->Accept(this);
+
+    // Add body {
+    STACK_PUSH_I(ins(ir::Scope, { }));
+    PushScope();
+
+    sa::Type* res = node->body->Accept(this);
+
+    if (mError::HasError()) { return t_null; }
+
+    PopScope();
+    STACK_POP();
+
+    STACK_POP();
+
+    return res;
 }
 
 sa::Type* AstVisitor::Visit(ForAST *node) {
