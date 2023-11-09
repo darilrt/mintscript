@@ -658,11 +658,8 @@ sa::Type* AstVisitor::Visit(IfAST* node) {
     }
 
     if (node->elseIfs.size() > 0) {
-        ir::Instruction* _if = STACK_TOP;
-
         for (auto elif : node->elseIfs) {
             STACK_PUSH_I(ins(ir::If, { }));
-            _if = STACK_TOP;
 
             sa::Type* type = elif->condition->Accept(this);
 
@@ -676,11 +673,9 @@ sa::Type* AstVisitor::Visit(IfAST* node) {
 
             PopScope();
             STACK_POP();
-            STACK_POP();
         }
-
+        
         if (node->elseBody) {
-            STACK_PUSH(_if);
             STACK_PUSH_I(ins(ir::Scope, { }));
             PushScope();
 
@@ -690,6 +685,9 @@ sa::Type* AstVisitor::Visit(IfAST* node) {
 
             PopScope();
             STACK_POP();
+        }
+
+        for (auto elif : node->elseIfs) {
             STACK_POP();
         }
     }
