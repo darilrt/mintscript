@@ -519,48 +519,15 @@ sa::Type* AstVisitor::Visit(ReturnAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(FunctionAST *node) {
-    const std::string parentName = nameStack.size() > 0 ? nameStack.top() + "_" : "";
-    const std::string fname = "f_" + parentName + node->name.value;
+    const std::string fname = "f_" + node->name.value;
 
-    sa::Type* clazz = t_null;
-
-    if (parentName != "") {
-        clazz = table->GetType(nameStack.top());
-        
-        if (clazz == nullptr) {
-            mError::AddError("Class '" + nameStack.top() + "' not found");
-            return t_null;
-        }
-
-        if (nameStack.top() == node->name.value) {
-            clazz->SetMethod(
-                node->name.value,
-                { fname, table->GetTypeVariant("Function", { clazz }) }
-            );
-        }
-        else {
-            clazz->SetMethod(
-                node->name.value,
-                { fname, table->GetTypeVariant("Function", {
-                    node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null
-                }) }
-            );
-        }
-
-        if (node->lambda->returnType) {
-            mError::AddError("Constructor cannot have return type");
-            return t_null;
-        }
-    }
-    else {
-        table->SetSymbol(node->name.value, { 
-            false, 
-            fname, 
-            table->GetTypeVariant("Function", { 
-                node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null
-            })
-        });
-    }
+    table->SetSymbol(node->name.value, { 
+        false, 
+        fname, 
+        table->GetTypeVariant("Function", { 
+            node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null
+        })
+    });
     
     PUSH_INST(ins(ir::Decl, fname, { }));
 
@@ -573,20 +540,6 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
     PushScope();
 
     int i = 0;
-
-    if (parentName != "") {
-        PUSH_INST(ins(ir::Decl, "v_this", { }));
-        PUSH_INST(ins(ir::Set, {
-            ins(ir::Var, "v_this", { }),
-            ins(ir::Arg, i++, { })
-        }));
-
-        table->SetSymbol("this", { 
-            false,
-            "v_this",
-            clazz
-        });
-    }
 
     for (; i < node->lambda->parameters.size(); i++) {
         ArgDeclAST* argDecl = (ArgDeclAST*) node->lambda->parameters[i];
@@ -607,10 +560,6 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 
     sa::Type* retsym = node->lambda->body->Accept(this);
     
-    if (parentName != "" && nameStack.top() == node->name.value) {
-        PUSH_INST(ins(ir::Var, "v_this", { }));
-    }
-
     if (node->lambda->returnType) {
         sa::Type* rettype = node->lambda->returnType->Accept(this);
 
