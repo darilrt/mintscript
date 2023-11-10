@@ -93,6 +93,7 @@ Token Lexer::NextToken() {
             while (Peek() != '\n') {
                 Next();
             }
+            Next();
 
             return NextToken();
         }
