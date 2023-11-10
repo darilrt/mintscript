@@ -505,6 +505,11 @@ sa::Type* AstVisitor::Visit(BlockAST *node) {
     for (auto& stmt : node->statements) {
         if (stmt == nullptr) { continue; }
 
+        if (dynamic_cast<ReturnAST*>(stmt) != nullptr) {
+            res = stmt->Accept(this);
+            break;
+        }
+
         res = stmt->Accept(this);
 
         if (mError::HasError()) { return t_null; }
@@ -652,8 +657,7 @@ sa::Type* AstVisitor::Visit(WhileAST *node) {
 
     sa::Type* type = node->condition->Accept(this);
 
-    // Add body {
-    STACK_PUSH_I(ins(ir::Scope, { }));
+    STACK_PUSH_I(ins(ir::Scope, 2, { }));
     PushScope();
 
     sa::Type* res = node->body->Accept(this);
@@ -674,13 +678,13 @@ sa::Type* AstVisitor::Visit(ForAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(BreakAST *node) {
-    throw std::runtime_error("BreakAST not implemented");
-    return {};
+    PUSH_INST(ins(ir::Break, { }));
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(ContinueAST *node) {
-    throw std::runtime_error("ContinueAST not implemented");
-    return {};
+    PUSH_INST(ins(ir::Continue, { }));
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(ImportAST *node) {
