@@ -166,11 +166,19 @@ namespace ir {
 
     class Interpreter {
     public:
+        enum class State {
+            None,
+            Continue,
+            Break,
+            Return
+        };
+
         Mainfold Interpret(Instruction* instruction);
 
         void Print(Instruction* instruction, int indent = 0);
         
     private:
+        State state = State::None;
         Context context;
         std::stack<std::vector<Mainfold>> stack;
     };

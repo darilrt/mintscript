@@ -513,20 +513,25 @@ sa::Type* AstVisitor::Visit(BlockAST *node) {
     return res;
 }
 
-sa::Type* AstVisitor::Visit(ReturnAST *node) {
-    throw std::runtime_error("ReturnAST not implemented");
-    return {};
+sa::Type* AstVisitor::Visit(ReturnAST *node) {   
+    STACK_PUSH_I(ins(ir::Return, { }));
+    
+    sa::Type* type = node->expression ? node->expression->Accept(this) : t_null;
+
+    STACK_POP();
+
+    return type;
 }
 
 sa::Type* AstVisitor::Visit(FunctionAST *node) {
     const std::string fname = "f_" + node->name.value;
 
+    sa::Type* rettype = node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null;
+
     table->SetSymbol(node->name.value, { 
         false, 
         fname, 
-        table->GetTypeVariant("Function", { 
-            node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null
-        })
+        table->GetTypeVariant("Function", { rettype })
     });
     
     PUSH_INST(ins(ir::Decl, fname, { }));
@@ -560,13 +565,9 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 
     sa::Type* retsym = node->lambda->body->Accept(this);
     
-    if (node->lambda->returnType) {
-        sa::Type* rettype = node->lambda->returnType->Accept(this);
-
-        if (retsym != rettype) {
-            mError::AddError("Function '" + node->name.value + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
-            return t_null;
-        }
+    if (retsym != rettype) {
+        mError::AddError("Function '" + node->name.value + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
+        return t_null;
     }
 
     PopScope();

@@ -281,7 +281,7 @@ Token Lexer::GetKeywordToken(const std::string &value) {
     else if (value == "in") { return TOKEN(In, value); }
     else if (value == "break") { return TOKEN(Break, value); }
     else if (value == "continue") { return TOKEN(Continue, value); }
-    else if (value == "ret") { return TOKEN(Return, value); }
+    else if (value == "return") { return TOKEN(Return, value); }
     else if (value == "class") { return TOKEN(Class, value); }
     else if (value == "super") { return TOKEN(Super, value); }
     else if (value == "as") { return TOKEN(As, value); }

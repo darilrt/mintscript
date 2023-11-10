@@ -37,9 +37,10 @@ ir::Instruction::~Instruction() {
 #define ARG(i) Interpret(instruction->GetArg(i))
 
 ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
+
     switch (instruction->GetInstruction()) {
         case IR: { 
-            return { Mainfold::Scope, new Instruction(ir::Scope, instruction->GetArgs()) };
+            return { Mainfold::Scope, new Instruction(ir::Scope, 1, instruction->GetArgs()) };
         }
 
         case If: {
@@ -103,23 +104,28 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         }
 
         case Scope: {
+            // Scopes types:
+            // 0: no breakable or returnable scope
+            // 1: returnable scope
+            // 2: breakable scope
+
             SymbolTable* scope = new SymbolTable(context.GetCurrent());
             context.Add(scope);
             context.SetCurrent(scope);
 
             Mainfold mf = { Mainfold::Null };
 
-            for (int i = 0; i < instruction->GetArgs().size(); i++) {
-                ir::Instruction *arg = instruction->GetArg(i);
+            int scopeType = instruction->value.i;
 
-                if (arg->GetInstruction() == ir::Type::Return) {
-                    if (arg->GetArgs().size() > 0) {
-                        mf = Interpret(instruction->GetArg(0));
+            for (int i = 0; i < instruction->GetArgs().size(); i++) {
+                mf = ARG(i);
+
+                if (state == State::Return) {
+                    if (scopeType == 1) {
+                        state = State::None;
                     }
                     break;
                 }
-                
-                mf = Interpret(instruction->GetArg(i));
             }
 
             context.SetCurrent(scope->GetParent());
@@ -130,6 +136,22 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
         case Native: {
             return { Mainfold::Native, instruction->value.native };
+        }
+
+        case Return: {
+            Mainfold mf = { Mainfold::Null };
+
+            if (instruction->GetArgs().size() > 0) {
+                mf = ARG(0);
+
+                if (mf.type == Mainfold::Field) {
+                    mf = *mf.value.mf;
+                }
+            }
+
+            state = State::Return;
+
+            return mf;
         }
 
         // Variables
@@ -288,6 +310,13 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
             break;
         }
 
+        case Return: {
+            std::cout << indentStr << "Return {" << std::endl;
+            Print(instruction->GetArg(0), indent + 1);
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
         // Variables
 
         case Decl: {
@@ -333,6 +362,14 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
 
         case AddI: {
             std::cout << indentStr << "AddI {" << std::endl;
+            Print(instruction->GetArg(0), indent + 1);
+            Print(instruction->GetArg(1), indent + 1);
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        case SubI: {
+            std::cout << indentStr << "SubI {" << std::endl;
             Print(instruction->GetArg(0), indent + 1);
             Print(instruction->GetArg(1), indent + 1);
             std::cout << indentStr << "}" << std::endl;
