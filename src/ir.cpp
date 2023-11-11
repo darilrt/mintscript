@@ -60,7 +60,16 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             Mainfold ret = { Mainfold::Null };
 
             while (ARG(0).value.b) {
-                ret = Interpret(instruction->GetArg(1));
+                ret = ARG(1);
+
+                if (state == State::Continue) {
+                    state = State::None;
+                }
+
+                if (state == State::Break) {
+                    state = State::None;
+                    break;
+                }
             }
 
             return ret;
@@ -86,6 +95,10 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
                 if (mf->type == Mainfold::Scope) {
                     ret = Interpret(mf->value.ir);
+                    
+                    if (state == State::Return) {
+                        state = State::None;
+                    }
                 }
                 else if (mf->type == Mainfold::Native) {
                     ret = mf->value.native(argv);
@@ -105,9 +118,9 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
         case Scope: {
             // Scopes types:
-            // 0: no breakable or returnable scope
-            // 1: returnable scope
-            // 2: breakable scope
+            //      0: no breakable or returnable scope
+            //      1: returnable scope
+            //      2: breakable scope
 
             SymbolTable* scope = new SymbolTable(context.GetCurrent());
             context.Add(scope);
@@ -120,10 +133,7 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             for (int i = 0; i < instruction->GetArgs().size(); i++) {
                 mf = ARG(i);
 
-                if (state == State::Return) {
-                    if (scopeType == 1) {
-                        state = State::None;
-                    }
+                if (state != State::None) {
                     break;
                 }
             }
@@ -152,6 +162,16 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             state = State::Return;
 
             return mf;
+        }
+
+        case Break: {
+            state = State::Break;
+            return { Mainfold::Null };
+        }
+
+        case Continue: {
+            state = State::Continue;
+            return { Mainfold::Null };
         }
 
         // Variables
@@ -189,11 +209,6 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         case New: {
             Object* object = new Object(instruction->value.i);
             Mainfold mf = { Mainfold::Object, object };
-
-            // for (int i = 0; i < instruction->GetArgs().size(); i++) {
-            //     object->fields.push_back(Interpret(instruction->GetArg(i)));
-            // }
-
             return mf;
         }
 
@@ -217,12 +232,20 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         
         case Shl: { return { Mainfold::Int,  { ARG(0).value.i << ARG(1).value.i } }; }
         case Shr: { return { Mainfold::Int,  { ARG(0).value.i >> ARG(1).value.i } }; }
-        case Eq:  { return { Mainfold::Bool, { ARG(0).value.i == ARG(1).value.i } }; }
-        case Neq: { return { Mainfold::Bool, { ARG(0).value.i != ARG(1).value.i } }; }
-        case Lt:  { return { Mainfold::Bool, { ARG(0).value.i < ARG(1).value.i } }; }
-        case Gt:  { return { Mainfold::Bool, { ARG(0).value.i > ARG(1).value.i } }; }
-        case Leq: { return { Mainfold::Bool, { ARG(0).value.i <= ARG(1).value.i } }; }
-        case Geq: { return { Mainfold::Bool, { ARG(0).value.i >= ARG(1).value.i } }; }
+        
+        case EqI:  { return { Mainfold::Bool, { ARG(0).value.i == ARG(1).value.i } }; }
+        case NeqI: { return { Mainfold::Bool, { ARG(0).value.i != ARG(1).value.i } }; }
+        case LtI:  { return { Mainfold::Bool, { ARG(0).value.i < ARG(1).value.i } }; }
+        case GtI:  { return { Mainfold::Bool, { ARG(0).value.i > ARG(1).value.i } }; }
+        case LeqI: { return { Mainfold::Bool, { ARG(0).value.i <= ARG(1).value.i } }; }
+        case GeqI: { return { Mainfold::Bool, { ARG(0).value.i >= ARG(1).value.i } }; }
+
+        case EqF:  { return { Mainfold::Bool, { ARG(0).value.f == ARG(1).value.f } }; }
+        case NeqF: { return { Mainfold::Bool, { ARG(0).value.f != ARG(1).value.f } }; }
+        case LtF:  { return { Mainfold::Bool, { ARG(0).value.f < ARG(1).value.f } }; }
+        case GtF:  { return { Mainfold::Bool, { ARG(0).value.f > ARG(1).value.f } }; }
+        case LeqF: { return { Mainfold::Bool, { ARG(0).value.f <= ARG(1).value.f } }; }
+        case GeqF: { return { Mainfold::Bool, { ARG(0).value.f >= ARG(1).value.f } }; }
         
         case And: { return { Mainfold::Bool, { ARG(0).value.b && ARG(1).value.b } }; }
         case Or:  { return { Mainfold::Bool, { ARG(0).value.b || ARG(1).value.b } }; }
@@ -297,7 +320,7 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
         }
 
         case Scope: {
-            std::cout << indentStr << "Scope {" << std::endl;
+            std::cout << indentStr << "Scope(" << instruction->value.i << ") {" << std::endl;
             for (int i = 0; i < instruction->GetArgs().size(); i++) {
                 Print(instruction->GetArg(i), indent + 1);
             }
@@ -314,6 +337,16 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
             std::cout << indentStr << "Return {" << std::endl;
             Print(instruction->GetArg(0), indent + 1);
             std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        case Break: {
+            std::cout << indentStr << "Break" << std::endl;
+            break;
+        }
+
+        case Continue: {
+            std::cout << indentStr << "Continue" << std::endl;
             break;
         }
 
@@ -360,21 +393,36 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
 
         // Operators
 
-        case AddI: {
-            std::cout << indentStr << "AddI {" << std::endl;
-            Print(instruction->GetArg(0), indent + 1);
-            Print(instruction->GetArg(1), indent + 1);
-            std::cout << indentStr << "}" << std::endl;
-            break;
-        }
+#define OP(name) { std::cout << indentStr << #name << " {" << std::endl; Print(instruction->GetArg(0), indent + 1); Print(instruction->GetArg(1), indent + 1); std::cout << indentStr << "}" << std::endl; break; }
 
-        case SubI: {
-            std::cout << indentStr << "SubI {" << std::endl;
-            Print(instruction->GetArg(0), indent + 1);
-            Print(instruction->GetArg(1), indent + 1);
-            std::cout << indentStr << "}" << std::endl;
-            break;
-        }
+        case AddI: OP(AddI)
+        case SubI: OP(SubI)
+        case MulI: OP(MulI)
+        case DivI: OP(DivI)
+        case ModI: OP(ModI)
+
+        case AddF: OP(AddF)
+        case SubF: OP(SubF)
+        case MulF: OP(MulF)
+        case DivF: OP(DivF)
+        case ModF: OP(ModF)
+
+        case Shl: OP(Shl)
+        case Shr: OP(Shr)
+
+        case EqI: OP(EqI)
+        case NeqI: OP(NeqI)
+        case LtI: OP(LtI)
+        case GtI: OP(GtI)
+        case LeqI: OP(LeqI)
+        case GeqI: OP(GeqI)
+
+        case EqF: OP(EqF)
+        case NeqF: OP(NeqF)
+        case LtF: OP(LtF)
+        case GtF: OP(GtF)
+        case LeqF: OP(LeqF)
+        case GeqF: OP(GeqF)
 
         // Literals
         

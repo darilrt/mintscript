@@ -114,8 +114,6 @@ Token Lexer::NextToken() {
                 }
             }
 
-
-
             return NextToken();
         }
     }

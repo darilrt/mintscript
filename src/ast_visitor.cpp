@@ -273,20 +273,10 @@ sa::Type* AstVisitor::Visit(BinaryExprAST *node) {
     }
 
     if (
-        node->op.type == Token::Type::NotEqual ||
-        node->op.type == Token::Type::Less ||
-        node->op.type == Token::Type::LessEqual ||
-        node->op.type == Token::Type::Greater ||
-        node->op.type == Token::Type::GreaterEqual ||
         node->op.type == Token::Type::AmpAmp ||
         node->op.type == Token::Type::PipePipe
     ) { 
         switch (node->op.type) {
-            case Token::Type::NotEqual: inst->SetInstruction(ir::Neq); return t_bool;
-            case Token::Type::Less: inst->SetInstruction(ir::Lt); return t_bool;
-            case Token::Type::LessEqual: inst->SetInstruction(ir::Leq); return t_bool;
-            case Token::Type::Greater: inst->SetInstruction(ir::Gt); return t_bool;
-            case Token::Type::GreaterEqual: inst->SetInstruction(ir::Geq); return t_bool;
             case Token::Type::AmpAmp: inst->SetInstruction(ir::And); return t_bool;
             case Token::Type::PipePipe: inst->SetInstruction(ir::Or); return t_bool;
             default: break;
@@ -360,6 +350,14 @@ sa::Type* AstVisitor::Visit(BinaryExprAST *node) {
         case Token::Type::Star: inst->SetInstruction(type == t_float ? ir::MulF : ir::MulI); break;
         case Token::Type::Slash: inst->SetInstruction(type == t_float ? ir::DivF : ir::DivI); break;
         case Token::Type::Percent: inst->SetInstruction(type == t_float ? ir::ModF : ir::ModI); break;
+
+        case Token::Type::NotEqual: inst->SetInstruction(type == t_float ? ir::NeqF : ir::NeqI); break;
+        case Token::Type::EqualEqual: inst->SetInstruction(type == t_float ? ir::EqF : ir::EqI); break;
+        case Token::Type::Less: inst->SetInstruction(type == t_float ? ir::LtF : ir::LtI); break;
+        case Token::Type::LessEqual: inst->SetInstruction(type == t_float ? ir::LeqF : ir::LeqI); break;
+        case Token::Type::Greater: inst->SetInstruction(type == t_float ? ir::GtF : ir::GtI); break;
+        case Token::Type::GreaterEqual: inst->SetInstruction(type == t_float ? ir::GeqF : ir::GeqI); break;
+
         default: break;
     }
 

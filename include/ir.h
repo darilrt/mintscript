@@ -30,7 +30,8 @@ namespace ir {
         AddF, SubF, MulF, DivF, ModF,
         And, Or, Xor, Not,
         Shl, Shr,
-        Eq, Neq, Lt, Gt, Leq, Geq,
+        EqI, NeqI, LtI, GtI, LeqI, GeqI,
+        EqF, NeqF, LtF, GtF, LeqF, GeqF,
 
         // Literals
         Int,
