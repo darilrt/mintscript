@@ -92,9 +92,10 @@ ASTNode *Parser::Assignment() {
     ASTNode *node = nullptr;
 
     EXPECTF(node, Expression);
-
+    
     if (IS(Equal)) {
-        const Token &op = scanner.Next();
+        Token op = scanner.Peek();
+        scanner.Next();
 
         ASTNode *right = nullptr;
         EXPECTF(right, Expression);

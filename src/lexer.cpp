@@ -86,7 +86,7 @@ Token Lexer::NextToken() {
         return GetStringToken(false);
     }
 
-    if (Peek() == '/') {
+    if (Peek() == '/' && (source[pos + 1] == '/' || source[pos + 1] == '*')) {
         Next();
 
         if (Peek() == '/') {
@@ -150,10 +150,10 @@ Token Lexer::NextToken() {
             )
         )
         CASE('/', 
-            OPTION('=', 
-                TOKEN(SlashAssign, "/="), 
-                OPTION('/', 
-                    TOKEN(SlashSlash, "//"), 
+            OPTION('=',
+                TOKEN(SlashAssign, "/="),
+                OPTION('/',
+                    TOKEN(SlashSlash, "//"),
                     TOKEN(Slash, "/")
                 )
             )

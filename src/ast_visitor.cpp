@@ -116,7 +116,7 @@ AstVisitor::~AstVisitor() { }
 AstVisitor* AstVisitor::Eval(ASTNode *node) {
     AstVisitor* visitor = new AstVisitor();
     
-    visitor->stack.push(ins(ir::Scope, { }));
+    visitor->stack.push(ins(ir::Scope, 0, { }));
 
     visitor->table = new sa::SymbolTable();
 
@@ -275,7 +275,7 @@ sa::Type* AstVisitor::Visit(BinaryExprAST *node) {
     if (
         node->op.type == Token::Type::AmpAmp ||
         node->op.type == Token::Type::PipePipe
-    ) { 
+    ) {
         switch (node->op.type) {
             case Token::Type::AmpAmp: inst->SetInstruction(ir::And); return t_bool;
             case Token::Type::PipePipe: inst->SetInstruction(ir::Or); return t_bool;
@@ -410,14 +410,16 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(AssignmentAST *node) {
+    std::cout << node->type.ToString() << std::endl;
     ir::Instruction* inst = ins(ir::Set, { });
 
     STACK_PUSH_I(inst);
     sa::Type* type = node->declaration->Accept(this);
+
     sa::Type* expr = node->expression->Accept(this);
 
     if (type != expr) {
-        mError::AddError("Type mismatch");
+        mError::AddError("Type mismatch expected '" + type->name + "' got '" + expr->name + "'");
         return {};
     }
     STACK_POP();
