@@ -1,1 +1,2 @@
-mut i: int = 0
+
+print("Hello")

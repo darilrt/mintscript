@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+sa::SymbolTable* sa::global = new sa::SymbolTable();
+
 sa::Type::Type() {
     name = "";
 }

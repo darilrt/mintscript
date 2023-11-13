@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+ir::Instruction* ir::global = new Instruction(ir::Scope, 0, { });
+
 ir::Instruction::Instruction(Type instruction, std::vector<Instruction *> args) {
     this->instruction = instruction;
     this->args = args;
@@ -83,32 +85,32 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
                 std::vector<Mainfold> argv;
                 argv.resize(args.size() - 1);
-
+                
                 for (int i = 1; i < args.size(); i++) {
                     argv[i - 1] = Interpret(args[i]);
                 }
-
-                stack.push(argv);
                 
                 Mainfold* mf = ARG(0).value.mf;
                 Mainfold ret = { Mainfold::Null };
 
                 if (mf->type == Mainfold::Scope) {
+                    stack.push(argv);
                     ret = Interpret(mf->value.ir);
                     
                     if (state == State::Return) {
                         state = State::None;
                     }
+                    stack.pop();
                 }
                 else if (mf->type == Mainfold::Native) {
                     ret = mf->value.native(argv);
                 }
 
-                stack.pop();
 
                 return ret;
             }
             
+            std::cout << "Call End"  << std::endl;
             return { Mainfold::Null };
         }
 
@@ -177,7 +179,10 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         // Variables
         case Decl: {
             context.GetCurrent()->Set(*instruction->value.s);
-            return { Mainfold::Null };
+            return { 
+                Mainfold::Field,
+                &context.GetCurrent()->Get(*instruction->value.s)
+            };
         }
 
         case Set: {
@@ -329,7 +334,7 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
         }
 
         case Native: {
-            std::cout << indentStr << "Native(" << instruction->value.native << ")" << std::endl;
+            std::cout << indentStr << "Native(" << (void*) instruction->value.native << ")" << std::endl;
             break;
         }
 
@@ -432,7 +437,9 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
         case Bool: { std::cout << indentStr << "Bool(" << instruction->value.b << ")" << std::endl; break; }
         case Null: { std::cout << indentStr << "Null" << std::endl; break; }
         
-        default: break;
+        default:
+            std::cout << indentStr << "Unknown instruction " << instruction->GetInstruction() << std::endl;
+            break;
     }
 }
 
@@ -441,6 +448,8 @@ inline ir::Mainfold& ir::SymbolTable::Get(std::string name) {
         if (parent != nullptr) {
             return parent->Get(name);
         }
+
+        std::cout << "IR: Symbol " << name << " not found" << std::endl;
     }
 
     return symbols[name];

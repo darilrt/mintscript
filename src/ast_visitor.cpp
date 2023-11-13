@@ -3,6 +3,7 @@
 #include "decl.h"
 #include "token.h"
 #include "ast_visitor.h"
+#include "builtin.h"
 
 #include <sstream>
 
@@ -18,84 +19,8 @@
     }
 #define ins new ir::Instruction
 
-static sa::Type *t_null = nullptr,
-                *t_int = nullptr,
-                *t_float = nullptr,
-                *t_str = nullptr,
-                *t_bool = nullptr,
-                *t_type = nullptr,
-                *t_function = nullptr,
-                *t_void = nullptr;
-
 inline bool IsPrimitive(sa::Type* type) {
     return type == t_int || type == t_float || type == t_str || type == t_bool;
-}
-
-void PrintMainfold(ir::Mainfold mf) {
-    switch (mf.type) {
-        case ir::Mainfold::Int: std::cout << mf.value.i; break;
-        case ir::Mainfold::Float: std::cout << mf.value.f; break;
-        case ir::Mainfold::String: std::cout << *mf.value.s; break;
-        case ir::Mainfold::Bool: std::cout << (mf.value.b ? "true" : "false"); break;
-        case ir::Mainfold::Null: std::cout << "Null"; break;
-        case ir::Mainfold::Field: std::cout << "{ field." << mf.value.mf << " }"; break;
-        case ir::Mainfold::Object: std::cout << "{ object." << mf.value.st << " }"; break;
-        case ir::Mainfold::Native: std::cout << "{ native }"; break;
-        case ir::Mainfold::Scope: std::cout << "{ scope." << mf.value.ir << " }"; break;
-        default: std::cout << "Unknown Mainfold type " << mf.type; break;
-    }
-}
-
-void LoadBuiltInTypes(sa::SymbolTable* table, std::stack<ir::Instruction*>& stack) {
-    auto PUSH_NATIVE = [&](std::string label, ir::Mainfold (*lambda)(std::vector<ir::Mainfold>) ) {
-        stack.top()->GetArgs().push_back(new ir::Instruction(ir::Decl, label, { })); \
-        stack.top()->GetArgs().push_back(new ir::Instruction(ir::Set, { \
-            new ir::Instruction(ir::Var, label, { }), \
-            new ir::Instruction(ir::Native, lambda, { }) \
-        }));
-    };
-
-    table->SetType("Type", { "Type" });
-    t_type = table->GetType("Type");
-    
-    table->SetType("Function", { "Function" });
-    t_function = table->GetType("Function");
-    
-    table->SetType("int", { "int" });
-    t_int = table->GetType("int");
-    
-    table->SetType("float", { "float" });
-    t_float = table->GetType("float");
-    
-    table->SetType("str", { "str" });
-    t_str = table->GetType("str");
-    
-    table->SetType("bool", { "bool" });
-    t_bool = table->GetType("bool");
-    
-    table->SetType("null", { "null" });
-    t_null = table->GetType("null");
-
-    table->SetType("void", { "void" });
-    t_void = table->GetType("void");
-
-    table->SetSymbol("print", { false, "f_print", t_function->GetVariant({ t_void }) });
-    PUSH_NATIVE("f_print",
-        [](std::vector<ir::Mainfold> args) -> ir::Mainfold {
-            for (ir::Mainfold arg : args) {
-                if (arg.type == ir::Mainfold::Field) {
-                    PrintMainfold(*arg.value.mf);
-                }
-                else {
-                    PrintMainfold(arg);
-                }
-            }
-
-            std::cout << "\n";
-
-            return { ir::Mainfold::Null };
-        }
-    );
 }
 
 void AstVisitor::PushScope() {
@@ -118,10 +43,8 @@ AstVisitor* AstVisitor::Eval(ASTNode *node) {
     
     visitor->stack.push(ins(ir::Scope, 0, { }));
 
-    visitor->table = new sa::SymbolTable();
+    visitor->table = sa::global;
 
-    LoadBuiltInTypes(visitor->table, visitor->stack);
-    
     sa::Type* list = node->Accept(visitor);
 
     return visitor;
@@ -447,12 +370,12 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
 
             if (clazz->GetField(node->identifier.value)->type != value) {
                 mError::AddError("Type mismatch");
-                return {};
+                return t_null;
             }
         }
         else if (!node->isMutable) {
             mError::AddError("Cannot declare immutable variable without value");
-            return {};
+            return t_null;
         }
 
         return t_null;
@@ -462,10 +385,9 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
 
     const std::string vname = "v_" + node->identifier.value;
 
-    PUSH_INST(ins(ir::Decl, vname, { }));
     table->SetSymbol(node->identifier.value, { node->isMutable, vname, type });
     STACK_PUSH_I(ins(ir::Set, {
-        ins(ir::Var, vname, { })
+        ins(ir::Decl, vname, { })
     }));
     
     if (node->expression) {
@@ -478,7 +400,7 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
     }
     else if (!node->isMutable) {
         mError::AddError("Cannot declare immutable variable without value");
-        return {};
+        return t_null;
     }
     else {
         PUSH_INST(ins(ir::Null, { }));
@@ -724,7 +646,7 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
             type->SetMethod(
                 methodName, 
                 { 
-                    "f_" + type->name + "_" + methodName, 
+                    "m_" + type->name + "_" + methodName, 
                     table->GetTypeVariant("Function", { 
                         type->name == methodName ? 
                             type :

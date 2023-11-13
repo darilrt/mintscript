@@ -101,4 +101,5 @@ namespace sa {
         std::unordered_map<std::string, Symbol> symbols;
     };
 
+    extern SymbolTable* global;
 }

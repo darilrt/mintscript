@@ -183,4 +183,6 @@ namespace ir {
         Context context;
         std::stack<std::vector<Mainfold>> stack;
     };
+
+    extern ir::Instruction* global;
 }

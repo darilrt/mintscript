@@ -81,11 +81,11 @@ Functions are declared without any keyword. The return type is declared after th
 
 ```mintscript
 add(a: int, b: int) -> int {
-    ret a + b
+    return a + b
 }
 ```
 
-The `ret` keyword is used to return a value from a function. You can also return early from a function by using the `ret` keyword without any value. You can also return values without using the `ret` keyword by just writing the value you want to return:
+The `return` keyword is used to return a value from a function. You can also return early from a function by using the `return` keyword without any value. You can also return values without using the `return` keyword by just writing the value you want to return:
 
 ```mintscript
 add(a: int, b: int) -> int { 
@@ -93,10 +93,10 @@ add(a: int, b: int) -> int {
 }
 // Is the same as
 add(a: int, b: int) -> int { 
-    ret a + b
+    return a + b
 }
 // or just
-add(a: int, b: int) -> int { a + b }
+add(a: int, b: int) -> int { return a + b }
 ```
 
 If you dont want to return anything from a function you can declare it as `void` or just leave out the return type:
@@ -121,8 +121,8 @@ So you can pass functions as arguments to other functions:
 ```mintscript
 add(a: int, b: int) -> int { a + b }
 
-let apply(f: (int, int) -> int, a: int, b: int) -> int {
-    ret f(a, b)
+apply(f: (int, int) -> int, a: int, b: int) -> int {
+    return f(a, b)
 }
 
 apply(add, 5, 10) // 15
