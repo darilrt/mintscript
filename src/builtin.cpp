@@ -40,6 +40,8 @@ ir::Mainfold builtin_print(std::vector<ir::Mainfold> args) {
         default: std::cout << "Unknown Mainfold type " << mf.type; break;
     }
 
+    std::cout << "\n";
+
     return { ir::Mainfold::Null };
 }
 
@@ -68,5 +70,5 @@ void mint_Root() {
     sa::global->SetType("bool", { "bool" });
     t_bool = sa::global->GetType("bool");
 
-    mint::Function("print", { t_void } , builtin_print);
+    mint::Function("print", { t_void, t_str } , builtin_print);
 }

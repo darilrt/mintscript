@@ -4,6 +4,7 @@
 #include "token.h"
 #include "ast_visitor.h"
 #include "builtin.h"
+#include "MintScript.h"
 
 #include <sstream>
 
@@ -160,14 +161,27 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         PUSH_INST(args[0]);
     }
 
-    for (auto arg : node->args) {
-        sa::Type* type = arg->Accept(this);
+    if (ptype->typeParameters.size() == (node->args.size() + 1)) {
+        for (int i = 0; i < node->args.size(); i++) {
+            sa::Type* type = node->args[i]->Accept(this);
+            sa::Type* expected = ptype->typeParameters[i + 1];
 
-        if (type == t_type) {
-            mError::AddError("Cannot pass type as argument");
-            return t_null;
+            if (type != expected) {
+                mError::AddError("Type mismatch expected '" + expected->name + "' got '" + type->name + "'");
+                return t_null;
+            }
+
+            if (type == t_type) {
+                mError::AddError("Cannot pass type as argument");
+                return t_null;
+            }
         }
     }
+    else {
+        mError::AddError("Expected " + std::to_string(ptype->typeParameters.size() - 1) + " arguments got " + std::to_string(node->args.size()));
+        return t_null;
+    }
+
 
     STACK_POP();
 
@@ -333,7 +347,6 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(AssignmentAST *node) {
-    std::cout << node->type.ToString() << std::endl;
     ir::Instruction* inst = ins(ir::Set, { });
 
     STACK_PUSH_I(inst);

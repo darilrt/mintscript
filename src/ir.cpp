@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-ir::Instruction* ir::global = new Instruction(ir::Scope, 0, { });
+ir::Instruction* ir::global = new Instruction(ir::Scope, 3, { });
 
 ir::Instruction::Instruction(Type instruction, std::vector<Instruction *> args) {
     this->instruction = instruction;
@@ -37,6 +37,15 @@ ir::Instruction::~Instruction() {
 }
 
 #define ARG(i) Interpret(instruction->GetArg(i))
+
+ir::Interpreter::Interpreter() {
+    SymbolTable* scope = new SymbolTable(nullptr);
+    context.Add(scope);
+    context.SetCurrent(scope);
+}
+
+ir::Interpreter::~Interpreter() {
+}
 
 ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
@@ -84,10 +93,12 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
                 const std::vector<Instruction*> args = instruction->GetArgs();
 
                 std::vector<Mainfold> argv;
-                argv.resize(args.size() - 1);
                 
-                for (int i = 1; i < args.size(); i++) {
-                    argv[i - 1] = Interpret(args[i]);
+                if (args.size() > 1) {
+                    argv.resize(args.size() - 1);
+                    for (int i = 1; i < args.size(); i++) {
+                        argv[i - 1] = Interpret(args[i]);
+                    }
                 }
                 
                 Mainfold* mf = ARG(0).value.mf;
@@ -123,14 +134,18 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             //      0: no breakable or returnable scope
             //      1: returnable scope
             //      2: breakable scope
-
-            SymbolTable* scope = new SymbolTable(context.GetCurrent());
-            context.Add(scope);
-            context.SetCurrent(scope);
-
-            Mainfold mf = { Mainfold::Null };
+            //      3: no symbol table
 
             int scopeType = instruction->value.i;
+
+            SymbolTable* scope = nullptr;
+            if (scopeType != 3) {
+                scope = new SymbolTable(context.GetCurrent());
+                context.Add(scope);
+                context.SetCurrent(scope);
+            }
+
+            Mainfold mf = { Mainfold::Null };
 
             for (int i = 0; i < instruction->GetArgs().size(); i++) {
                 mf = ARG(i);
@@ -140,8 +155,10 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
                 }
             }
 
-            context.SetCurrent(scope->GetParent());
-            delete scope;
+            if (scopeType != 3) {
+                context.SetCurrent(context.GetCurrent()->GetParent());
+                delete scope;
+            }
 
             return mf;
         }

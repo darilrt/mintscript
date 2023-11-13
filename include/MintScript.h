@@ -12,19 +12,26 @@
 #include <string>
 #include <vector>
 
-MINT_API void mMain(int argc, char** argv);
-
-void mInit();
-
-void mShutdown();
-
-void mRunFile(const std::string &path, bool printIR=false);
-
-void mRunString(const std::string &source);
-
-void mRunInteractive();
+extern MINT_API sa::Type *t_null,
+                *t_int,
+                *t_float,
+                *t_str,
+                *t_bool,
+                *t_type,
+                *t_function,
+                *t_void;
 
 namespace mint {
+
+    MINT_API void Main(int argc, char** argv);
+
+    void Init();
+
+    void Shutdown();
+
+    void RunFile(const std::string &path, bool printIR=false);
+
+    void RunREPL();
 
     class Method {
     public:

@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv) {
     
-    mMain(argc, argv);
+    mint::Main(argc, argv);
 
     return 0;
 }

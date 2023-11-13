@@ -12,6 +12,33 @@
 
 #include <windows.h>
 
+HINSTANCE mLoadLib(const std::string& path) {
+typedef void (*root_t)(void); 
+
+    // load function from dll called test.dll
+    HINSTANCE hinstLib = LoadLibrary("lib/testlib.dll");
+
+    if (!hinstLib) {
+        std::cout << "Could not load the dynamic library" << std::endl;
+        return nullptr;
+    }
+
+    root_t root = (root_t) GetProcAddress(hinstLib, "mint_Root");
+
+    if (root != NULL) {
+        root();
+    }
+    else {
+        std::cout << "Could not load the root function" << std::endl;
+        FreeLibrary(hinstLib);
+        return nullptr;
+    }
+
+    // Free the DLL module when you are finished with it:
+    // FreeLibrary(hinstLib);
+    return hinstLib;
+}
+
 ir::Instruction* mLoadFile(const std::string &path) {
     std::filesystem::path filePath(path);
     MAIN_FILE_PATH = std::filesystem::absolute(filePath).parent_path();
@@ -61,8 +88,8 @@ ir::Instruction* mLoadFile(const std::string &path) {
     return instruction;
 }
 
-void mMain(int argc, char **argv) {
-    mInit();
+void mint::Main(int argc, char **argv) {
+    Init();
 
     if (argc > 1) {
         std::vector<std::string> args(argv + 1, argv + argc);
@@ -72,7 +99,7 @@ void mMain(int argc, char **argv) {
 
         for (std::string arg : args) {
             if (arg == "-i" || arg == "--interactive") {
-                mRunInteractive();
+                RunREPL();
                 return;
             } else if (arg == "-p" || arg == "--print") {
                 printIR = true;
@@ -86,46 +113,27 @@ void mMain(int argc, char **argv) {
             return;
         }
 
-        mRunFile(filePath, printIR);
+        RunFile(filePath, printIR);
         
     } else {
-        mRunInteractive();
+        RunREPL();
     }
 
-    mShutdown();
+    Shutdown();
 }
 
-void mInit() {
+void mint::Init() {
     // Initialize the MintScript context
 
     // Register the built-in functions
     mint_Root();
-
-typedef void (__stdcall *MYPROC)(void); 
-
-    // load function from dll called test.dll
-    HINSTANCE hinstLib = LoadLibrary("test.dll");
-
-    if (!hinstLib) {
-        std::cout << "Could not load the dynamic library" << std::endl;
-        return;
-    }
-
-    MYPROC root = (MYPROC) GetProcAddress(hinstLib, "mintroot");
-
-    if (root != NULL) {
-        root();
-    }
-    else {
-        std::cout << "Could not load the function" << std::endl;
-    }
 }
 
-void mShutdown() {
+void mint::Shutdown() {
     // Shutdown the MintScript context
 }
 
-void mRunFile(const std::string &path, bool printIR) {
+void mint::RunFile(const std::string &path, bool printIR) {
     ir::Instruction* irCode = mLoadFile(path);
 
     if (mError::HasError()) {
@@ -143,15 +151,16 @@ void mRunFile(const std::string &path, bool printIR) {
     interpreter.Interpret(ir::global);
 }
 
-void mRunString(const std::string &source) {
-}
-
-void mRunInteractive() {
-    std::cout << "MintScript v" << MINT_VERSION << std::endl;
+void mint::RunREPL() {
+    std::cout << "MintScript a" << MINT_VERSION << std::endl;
     std::cout << "Type 'exit()' to exit" << std::endl;
 
     std::string input;
-    
+
+    Parser parser("");
+    ir::Interpreter interpreter;
+    interpreter.Interpret(ir::global);
+
     while (true) {
         std::cout << ">> ";
         std::getline(std::cin, input);
@@ -169,12 +178,48 @@ void mRunInteractive() {
             break;
         }
 
-        mRunString(input);
+        parser = Parser(input);
+        ASTNode *node = parser.Parse();
+
+        // Check for errors
+        if (mError::HasError()) {
+            mError::PrintErrors();
+            mError::ClearErrors();
+            delete node;
+            continue;
+        }
+
+        if (node == nullptr) {
+            mError::AddError("Failed to parse input");
+            mError::PrintErrors();
+            mError::ClearErrors();
+            continue;
+        }
+
+        // Evaluate the AST
+        AstVisitor* ast_visitor = AstVisitor::Eval(node);
+
+        // Check for errors
+        if (mError::HasError()) {
+            mError::PrintErrors();
+            mError::ClearErrors();
+            delete node;
+            delete ast_visitor;
+            continue;
+        }
+        
+        ir::Instruction* irCode = ast_visitor->stack.top();
+        irCode->value.i = 3;
+        interpreter.Interpret(irCode);
 
         if (mError::HasError()) {
             mError::PrintErrors();
             mError::ClearErrors();
         }
+
+        delete node;
+        delete irCode;
+        delete ast_visitor;
     }
 }
 

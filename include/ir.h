@@ -174,6 +174,9 @@ namespace ir {
             Return
         };
 
+        Interpreter();
+        ~Interpreter();
+
         Mainfold Interpret(Instruction* instruction);
 
         void Print(Instruction* instruction, int indent = 0);
