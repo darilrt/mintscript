@@ -39,7 +39,7 @@ typedef void (*root_t)(void);
     return hinstLib;
 }
 
-ir::Instruction* mLoadFile(const std::string &path) {
+ir::Instruction* mLoadFile(const std::string &path, const std::string &moduleName) {
     std::filesystem::path filePath(path);
     MAIN_FILE_PATH = std::filesystem::absolute(filePath).parent_path();
 
@@ -70,7 +70,7 @@ ir::Instruction* mLoadFile(const std::string &path) {
     }
 
     // Evaluate the AST
-    AstVisitor* ast_visitor = AstVisitor::Eval(node);
+    AstVisitor* ast_visitor = AstVisitor::Eval(node, moduleName);
 
     // Check for errors
     if (mError::HasError()) {
@@ -134,7 +134,7 @@ void mint::Shutdown() {
 }
 
 void mint::RunFile(const std::string &path, bool printIR) {
-    ir::Instruction* irCode = mLoadFile(path);
+    ir::Instruction* irCode = mLoadFile(path, "main");
 
     if (mError::HasError()) {
         return;
@@ -232,7 +232,7 @@ void mint::Type(const std::string &name, const std::vector<Field> &fields, const
     }
 
     for (Method method : methods) {
-        const std::string &methodName = "m_" + name + "_" + method.name;
+        const std::string &methodName = "m" + name + method.name;
 
         type->SetMethod(method.name, { methodName, t_function->GetVariant(method.args) });
 
@@ -244,9 +244,16 @@ void mint::Type(const std::string &name, const std::vector<Field> &fields, const
 }
 
 void mint::Function(const std::string &name, const std::vector<sa::Type *> &args, ir::Mainfold (*value)(std::vector<ir::Mainfold>)) {
-    sa::global->SetSymbol(name, { false, "f_" + name, t_function->GetVariant(args) });
+    sa::global->SetSymbol(name, { false, "f" + name, t_function->GetVariant(args) });
     ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
-        new ir::Instruction(ir::Decl, "f_" + name, { }),
+        new ir::Instruction(ir::Decl, "f" + name, { }),
         new ir::Instruction(ir::Native, value, { })
     }));
+}
+
+MINT_API mint::TModule mint::Module(const std::string &name) {
+    /*
+    sa::global->SetModule(name, { name });
+    */
+    return { name };
 }

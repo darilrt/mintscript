@@ -76,6 +76,8 @@ namespace sa {
         Symbol() = default;
     };
 
+    class Module;
+
     class SymbolTable {
     public:
         SymbolTable() = default;
@@ -83,7 +85,7 @@ namespace sa {
 
         inline void SetSymbol(std::string name, Symbol symbol) { symbols[name] = symbol; }
 
-        Symbol* Get(std::string name);
+        Symbol* GetSymbol(std::string name);
 
         inline void SetParent(SymbolTable* parent) { this->parent = parent; }
 
@@ -95,10 +97,21 @@ namespace sa {
 
         Type* GetTypeVariant(std::string name, std::vector<sa::Type*> types);
 
+        void SetModule(std::string name, Module symbol);
+
+        Module* GetModule(std::string name);
+
     private:
         SymbolTable* parent = nullptr;
         std::unordered_map<std::string, Type> types;
         std::unordered_map<std::string, Symbol> symbols;
+        std::unordered_map<std::string, Module> modules;
+    };
+
+    class Module {
+    public:
+        std::string name;
+        SymbolTable symbols;
     };
 
     extern SymbolTable* global;

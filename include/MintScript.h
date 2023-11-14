@@ -63,4 +63,27 @@ namespace mint {
         ir::Mainfold (*value)(std::vector<ir::Mainfold>)
     );
 
+    class TModule {
+    public:
+        TModule(const std::string &name) { moduleName = name; }
+
+        inline void Type(
+            const std::string &name,
+            const std::vector<Field> &fields,
+            const std::vector<Method> &methods
+        ) { mint::Type(moduleName + name, fields, methods); }
+
+        inline void Function(
+            const std::string &name,
+            const std::vector<sa::Type*> &args,
+            ir::Mainfold (*value)(std::vector<ir::Mainfold>)
+        ) { mint::Function(moduleName + name, args, value); }
+
+        // inline MINT_API void SetSubmodule();
+    
+    private:
+        std::string moduleName;
+    };
+
+    MINT_API TModule Module(const std::string &name);
 }

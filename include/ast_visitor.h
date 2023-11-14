@@ -14,8 +14,9 @@
 
 class AstVisitor : public Visitor {
 public:
-    std::stack<ir::Instruction*> stack;
+    std::string moduleName;
     sa::SymbolTable* table;
+    std::stack<ir::Instruction*> stack;
     std::stack<std::string> nameStack;
 
     void PushScope();
@@ -26,7 +27,7 @@ public:
 
     ~AstVisitor();
 
-    static AstVisitor* Eval(ASTNode* node);
+    static AstVisitor* Eval(ASTNode* node, std::string moduleName = "main");
 
     sa::Type* Visit(ASTNode* node);
 

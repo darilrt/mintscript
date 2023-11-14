@@ -14,11 +14,9 @@ sa::Type    *t_null = nullptr,
             *t_void = nullptr;
 
 ir::Mainfold str_Concat(std::vector<ir::Mainfold> args) {
-    ir::Mainfold* self = args[0].value.mf;
-    
     return {
         ir::Mainfold::String,
-        new std::string(*self->value.s + *args[1].value.s)
+        new std::string(*args[0].value.s + *args[1].value.s)
     };
 }
 
@@ -46,6 +44,8 @@ ir::Mainfold builtin_print(std::vector<ir::Mainfold> args) {
 }
 
 void mint_Root() {
+    sa::global->SetType("Module", { "Module" });
+
     sa::global->SetType("Function", { "Function" });
     t_function = sa::global->GetType("Function");
 
@@ -61,11 +61,14 @@ void mint_Root() {
     sa::global->SetType("float", { "float" });
     t_float = sa::global->GetType("float");
 
-    mint::Type("str",
-        { },
-        { { "Concat", { t_str, t_str } , str_Concat } }
-    );
+    sa::global->SetType("str", { "str" });
     t_str = sa::global->GetType("str");
+    t_str->SetMethod("Concat", { "mstrConcat", t_function->GetVariant({ t_str, t_str }) });
+
+    ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
+        new ir::Instruction(ir::Decl, "mstrConcat", { }),
+        new ir::Instruction(ir::Native, str_Concat, { })
+    }));
 
     sa::global->SetType("bool", { "bool" });
     t_bool = sa::global->GetType("bool");

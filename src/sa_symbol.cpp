@@ -97,11 +97,11 @@ std::string sa::Type::ToString() {
     return str;
 }
 
-sa::Symbol *sa::SymbolTable::Get(std::string name) {
+sa::Symbol *sa::SymbolTable::GetSymbol(std::string name) {
     if (symbols.find(name) != symbols.end()) {
         return &symbols[name];
     } else if (parent != nullptr) {
-        return parent->Get(name);
+        return parent->GetSymbol(name);
     }
     return nullptr;
 }
@@ -120,6 +120,19 @@ sa::Type *sa::SymbolTable::GetTypeVariant(std::string name, std::vector<sa::Type
         return types[name].GetVariant(_types);
     } else if (parent != nullptr) {
         return parent->GetTypeVariant(name, _types);
+    }
+    return nullptr;
+}
+
+void sa::SymbolTable::SetModule(std::string name, Module symbol) {
+    modules[name] = symbol;
+}
+
+sa::Module *sa::SymbolTable::GetModule(std::string name) {
+    if (modules.find(name) != modules.end()) {
+        return &modules[name];
+    } else if (parent != nullptr) {
+        return parent->GetModule(name);
     }
     return nullptr;
 }

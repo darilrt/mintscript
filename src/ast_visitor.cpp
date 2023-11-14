@@ -39,11 +39,11 @@ AstVisitor::AstVisitor() { }
 
 AstVisitor::~AstVisitor() { }
 
-AstVisitor* AstVisitor::Eval(ASTNode *node) {
+AstVisitor* AstVisitor::Eval(ASTNode *node, std::string moduleName) {
     AstVisitor* visitor = new AstVisitor();
     
+    visitor->moduleName = moduleName;
     visitor->stack.push(ins(ir::Scope, 0, { }));
-
     visitor->table = sa::global;
 
     sa::Type* list = node->Accept(visitor);
@@ -97,7 +97,7 @@ sa::Type* AstVisitor::Visit(NullExprAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
-    sa::Symbol* sym = table->Get(node->name);
+    sa::Symbol* sym = table->GetSymbol(node->name);
 
     if (sym == nullptr) {
         sa::Type* typ = table->GetType(node->name);
@@ -158,7 +158,12 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
     std::vector<ir::Instruction*>& args = inst->GetArg(0)->GetArgs();
 
     if (args.size() > 0) {
-        PUSH_INST(args[0]);
+        if (args[0]->GetInstruction() == ir::Var || args[0]->GetInstruction() == ir::Field) {
+            PUSH_INST(ins(ir::Val, { args[0] }));
+        }
+        else {
+            PUSH_INST(args[0]);
+        }
     }
 
     if (ptype->typeParameters.size() == (node->args.size() + 1)) {
@@ -169,6 +174,12 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
             if (type != expected) {
                 mError::AddError("Type mismatch expected '" + expected->name + "' got '" + type->name + "'");
                 return t_null;
+            }
+
+            auto& args = inst->GetArgs();
+
+            if (args[args.size() - 1]->GetInstruction() == ir::Var || args[args.size() - 1]->GetInstruction() == ir::Field) {
+                args[args.size() - 1] = ins(ir::Val, { args[args.size() - 1] });
             }
 
             if (type == t_type) {
@@ -356,15 +367,15 @@ sa::Type* AstVisitor::Visit(AssignmentAST *node) {
 
     if (type != expr) {
         mError::AddError("Type mismatch expected '" + type->name + "' got '" + expr->name + "'");
-        return {};
+        return t_null;
     }
     STACK_POP();
 
-    return {};
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
-    const std::string parentName = nameStack.size() > 0 ? nameStack.top() + "_" : "";
+    const std::string parentName = nameStack.size() > 0 ? nameStack.top() : "";
 
     sa::Type* clazz = t_null;
 
@@ -396,7 +407,7 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
 
     sa::Type* type = node->type->Accept(this);
 
-    const std::string vname = "v_" + node->identifier.value;
+    const std::string vname = "v" + moduleName + node->identifier.value;
 
     table->SetSymbol(node->identifier.value, { node->isMutable, vname, type });
     STACK_PUSH_I(ins(ir::Set, {
@@ -464,7 +475,7 @@ sa::Type* AstVisitor::Visit(ReturnAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(FunctionAST *node) {
-    const std::string fname = "f_" + node->name.value;
+    const std::string fname = "f" + moduleName + node->name.value;
 
     sa::Type* rettype = node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null;
 
@@ -488,7 +499,7 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 
     for (; i < node->lambda->parameters.size(); i++) {
         ArgDeclAST* argDecl = (ArgDeclAST*) node->lambda->parameters[i];
-        const std::string argName = "v_" + argDecl->identifier.value;
+        const std::string argName = "v" + moduleName + argDecl->identifier.value;
         
         PUSH_INST(ins(ir::Decl, argName, { }));
         PUSH_INST(ins(ir::Set, {
@@ -659,7 +670,7 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
             type->SetMethod(
                 methodName, 
                 { 
-                    "m_" + type->name + "_" + methodName, 
+                    "m" + moduleName + type->name + methodName, 
                     table->GetTypeVariant("Function", { 
                         type->name == methodName ? 
                             type :
@@ -685,7 +696,7 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
 
             sa::Method* method = type->GetMethod(methodName);
 
-            std::string fname = "f_" + type->name + "_" + methodName;
+            std::string fname = "f" + moduleName + type->name + methodName;
 
             PUSH_INST(ins(ir::Decl, fname, { }));
             STACK_PUSH_I(ins(ir::Set, {
@@ -696,21 +707,23 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
 
             int i = 0;
 
+            const std::string vthis = "v" + moduleName + "this";
+
             table->SetSymbol("this", { 
                 false,
-                "v_this",
+                vthis,
                 type
             });
 
-            PUSH_INST(ins(ir::Decl, "v_this", { }));
+            PUSH_INST(ins(ir::Decl, vthis, { }));
             PUSH_INST(ins(ir::Set, {
-                ins(ir::Var, "v_this", { }),
+                ins(ir::Var, vthis, { }),
                 ins(ir::Arg, i++, { })
             }));
 
             for (; i <= funcDecl->lambda->parameters.size(); i++) {
                 ArgDeclAST* argDecl = (ArgDeclAST*) funcDecl->lambda->parameters[i - 1];
-                const std::string argName = "v_" + argDecl->identifier.value;
+                const std::string argName = "v" + moduleName + argDecl->identifier.value;
                 
                 table->SetSymbol(argDecl->identifier.value, { 
                     false,
@@ -737,7 +750,7 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
             }
 
             if (type->name == methodName) {
-                PUSH_INST(ins(ir::Var, "v_this", { }));
+                PUSH_INST(ins(ir::Var, vthis, { }));
             }
 
             PopScope();

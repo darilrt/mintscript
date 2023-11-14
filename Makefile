@@ -38,7 +38,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 
 run: $(OUTDLL) $(EXECUTABLE)
 	clear
-	$(EXECUTABLE) ./examples/test.mint
+	$(EXECUTABLE) ./examples/test.mint -p
 
 clean:
 	rm -rf $(OBJDIR)/*.o $(EXECUTABLE)
