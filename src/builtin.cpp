@@ -13,13 +13,6 @@ sa::Type    *t_null = nullptr,
             *t_function = nullptr,
             *t_void = nullptr;
 
-ir::Mainfold str_Concat(std::vector<ir::Mainfold> args) {
-    return {
-        ir::Mainfold::String,
-        new std::string(*args[0].value.s + *args[1].value.s)
-    };
-}
-
 ir::Mainfold builtin_print(std::vector<ir::Mainfold> args) {
     ir::Mainfold mf = args[0];
     
@@ -43,23 +36,25 @@ ir::Mainfold builtin_print(std::vector<ir::Mainfold> args) {
     return { ir::Mainfold::Null };
 }
 
+ir::Mainfold str_Concat(std::vector<ir::Mainfold> args) {
+    return {
+        ir::Mainfold::String,
+        new std::string(*args[0].value.s + *args[1].value.s)
+    };
+}
+
+ir::Mainfold int_ToStr(std::vector<ir::Mainfold> args) {
+    return {
+        ir::Mainfold::String,
+        new std::string(std::to_string(args[0].value.i))
+    };
+}
+
 void mint_Root() {
     sa::global->SetType("Module", { "Module" });
 
     sa::global->SetType("Function", { "Function" });
     t_function = sa::global->GetType("Function");
-
-    sa::global->SetType("null", { "null" });
-    t_null = sa::global->GetType("null");
-
-    sa::global->SetType("void", { "void" });
-    t_void = sa::global->GetType("void");
-
-    sa::global->SetType("int", { "int" });
-    t_int = sa::global->GetType("int");
-
-    sa::global->SetType("float", { "float" });
-    t_float = sa::global->GetType("float");
 
     sa::global->SetType("str", { "str" });
     t_str = sa::global->GetType("str");
@@ -69,6 +64,20 @@ void mint_Root() {
         new ir::Instruction(ir::Decl, "mstrConcat", { }),
         new ir::Instruction(ir::Native, str_Concat, { })
     }));
+
+    sa::global->SetType("null", { "null" });
+    t_null = sa::global->GetType("null");
+
+    sa::global->SetType("void", { "void" });
+    t_void = sa::global->GetType("void");
+
+    mint::Type("int", { }, {
+        { "ToStr", { t_str }, int_ToStr }
+    });
+    t_int = sa::global->GetType("int");
+
+    sa::global->SetType("float", { "float" });
+    t_float = sa::global->GetType("float");
 
     sa::global->SetType("bool", { "bool" });
     t_bool = sa::global->GetType("bool");

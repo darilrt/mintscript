@@ -479,12 +479,6 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 
     sa::Type* rettype = node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null;
 
-    table->SetSymbol(node->name.value, { 
-        false, 
-        fname, 
-        table->GetTypeVariant("Function", { rettype })
-    });
-    
     PUSH_INST(ins(ir::Decl, fname, { }));
 
     STACK_PUSH_I(ins(ir::Set, {
@@ -493,9 +487,19 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 
     STACK_PUSH_I(ins(ir::IR, { }));
 
+    table->SetSymbol(node->name.value, { 
+        false, 
+        fname, 
+        t_null
+    });
+
+    sa::Symbol* sym = table->GetSymbol(node->name.value);
+
     PushScope();
 
     int i = 0;
+
+    std::vector<sa::Type*> argtypes = { rettype };
 
     for (; i < node->lambda->parameters.size(); i++) {
         ArgDeclAST* argDecl = (ArgDeclAST*) node->lambda->parameters[i];
@@ -506,13 +510,19 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
             ins(ir::Var, argName, { }),
             ins(ir::Arg, i, { })
         }));
+
+        sa::Type *argType = argDecl->type->Accept(this);
+
+        argtypes.push_back(argType);
         
         table->SetSymbol(argDecl->identifier.value, { 
             false,
             argName, 
-            argDecl->type->Accept(this)
+            argType
         });
     }
+    
+    sym->type = table->GetTypeVariant("Function", argtypes);
 
     sa::Type* retsym = node->lambda->body->Accept(this);
     
