@@ -81,4 +81,8 @@ void mint_Root() {
     t_bool = sa::global->GetType("bool");
 
     mint::Function("print", { t_void, t_str } , builtin_print);
+
+    mint::TModule mod = mint::Module("std");
+
+    mod.Function("print", { t_void, t_str } , builtin_print);
 }
