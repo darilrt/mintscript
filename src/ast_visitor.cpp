@@ -718,9 +718,8 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
 
         sa::Method* method = type->GetMethod(methodName);
 
-        PUSH_INST(ins(ir::Decl, method->name, { }));
         STACK_PUSH_I(ins(ir::Set, {
-            ins(ir::Var, method->name, { }),
+            ins(ir::Decl, method->name, { }),
         }));
         STACK_PUSH_I(ins(ir::IR, { }));
         PushScope();
