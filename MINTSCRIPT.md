@@ -11,9 +11,7 @@ Mintscript is a programming language that intends to be easy to use but still po
 First of all, lets start with the classic Hello World program. In Mintscript it looks like this:
 
 ```mintscript
-main() {
-    print("Hello World!")
-}
+print("Hello World!")
 ```
 
 Save this code in a file called `hello.mint` and run it with the command `mint hello.mint`. You should see the output `Hello World!`.
@@ -96,7 +94,7 @@ add(a: int, b: int) -> int {
     return a + b
 }
 // or just
-add(a: int, b: int) -> int { return a + b }
+add(a: int, b: int) -> int { a + b }
 ```
 
 If you dont want to return anything from a function you can declare it as `void` or just leave out the return type:
@@ -128,20 +126,9 @@ apply(f: (int, int) -> int, a: int, b: int) -> int {
 apply(add, 5, 10) // 15
 ```
 
-The functions accept named arguments. This means that you can pass the arguments in any order you want:
-
-```mintscript
-add(a: int, b: int) -> int { a + b }
-
-add(b: 5, a: 10) // 15
-```
-
-Also you can define default values for arguments:
-
 ```mintscript
 add(a: int, b: int = 5) -> int { a + b }
 add(10) // 15
-add(a: 10) // 15
 ```
 
 ## Classes
