@@ -1,6 +1,6 @@
 # Compiler settings
 CXX = g++
-CXXFLAGS = -std=c++17 # -Wall -Wextra -Werror -pedantic
+CXXFLAGS = -std=c++17 -fPIC
 
 # Directories
 SRCDIR = src

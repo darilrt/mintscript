@@ -10,11 +10,15 @@
 #include <fstream>
 #include <filesystem>
 
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
+#elif defined(__linux__)
+#include <dlfcn.h>
+#endif
 
-HINSTANCE mLoadLib(const std::string& path) {
+void* mLoadLib(const std::string& path) {
 typedef void (*root_t)(void); 
-
+#if defined(_WIN32) || defined(_WIN64)
     // load function from dll called test.dll
     HINSTANCE hinstLib = LoadLibrary("lib/testlib.dll");
 
@@ -37,6 +41,27 @@ typedef void (*root_t)(void);
     // Free the DLL module when you are finished with it:
     // FreeLibrary(hinstLib);
     return hinstLib;
+#elif defined(__linux__)
+    void* handle = dlopen(path.c_str(), RTLD_LAZY);
+
+    if (!handle) {
+        std::cout << "Could not load the dynamic library" << std::endl;
+        return nullptr;
+    }
+
+    root_t root = (root_t) dlsym(handle, "mint_Root");
+
+    if (root != NULL) {
+        root();
+    }
+    else {
+        std::cout << "Could not load the root function" << std::endl;
+        dlclose(handle);
+        return nullptr;
+    }
+
+    return handle;
+#endif
 }
 
 ir::Instruction* mLoadFile(const std::string &path, const std::string &moduleName) {
@@ -89,6 +114,7 @@ ir::Instruction* mLoadFile(const std::string &path, const std::string &moduleNam
 }
 
 void mint::Main(int argc, char **argv) {
+    
     Init();
 
     if (argc > 1) {

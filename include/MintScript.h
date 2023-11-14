@@ -1,9 +1,17 @@
 #pragma once
 
 #if defined(MINT_EXPORTS)
-    #define MINT_API __declspec(dllexport)
+    #if defined(_MSC_VER)
+        #define MINT_API __declspec(dllexport)
+    #elif defined(__GNUC__)
+        #define MINT_API __attribute__((visibility("default")))
+    #endif
 #else
-    #define MINT_API __declspec(dllimport)
+    #if defined(_MSC_VER)
+        #define MINT_API __declspec(dllimport)
+    #elif defined(__GNUC__)
+        #define MINT_API
+    #endif
 #endif
 
 #include "ir.h"

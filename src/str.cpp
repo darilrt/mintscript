@@ -12,6 +12,6 @@ void mint_Str() {
     t_str = mint::Type("str", { }, { });
 
     mint::Extend("str", { }, {
-        { "Concat", { t_str, t_str } },
+        { "Concat", { t_str, t_str }, str_Concat },
     });
 }

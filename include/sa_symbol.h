@@ -76,7 +76,11 @@ namespace sa {
         Symbol() = default;
     };
 
-    class Module;
+    class Module {
+    public:
+        std::string name;
+        SymbolTable* symbols;
+    };
 
     class SymbolTable {
     public:
@@ -106,12 +110,6 @@ namespace sa {
         std::unordered_map<std::string, Type> types;
         std::unordered_map<std::string, Symbol> symbols;
         std::unordered_map<std::string, Module> modules;
-    };
-
-    class Module {
-    public:
-        std::string name;
-        SymbolTable symbols;
     };
 
     extern SymbolTable* global;

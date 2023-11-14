@@ -9,7 +9,7 @@ class Vec2 {
     }
 
     ToStr() -> str {
-        return "Vec2({}, {})"
+        return "Vec2(".Concat(this.x.ToStr()).Concat(", ").Concat(this.y.ToStr()).Concat(")")
     }
 }
 
