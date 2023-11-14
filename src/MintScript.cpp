@@ -223,8 +223,29 @@ void mint::RunREPL() {
     }
 }
 
-void mint::Type(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
+sa::Type* mint::Type(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
     sa::global->SetType(name, { name });
+    sa::Type* type = sa::global->GetType(name);
+
+    for (Field field : fields) {
+        type->AddField(field.name, { field.isMutable, field.type });
+    }
+
+    for (Method method : methods) {
+        const std::string &methodName = "m" + name + method.name;
+
+        type->SetMethod(method.name, { methodName, t_function->GetVariant(method.args) });
+
+        ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
+            new ir::Instruction(ir::Decl, methodName, { }),
+            new ir::Instruction(ir::Native, method.value, { })
+        }));
+    }
+
+    return type;
+}
+
+void mint::Extend(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
     sa::Type* type = sa::global->GetType(name);
 
     for (Field field : fields) {

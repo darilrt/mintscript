@@ -53,7 +53,7 @@ AstVisitor* AstVisitor::Eval(ASTNode *node, std::string moduleName) {
 
 sa::Type* AstVisitor::Visit(ASTNode *node) {
     std::cout << "ASTNode" << std::endl;
-    return {};
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(ProgramAST *node) {
@@ -98,21 +98,25 @@ sa::Type* AstVisitor::Visit(NullExprAST *node) {
 
 sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
     sa::Symbol* sym = table->GetSymbol(node->name);
-
-    if (sym == nullptr) {
-        sa::Type* typ = table->GetType(node->name);
-
-        if (typ == nullptr) {
-            mError::AddError("Symbol '" + node->name + "' not found");
-            return t_null;
-        }
-
+    if (sym != nullptr) {
+        PUSH_INST(ins(ir::Var, sym->name, { }));
+        return sym->type;
+    }
+    
+    sa::Type* typ = table->GetType(node->name);
+    if (typ != nullptr) {
         PUSH_INST(ins(ir::Var, node->name, { }));
         return t_type;
     }
-    
-    PUSH_INST(ins(ir::Var, sym->name, { }));
-    return sym->type;
+
+    sa::Module* mod = table->GetModule(node->name);
+    if (mod != nullptr) {
+        PUSH_INST(ins(ir::Var, node->name, { }));
+        return table->GetType("Module");
+    }
+
+    mError::AddError("Symbol '" + node->name + "' not found");
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(IndexExprAST *node) {
@@ -138,9 +142,13 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         }
 
         if (type->HasMethod(name)) {
+            const sa::Method* method = type->GetMethod(name);
+
             delete inst->GetArg(0)->value.s;
-            inst->GetArg(0)->value.s = new std::string(type->GetMethod(name)->name);
+            inst->GetArg(0)->value.s = new std::string(method->name);
             inst->GetArgs().push_back(ins(ir::New, (int) type->fields.size(), { }));
+
+            ptype = method->type;
         }
         else {
             inst->SetInstruction(ir::New);
@@ -201,7 +209,7 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
 
 sa::Type* AstVisitor::Visit(UnaryExprAST *node) {
     throw std::runtime_error("UnaryExprAST not implemented");
-    return {};
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(BinaryExprAST *node) {
@@ -314,7 +322,7 @@ sa::Type* AstVisitor::Visit(BinaryExprAST *node) {
 
 sa::Type* AstVisitor::Visit(TernaryExprAST *node) {
     throw std::runtime_error("TernaryExprAST not implemented");
-    return {};
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(ParenExprAST *node) {
@@ -323,7 +331,7 @@ sa::Type* AstVisitor::Visit(ParenExprAST *node) {
 
 sa::Type* AstVisitor::Visit(ArrayExprAST *node) {
     throw std::runtime_error("ArrayExprAST not implemented");
-    return {};
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(AccessExprAST *node) {
@@ -437,12 +445,12 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
 
 sa::Type* AstVisitor::Visit(LambdaAST *node) {
     throw std::runtime_error("LambdaAST not implemented");
-    return {};
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(ArgDeclAST *node) {
     throw std::runtime_error("ArgDeclAST not implemented");
-    return {};
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(BlockAST *node) {
@@ -608,7 +616,6 @@ sa::Type* AstVisitor::Visit(IfAST* node) {
 }
 
 sa::Type* AstVisitor::Visit(WhileAST *node) {
-
     STACK_PUSH_I(ins(ir::Loop, { }));
 
     sa::Type* type = node->condition->Accept(this);
@@ -630,7 +637,7 @@ sa::Type* AstVisitor::Visit(WhileAST *node) {
 
 sa::Type* AstVisitor::Visit(ForAST *node) {
     throw std::runtime_error("ForAST not implemented");
-    return {};
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(BreakAST *node) {
@@ -645,12 +652,12 @@ sa::Type* AstVisitor::Visit(ContinueAST *node) {
 
 sa::Type* AstVisitor::Visit(ImportAST *node) {
     throw std::runtime_error("ImportAST not implemented");
-    return {};
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(ExportAST *node) {
     throw std::runtime_error("ExportAST not implemented");
-    return {};
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(ClassAST *node) {
@@ -677,17 +684,21 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
         if (funcDecl != nullptr) { // Method
             const std::string methodName = funcDecl->name.value;
 
-            type->SetMethod(
-                methodName, 
-                { 
-                    "m" + moduleName + type->name + methodName, 
-                    table->GetTypeVariant("Function", { 
-                        type->name == methodName ? 
-                            type :
-                            funcDecl->lambda->returnType ? funcDecl->lambda->returnType->Accept(this) : t_null 
-                    })
-                }
-            );
+            sa::Type* funct = type->name == methodName ? 
+                type : funcDecl->lambda->returnType ? 
+                    funcDecl->lambda->returnType->Accept(this) : t_null;
+
+            std::vector<sa::Type*> argtypes = { funct };
+
+            for (int i = 0; i < funcDecl->lambda->parameters.size(); i++) {
+                ArgDeclAST* argDecl = (ArgDeclAST*) funcDecl->lambda->parameters[i];
+                argtypes.push_back(argDecl->type->Accept(this));
+            }
+
+            type->SetMethod(methodName, {
+                "m" + moduleName + type->name + methodName, 
+                table->GetTypeVariant("Function", argtypes)
+            });
 
             continue;
         }
@@ -701,73 +712,70 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
 
         FunctionAST* funcDecl = dynamic_cast<FunctionAST*>(stmt);
         
-        if (funcDecl != nullptr) { // Method
-            const std::string methodName = funcDecl->name.value;
+        if (funcDecl == nullptr) { continue; }
 
-            sa::Method* method = type->GetMethod(methodName);
+        const std::string methodName = funcDecl->name.value;
 
-            std::string fname = "f" + moduleName + type->name + methodName;
+        sa::Method* method = type->GetMethod(methodName);
 
-            PUSH_INST(ins(ir::Decl, fname, { }));
-            STACK_PUSH_I(ins(ir::Set, {
-                ins(ir::Var, fname, { }),
-            }));
-            STACK_PUSH_I(ins(ir::IR, { }));
-            PushScope();
+        PUSH_INST(ins(ir::Decl, method->name, { }));
+        STACK_PUSH_I(ins(ir::Set, {
+            ins(ir::Var, method->name, { }),
+        }));
+        STACK_PUSH_I(ins(ir::IR, { }));
+        PushScope();
 
-            int i = 0;
+        int i = 0;
 
-            const std::string vthis = "v" + moduleName + "this";
+        const std::string vthis = "v" + moduleName + "this";
 
-            table->SetSymbol("this", { 
+        table->SetSymbol("this", { 
+            false,
+            vthis,
+            type
+        });
+
+        PUSH_INST(ins(ir::Decl, vthis, { }));
+        PUSH_INST(ins(ir::Set, {
+            ins(ir::Var, vthis, { }),
+            ins(ir::Arg, i++, { })
+        }));
+
+        for (; i <= funcDecl->lambda->parameters.size(); i++) {
+            ArgDeclAST* argDecl = (ArgDeclAST*) funcDecl->lambda->parameters[i - 1];
+            const std::string argName = "v" + moduleName + argDecl->identifier.value;
+            
+            table->SetSymbol(argDecl->identifier.value, { 
                 false,
-                vthis,
-                type
+                argName, 
+                argDecl->type->Accept(this)
             });
 
-            PUSH_INST(ins(ir::Decl, vthis, { }));
+            PUSH_INST(ins(ir::Decl, argName, { }));
             PUSH_INST(ins(ir::Set, {
-                ins(ir::Var, vthis, { }),
-                ins(ir::Arg, i++, { })
+                ins(ir::Var, argName, { }),
+                ins(ir::Arg, i, { })
             }));
-
-            for (; i <= funcDecl->lambda->parameters.size(); i++) {
-                ArgDeclAST* argDecl = (ArgDeclAST*) funcDecl->lambda->parameters[i - 1];
-                const std::string argName = "v" + moduleName + argDecl->identifier.value;
-                
-                table->SetSymbol(argDecl->identifier.value, { 
-                    false,
-                    argName, 
-                    argDecl->type->Accept(this)
-                });
-
-                PUSH_INST(ins(ir::Decl, argName, { }));
-                PUSH_INST(ins(ir::Set, {
-                    ins(ir::Var, argName, { }),
-                    ins(ir::Arg, i, { })
-                }));
-            }
-
-            sa::Type* retsym = funcDecl->lambda->body->Accept(this);
-
-            if (funcDecl->lambda->returnType) {
-                sa::Type* rettype = method->type;
-
-                if (retsym != rettype) {
-                    mError::AddError("Function '" + methodName + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
-                    return t_null;
-                }
-            }
-
-            if (type->name == methodName) {
-                PUSH_INST(ins(ir::Var, vthis, { }));
-            }
-
-            PopScope();
-            STACK_POP();
-            STACK_POP();
-
         }
+
+        sa::Type* retsym = funcDecl->lambda->body->Accept(this);
+
+        if (funcDecl->lambda->returnType) {
+            sa::Type* rettype = method->type->typeParameters[0];
+
+            if (retsym != rettype) {
+                mError::AddError("Function '" + methodName + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
+                return t_null;
+            }
+        }
+
+        if (type->name == methodName) {
+            PUSH_INST(ins(ir::Var, vthis, { }));
+        }
+
+        PopScope();
+        STACK_POP();
+        STACK_POP();
     }
 
     nameStack.pop();

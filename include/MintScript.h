@@ -51,7 +51,13 @@ namespace mint {
         Field() = default;
     };
     
-    MINT_API void Type(
+    MINT_API sa::Type* Type(
+        const std::string &name,
+        const std::vector<Field> &fields,
+        const std::vector<Method> &methods
+    );
+
+    MINT_API void Extend(
         const std::string &name,
         const std::vector<Field> &fields,
         const std::vector<Method> &methods
