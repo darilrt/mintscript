@@ -20,7 +20,7 @@ void* mLoadLib(const std::string& path) {
 typedef void (*root_t)(void); 
 #if defined(_WIN32) || defined(_WIN64)
     // load function from dll called test.dll
-    HINSTANCE hinstLib = LoadLibrary("lib/testlib.dll");
+    HINSTANCE hinstLib = LoadLibrary(path.c_str());
 
     if (!hinstLib) {
         std::cout << "Could not load the dynamic library" << std::endl;
