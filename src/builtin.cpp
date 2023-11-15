@@ -51,6 +51,13 @@ ir::Mainfold float_ToStr(std::vector<ir::Mainfold> args) {
     };
 }
 
+ir::Mainfold bool_ToStr(std::vector<ir::Mainfold> args) {
+    return {
+        ir::Mainfold::String,
+        new std::string(args[0].value.b ? "true" : "false")
+    };
+}
+
 void mint_Root() {
     sa::global->SetType("Module", { "Module" });
     t_module = sa::global->GetType("Module");
@@ -79,7 +86,10 @@ void mint_Root() {
     });
     t_float = sa::global->GetType("float");
 
-    sa::global->SetType("bool", { "bool" });
+    
+    mint::Type("bool", { }, {
+        { "ToStr", { t_str }, bool_ToStr }
+    });
     t_bool = sa::global->GetType("bool");
 
     mint::Function("print", { t_void, t_str } , builtin_print);

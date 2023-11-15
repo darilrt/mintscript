@@ -1,2 +1,4 @@
 
-std.print("Hello, World!")
+let a: bool = true
+
+print (a.ToStr())
