@@ -59,7 +59,7 @@ namespace sa {
 
         bool IsVariantOf(Type* type);
 
-        Type* GetVariant(std::vector<sa::Type*> types);
+        Type* GetVariant(const std::vector<sa::Type*>& types);
 
         std::string ToString();
 
