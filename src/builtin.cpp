@@ -1,63 +1,90 @@
 #include "builtin.h"
-#include "MintScript.h"
+#include "ir.h"
+#include "MintScript.h" 
 
-void BuiltInInit() {
-    // Types
-    mException::Type->Init();
-    mType::Type->Init();
-    mFunction::Type->Init();
-    mMethodWrapper::Type->Init();
-    mInt::Type->Init();
-    mStr::Type->Init();
-    mFloat::Type->Init();
-    mBool::Type->Init();
-    mNull::Type->Init();
-    mList::Type->Init();
-    mModule::Type->Init();
-    // zDict::Type->Init();
+#include <iostream>
 
-    // Modules
-    os_init();
+sa::Type    *t_null = nullptr,
+            *t_int = nullptr,
+            *t_float = nullptr,
+            *t_str = nullptr,
+            *t_bool = nullptr,
+            *t_type = nullptr,
+            *t_function = nullptr,
+            *t_void = nullptr,
+            *t_module = nullptr;
 
-    mSymbolTable::globals->Set("print", new mFunction([](mObject* _args, mObject* _kwargs, mObject* _self) -> mObject* {
-        const mList* args = (mList*)_args;
+ir::Mainfold builtin_print(std::vector<ir::Mainfold> args) {
+    ir::Mainfold mf = args[0];
+    
+    if (mf.type == ir::Mainfold::Field) mf = *mf.value.mf;
+    
+    switch (mf.type) {
+        case ir::Mainfold::Int: std::cout << mf.value.i; break;
+        case ir::Mainfold::Float: std::cout << mf.value.f; break;
+        case ir::Mainfold::String: std::cout << *mf.value.s; break;
+        case ir::Mainfold::Bool: std::cout << (mf.value.b ? "true" : "false"); break;
+        case ir::Mainfold::Null: std::cout << "Null"; break;
+        case ir::Mainfold::Field: std::cout << "{ field." << mf.value.mf << " }"; break;
+        case ir::Mainfold::Object: std::cout << "{ object." << mf.value.st << " }"; break;
+        case ir::Mainfold::Native: std::cout << "{ native." << (void*)mf.value.native << " }"; break;
+        case ir::Mainfold::Scope: std::cout << "{ scope." << mf.value.ir << " }"; break;
+        default: std::cout << "Unknown Mainfold type " << mf.type; break;
+    }
 
-        for (mObject* arg : args->items) {
-            if (arg == nullptr) { return nullptr; }
+    std::cout << "\n";
 
-            if (arg->type == mStr::Type) {
-                std::cout << ((mStr*)arg)->value;
-            } else {
-                std::cout << arg->ToString();
-            }
+    return { ir::Mainfold::Null };
+}
 
-            std::cout << " ";
-        }
+ir::Mainfold int_ToStr(std::vector<ir::Mainfold> args) {
+    return {
+        ir::Mainfold::String,
+        new std::string(std::to_string(args[0].value.i))
+    };
+}
 
-        std::cout << std::endl;
-        return nullptr;
-    }));
+ir::Mainfold float_ToStr(std::vector<ir::Mainfold> args) {
+    return {
+        ir::Mainfold::String,
+        new std::string(std::to_string(args[0].value.f))
+    };
+}
 
-    mSymbolTable::globals->Set("input", new mFunction([](mObject* _args, mObject* _kwargs, mObject* _self) -> mObject* {
-        const mList* args = (mList*)_args;
+void mint_Root() {
+    sa::global->SetType("Module", { "Module" });
+    t_module = sa::global->GetType("Module");
 
-        for (mObject* arg : args->items) {
-            if (arg == nullptr) { return nullptr; }
+    sa::global->SetType("Type", { "Type" });
+    t_type = sa::global->GetType("Type");
 
-            if (arg->type == mStr::Type) {
-                std::cout << ((mStr*)arg)->value;
-            } else {
-                std::cout << arg->ToString();
-            }
+    sa::global->SetType("Function", { "Function" });
+    t_function = sa::global->GetType("Function");
 
-            if (arg != args->items.back()) {
-                std::cout << " ";
-            }
-        }
+    mint_Str();
 
-        std::string input;
-        std::getline(std::cin, input);
+    sa::global->SetType("null", { "null" });
+    t_null = sa::global->GetType("null");
 
-        return new mStr(input);
-    }));
+    sa::global->SetType("void", { "void" });
+    t_void = sa::global->GetType("void");
+
+    mint::Type("int", { }, {
+        { "ToStr", { t_str }, int_ToStr }
+    });
+    t_int = sa::global->GetType("int");
+
+    mint::Type("float", { }, {
+        { "ToStr", { t_str }, float_ToStr }
+    });
+    t_float = sa::global->GetType("float");
+
+    sa::global->SetType("bool", { "bool" });
+    t_bool = sa::global->GetType("bool");
+
+    mint::Function("print", { t_void, t_str } , builtin_print);
+
+    mint::TModule mod = mint::Module("std");
+
+    mod.Function("print", { t_void, t_str } , builtin_print);
 }

@@ -30,19 +30,3 @@ foo(a: int, b: int) -> int {
 }
 
 print(foo(1, 2))
-
-// List
-
-mut list_a : List = [1, 2, 3]
-
-list_a.Push(4)
-list_a.Push(5)
-
-print(list_a.Pop())
-
-print(list_a[0])
-print(list_a.Length())
-
-mut a : str = input("Name: ")
-
-print(a)

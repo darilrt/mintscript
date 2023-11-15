@@ -1,8 +1,6 @@
-// Fibonacci in MintScript
-
-fibonacci(n : int) -> int {
-    if n < 2 { n }
-    fibonacci(n - 1) + fibonacci(n - 2)
+fib(n: int) -> int {
+    if n < 2 { return n }
+    return fib(n - 1) + fib(n - 2)
 }
 
-print(fibonacci(10))
+print(fib(20))

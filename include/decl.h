@@ -3,11 +3,10 @@
 #include "ast.h"
 #include "expr.h"
 #include "token.h"
-#include "object.h"
-#include "mlist.h"
 
 #include <list>
 #include <string>
+#include <vector>
 
 class AssignmentAST : public ASTNode {
 public:
@@ -17,7 +16,7 @@ public:
     
     AssignmentAST(Token type, ASTNode* declaration, ASTNode* expression) : type(type), declaration(declaration), expression(expression) { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class VarDeclarationAST : public ASTNode {
@@ -29,7 +28,7 @@ public:
 
     VarDeclarationAST(bool isMutable, Token identifier, ASTNode* type, ASTNode* expression) : isMutable(isMutable), identifier(identifier), type(type), expression(expression) { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class LambdaAST : public ASTNode {
@@ -40,7 +39,7 @@ public:
 
     LambdaAST(std::vector<ASTNode*> parameters, ASTNode* returnType, ASTNode* body) : parameters(parameters), returnType(returnType), body(body) { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ReturnAST : public ASTNode {
@@ -49,7 +48,7 @@ public:
 
     ReturnAST(ASTNode* expression) : expression(expression) { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ArgDeclAST : public ASTNode {
@@ -61,7 +60,7 @@ public:
 
     ArgDeclAST(bool isMutable, Token identifier, ASTNode* type, ASTNode* defaultValue) : isMutable(isMutable), identifier(identifier), type(type), defaultValue(defaultValue) { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class FunctionAST : public ASTNode {
@@ -71,7 +70,7 @@ public:
 
     FunctionAST(Token name, LambdaAST* lambda) : name(name), lambda(lambda) { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class BlockAST : public ASTNode {
@@ -80,7 +79,7 @@ public:
 
     BlockAST(std::vector<ASTNode*> statements) : statements(statements) { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ProgramAST : public ASTNode {
@@ -89,7 +88,7 @@ public:
 
     ProgramAST(std::vector<ASTNode*> statements) : statements(statements) { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class IfAST : public ASTNode {
@@ -101,7 +100,7 @@ public:
 
     IfAST() { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class WhileAST : public ASTNode {
@@ -111,21 +110,21 @@ public:
 
     WhileAST() { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class BreakAST : public ASTNode {
 public:
     BreakAST() { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ContinueAST : public ASTNode {
 public:
     ContinueAST() { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ForAST : public ASTNode {
@@ -138,7 +137,7 @@ public:
 
     ForAST(ASTNode* variable, ASTNode* iterable, ASTNode* body) : variable(variable), iterable(iterable), body(body) { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ImportAST : public ASTNode {
@@ -151,7 +150,7 @@ public:
 
     ImportAST() { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ExportAST : public ASTNode {
@@ -160,7 +159,7 @@ public:
 
     ExportAST(std::vector<ASTNode*> list) : list(list) { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };
 
 class ClassAST : public ASTNode {
@@ -171,5 +170,5 @@ public:
     
     ClassAST(Token name, std::vector<ASTNode*> statements, std::vector<ASTNode*> bases) : name(name), statements(statements), bases(bases) { }
 
-    mList Accept(Visitor* visitor) override { return visitor->Visit(this); }
+    sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

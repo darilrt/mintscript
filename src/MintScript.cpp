@@ -3,21 +3,68 @@
 #include "ast.h"
 #include "error.h"
 #include "globals.h"
-#include "eval_visitor.h"
+#include "ast_visitor.h"
+#include "builtin.h"
 
 #include <iostream>
 #include <fstream>
 #include <filesystem>
 
-void mInit() {
-    BuiltInInit();
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#elif defined(__linux__)
+#include <dlfcn.h>
+#endif
+
+void* mLoadLib(const std::string& path) {
+typedef void (*root_t)(void); 
+#if defined(_WIN32) || defined(_WIN64)
+    // load function from dll called test.dll
+    HINSTANCE hinstLib = LoadLibrary("lib/testlib.dll");
+
+    if (!hinstLib) {
+        std::cout << "Could not load the dynamic library" << std::endl;
+        return nullptr;
+    }
+
+    root_t root = (root_t) GetProcAddress(hinstLib, "mint_Root");
+
+    if (root != NULL) {
+        root();
+    }
+    else {
+        std::cout << "Could not load the root function" << std::endl;
+        FreeLibrary(hinstLib);
+        return nullptr;
+    }
+
+    // Free the DLL module when you are finished with it:
+    // FreeLibrary(hinstLib);
+    return hinstLib;
+#elif defined(__linux__)
+    void* handle = dlopen(path.c_str(), RTLD_LAZY);
+
+    if (!handle) {
+        std::cout << "Could not load the dynamic library" << std::endl;
+        return nullptr;
+    }
+
+    root_t root = (root_t) dlsym(handle, "mint_Root");
+
+    if (root != NULL) {
+        root();
+    }
+    else {
+        std::cout << "Could not load the root function" << std::endl;
+        dlclose(handle);
+        return nullptr;
+    }
+
+    return handle;
+#endif
 }
 
-void mShutdown() {
-    // Shutdown the MintScript context
-}
-
-void mRunFile(const std::string &path) {
+ir::Instruction* mLoadFile(const std::string &path, const std::string &moduleName) {
     std::filesystem::path filePath(path);
     MAIN_FILE_PATH = std::filesystem::absolute(filePath).parent_path();
 
@@ -25,7 +72,7 @@ void mRunFile(const std::string &path) {
 
     if (!file.is_open()) {
         std::cout << "Failed to open file: " << path << std::endl;
-        return;
+        return nullptr;
     }
 
     std::string source((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -38,61 +85,108 @@ void mRunFile(const std::string &path) {
     // Check for errors
     if (mError::HasError()) {
         mError::PrintErrors();
-        return;
+        delete node;
+        return nullptr;
     }
 
     if (node == nullptr) {
         mError::AddError("Failed to parse file: " + path);
-        return;
+        return nullptr;
     }
 
     // Evaluate the AST
-    EvalVisitor::Eval(node, mSymbolTable::globals, nullptr);
+    AstVisitor* ast_visitor = AstVisitor::Eval(node, moduleName);
 
     // Check for errors
     if (mError::HasError()) {
         mError::PrintErrors();
-        return;
+        delete node;
+        delete ast_visitor;
+        return nullptr;
     }
-    
+
+    ir::Instruction* instruction = ast_visitor->stack.top();
+
     delete node;
+    delete ast_visitor;
+
+    return instruction;
 }
 
-void mRunString(const std::string &source) {
-    Parser parser(source);
+void mint::Main(int argc, char **argv) {
+    
+    Init();
 
-    ASTNode *node = parser.Parse();
+    if (argc > 1) {
+        std::vector<std::string> args(argv + 1, argv + argc);
+        
+        bool printIR = false;
+        std::string filePath = "";
+
+        for (std::string arg : args) {
+            if (arg == "-i" || arg == "--interactive") {
+                RunREPL();
+                return;
+            } else if (arg == "-p" || arg == "--print") {
+                printIR = true;
+            } else {
+                filePath = arg;
+            }
+        }
+
+        if (filePath == "") {
+            std::cout << "No file specified" << std::endl;
+            return;
+        }
+
+        RunFile(filePath, printIR);
+        
+    } else {
+        RunREPL();
+    }
+
+    Shutdown();
+}
+
+void mint::Init() {
+    // Initialize the MintScript context
+
+    // Register the built-in functions
+    mint_Root();
+}
+
+void mint::Shutdown() {
+    // Shutdown the MintScript context
+}
+
+void mint::RunFile(const std::string &path, bool printIR) {
+    ir::Instruction* irCode = mLoadFile(path, "main");
 
     if (mError::HasError()) {
         return;
-    }   
+    }
 
-    if (node == nullptr) { return; }
+    ir::Interpreter interpreter;
     
-    // Evaluate the AST
-    mObject* result = EvalVisitor::Eval(node, mSymbolTable::globals, nullptr);
+    ir::global->GetArgs().push_back(irCode);
 
-    if (mError::HasError()) {
-        return;
+    if (printIR) {
+        interpreter.Print(ir::global);
     }
-
-    if (result) {
-        std::cout << result->ToString() << std::endl;
-    }
-    else {
-        std::cout << "DEBUG: Result null" << std::endl; // DEBUG
-    }
-
-    // Cleanup
-    delete node;
+    
+    interpreter.Interpret(ir::global);
 }
 
-void mRunInteractive() {
-    std::cout << "MintScript v" << MINT_VERSION << std::endl;
+void mint::RunREPL() {
+    std::cout << "MintScript a" << MINT_VERSION << std::endl;
     std::cout << "Type 'exit()' to exit" << std::endl;
 
     std::string input;
-    
+
+    Parser parser("");
+    ir::Interpreter interpreter;
+    interpreter.Interpret(ir::global);
+
     while (true) {
         std::cout << ">> ";
         std::getline(std::cin, input);
@@ -110,11 +204,122 @@ void mRunInteractive() {
             break;
         }
 
-        mRunString(input);
+        parser = Parser(input);
+        ASTNode *node = parser.Parse();
+
+        // Check for errors
+        if (mError::HasError()) {
+            mError::PrintErrors();
+            mError::ClearErrors();
+            delete node;
+            continue;
+        }
+
+        if (node == nullptr) {
+            mError::AddError("Failed to parse input");
+            mError::PrintErrors();
+            mError::ClearErrors();
+            continue;
+        }
+
+        // Evaluate the AST
+        AstVisitor* ast_visitor = AstVisitor::Eval(node);
+
+        // Check for errors
+        if (mError::HasError()) {
+            mError::PrintErrors();
+            mError::ClearErrors();
+            delete node;
+            delete ast_visitor;
+            continue;
+        }
+        
+        ir::Instruction* irCode = ast_visitor->stack.top();
+        irCode->value.i = 3;
+        interpreter.Interpret(irCode);
 
         if (mError::HasError()) {
             mError::PrintErrors();
             mError::ClearErrors();
         }
+
+        delete node;
+        delete irCode;
+        delete ast_visitor;
     }
+}
+
+sa::Type* mint::Type(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
+    sa::global->SetType(name, { name });
+    sa::Type* type = sa::global->GetType(name);
+
+    for (Field field : fields) {
+        type->AddField(field.name, { field.isMutable, field.type });
+    }
+
+    for (Method method : methods) {
+        const std::string &methodName = "m" + name + method.name;
+
+        type->SetMethod(method.name, { methodName, t_function->GetVariant(method.args) });
+
+        ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
+            new ir::Instruction(ir::Decl, methodName, { }),
+            new ir::Instruction(ir::Native, method.value, { })
+        }));
+    }
+
+    return type;
+}
+
+void mint::Extend(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
+    sa::Type* type = sa::global->GetType(name);
+
+    for (Field field : fields) {
+        type->AddField(field.name, { field.isMutable, field.type });
+    }
+
+    for (Method method : methods) {
+        const std::string &methodName = "m" + name + method.name;
+
+        type->SetMethod(method.name, { methodName, t_function->GetVariant(method.args) });
+
+        ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
+            new ir::Instruction(ir::Decl, methodName, { }),
+            new ir::Instruction(ir::Native, method.value, { })
+        }));
+    }
+}
+
+void mint::Function(const std::string &name, const std::vector<sa::Type *> &args, ir::Mainfold (*value)(std::vector<ir::Mainfold>)) {
+    sa::global->SetSymbol(name, { false, "f" + name, t_function->GetVariant(args) });
+    ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
+        new ir::Instruction(ir::Decl, "f" + name, { }),
+        new ir::Instruction(ir::Native, value, { })
+    }));
+}
+
+mint::TModule mint::Module(const std::string &name) {
+    sa::global->SetModule(name, { name });
+    sa::Module* mod = sa::global->GetModule(name);
+    return { mod };
+}
+
+mint::TModule::TModule(sa::Module *mod) {
+    this->mod = mod;
+    mod->symbols = new sa::SymbolTable();
+}
+
+void mint::TModule::Type(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
+    const std::string tname = mod->name + name;
+    mod->symbols->SetType(name, { tname });
+    sa::Type* type = mod->symbols->GetType(name);
+}
+
+void mint::TModule::Function(const std::string &name, const std::vector<sa::Type *> &args, ir::Mainfold (*value)(std::vector<ir::Mainfold>)) {
+    const std::string fname = "f" + mod->name + name;
+    mod->symbols->SetSymbol(name, { false, fname, t_function->GetVariant(args) });
+    ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
+        new ir::Instruction(ir::Decl, fname, { }),
+        new ir::Instruction(ir::Native, value, { })
+    }));
 }

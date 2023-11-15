@@ -4,7 +4,6 @@
 #include "ast.h"
 #include "expr.h"
 #include "decl.h"
-#include "mnull.h"
 
 #include "eval.h"
 
@@ -93,9 +92,10 @@ ASTNode *Parser::Assignment() {
     ASTNode *node = nullptr;
 
     EXPECTF(node, Expression);
-
+    
     if (IS(Equal)) {
-        const Token &op = scanner.Next();
+        Token op = scanner.Peek();
+        scanner.Next();
 
         ASTNode *right = nullptr;
         EXPECTF(right, Expression);
@@ -491,7 +491,7 @@ ASTNode *Parser::ArgDecl(bool strict) {
     }
     scanner.Next();
 
-    ASTNode *type = Expression();
+    ASTNode *type = Type();
 
     if (type == nullptr) {
         ERROR("SyntaxError: Expected type after ':' " + scanner.Peek().location.ToString());
@@ -637,7 +637,7 @@ TypeSignatureAST *Parser::TypeSignature(bool strict) {
     return new TypeSignatureAST(name, types);
 }
 
-// Expression: Factor
+// Expression: Conditional
 ASTNode* Parser::Expression() {
     ASTNode *expr = nullptr;
     
@@ -932,7 +932,7 @@ ASTNode *Parser::Postfix() {
     return expr;
 }
 
-// Access: Unary ( '.' IDENTIFIER | '[' Expression ']' | '(' ExprList ')' )*
+// Access: Factor ( '.' IDENTIFIER | '[' Expression ']' | '(' ExprList ')' )*
 ASTNode *Parser::Access() {
     ASTNode *node = nullptr;
 
@@ -1016,7 +1016,7 @@ ASTNode* Parser::Factor() {
     }
     else if (IS(Float)) {
         GET(token, Float);
-        expr = new NumberExprAST(std::stod(token.value));
+        expr = new NumberExprAST(std::stof(token.value));
     }
     else if (IS(String)) {
         GET(token, String);
@@ -1101,7 +1101,7 @@ ASTNode *Parser::Lambda() {
     if (IS(Arrow)) {
         scanner.Next();
 
-        type = Expression();
+        type = Type();
 
         if (type == nullptr) {
             ERROR("SyntaxError: Expected expression after '->'");

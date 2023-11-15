@@ -1,6 +1,6 @@
 # Compiler settings
 CXX = g++
-CXXFLAGS = -std=c++17 # -Wall -Wextra -Werror -pedantic
+CXXFLAGS = -std=c++17 -fPIC
 
 # Directories
 SRCDIR = src
@@ -14,26 +14,31 @@ OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 ifeq ($(OS),Windows_NT)
 	EXECUTABLE = $(BINDIR)/mint.exe
+	OUTDLL = $(BINDIR)/mint.dll
 	DESTDIR = C:\MintScript
 else
 	EXECUTABLE = $(BINDIR)/mint
+	OUTDLL = $(BINDIR)/libmint.so
 	DESTDIR = /usr/local/bin
 endif
 
 # Targets
-all: $(EXECUTABLE)
+all: $(OUTDLL) $(EXECUTABLE)
 
-$(EXECUTABLE): $(OBJECTS)
+$(EXECUTABLE):
+	$(CXX) $(CXXFLAGS) src/main.cpp -o $@ $(INCLUDES) -static-libstdc++ -L$(BINDIR) -lmint
+
+$(OUTDLL): $(OBJECTS)
 	mkdir -p $(BINDIR)
-	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $@ $(INCLUDES) -static-libstdc++
+	$(CXX) $(CXXFLAGS) $(OBJECTS) -shared -o $@ $(INCLUDES) -static-libstdc++ -Wl,--out-implib,$(BINDIR)/libmint.a
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	mkdir -p $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INCLUDES) -static-libstdc++
+	$(CXX) $(CXXFLAGS) -DMINT_EXPORTS -c $< -o $@ $(INCLUDES) -static-libstdc++
 
-run: $(EXECUTABLE)
+run: $(OUTDLL) $(EXECUTABLE)
 	clear
-	$(EXECUTABLE) ./examples/test.mint
+	$(EXECUTABLE) ./examples/test.mint -p
 
 clean:
 	rm -rf $(OBJDIR)/*.o $(EXECUTABLE)

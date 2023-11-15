@@ -1,21 +1,102 @@
 #pragma once
 
-#include "symbol.h"
-#include "object.h"
-#include "symbol.h"
+#if defined(MINT_EXPORTS)
+    #if defined(_MSC_VER)
+        #define MINT_API __declspec(dllexport)
+    #elif defined(__GNUC__)
+        #define MINT_API __attribute__((visibility("default")))
+    #endif
+#else
+    #if defined(_MSC_VER)
+        #define MINT_API __declspec(dllimport)
+    #elif defined(__GNUC__)
+        #define MINT_API
+    #endif
+#endif
 
-#include "builtin.h"
+#include "ir.h"
+#include "sa_symbol.h"
 
-// #include "zdict.h"
+#include <string>
+#include <vector>
 
-void mInit();
+extern MINT_API sa::Type    *t_null,
+                            *t_int,
+                            *t_float,
+                            *t_str,
+                            *t_bool,
+                            *t_type,
+                            *t_function,
+                            *t_void,
+                            *t_module;
 
-void mShutdown();
+namespace mint {
 
-void mRunFile(const std::string &path);
+    MINT_API void Main(int argc, char** argv);
 
-void mRunString(const std::string &source);
+    void Init();
 
-void mTest();
+    void Shutdown();
 
-void mRunInteractive();
+    void RunFile(const std::string &path, bool printIR=false);
+
+    void RunREPL();
+
+    class Method {
+    public:
+        std::string name;
+        std::vector<sa::Type*> args;
+        ir::Mainfold (*value)(std::vector<ir::Mainfold>);
+
+        Method() = default;
+    };
+
+    class Field {
+    public:
+        std::string name;
+        sa::Type* type;
+        bool isMutable;
+
+        Field() = default;
+    };
+    
+    MINT_API sa::Type* Type(
+        const std::string &name,
+        const std::vector<Field> &fields,
+        const std::vector<Method> &methods
+    );
+
+    MINT_API void Extend(
+        const std::string &name,
+        const std::vector<Field> &fields,
+        const std::vector<Method> &methods
+    );
+
+    MINT_API void Function(
+        const std::string &name,
+        const std::vector<sa::Type*> &args,
+        ir::Mainfold (*value)(std::vector<ir::Mainfold>)
+    );
+
+    class MINT_API TModule {
+    public:
+        TModule(sa::Module* mod);
+
+        void Type(
+            const std::string &name,
+            const std::vector<Field> &fields,
+            const std::vector<Method> &methods
+        );
+
+        void Function(
+            const std::string &name,
+            const std::vector<sa::Type*> &args,
+            ir::Mainfold (*value)(std::vector<ir::Mainfold>)
+        );
+
+    private:
+        sa::Module* mod;
+    };
+
+    MINT_API TModule Module(const std::string &name);
+}

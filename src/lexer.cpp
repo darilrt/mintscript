@@ -86,13 +86,14 @@ Token Lexer::NextToken() {
         return GetStringToken(false);
     }
 
-    if (Peek() == '/') {
+    if (Peek() == '/' && (source[pos + 1] == '/' || source[pos + 1] == '*')) {
         Next();
 
         if (Peek() == '/') {
             while (Peek() != '\n') {
                 Next();
             }
+            Next();
 
             return NextToken();
         }
@@ -112,8 +113,6 @@ Token Lexer::NextToken() {
                     Next();
                 }
             }
-
-
 
             return NextToken();
         }
@@ -151,10 +150,10 @@ Token Lexer::NextToken() {
             )
         )
         CASE('/', 
-            OPTION('=', 
-                TOKEN(SlashAssign, "/="), 
-                OPTION('/', 
-                    TOKEN(SlashSlash, "//"), 
+            OPTION('=',
+                TOKEN(SlashAssign, "/="),
+                OPTION('/',
+                    TOKEN(SlashSlash, "//"),
                     TOKEN(Slash, "/")
                 )
             )
@@ -280,7 +279,7 @@ Token Lexer::GetKeywordToken(const std::string &value) {
     else if (value == "in") { return TOKEN(In, value); }
     else if (value == "break") { return TOKEN(Break, value); }
     else if (value == "continue") { return TOKEN(Continue, value); }
-    else if (value == "ret") { return TOKEN(Return, value); }
+    else if (value == "return") { return TOKEN(Return, value); }
     else if (value == "class") { return TOKEN(Class, value); }
     else if (value == "super") { return TOKEN(Super, value); }
     else if (value == "as") { return TOKEN(As, value); }
