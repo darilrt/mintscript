@@ -1,3 +1,2 @@
 
-mut a: std.int = std.int()
-
+print(true.ToStr())

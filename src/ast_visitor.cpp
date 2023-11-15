@@ -204,8 +204,7 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
 
     sa::Type* ptype = node->property->Accept(this);
     sa::Type* type = t_null;
-
-
+    
     if (ptype == t_type) {
         type = (sa::Type*)payload;
         const std::string name = type->name;
@@ -275,7 +274,6 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         mError::AddError("Expected " + std::to_string(ptype->typeParameters.size() - 1) + " arguments got " + std::to_string(node->args.size()));
         return t_null;
     }
-
 
     STACK_POP();
 

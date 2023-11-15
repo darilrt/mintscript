@@ -59,15 +59,21 @@ bool sa::Type::IsVariantOf(Type *type) {
     return false;
 }
 
-sa::Type* sa::Type::GetVariant(std::vector<sa::Type*> types) {
+sa::Type* sa::Type::GetVariant(const std::vector<sa::Type*>& types) {
     for (sa::Type* variant : variants) {
         bool match = true;
+
+        if (variant->typeParameters.size() != types.size()) {
+            continue;
+        }
+
         for (int i = 0; i < variant->typeParameters.size(); i++) {
             if (variant->typeParameters[i] != types[i]) {
                 match = false;
                 break;
             }
         }
+        
         if (match) {
             return variant;
         }

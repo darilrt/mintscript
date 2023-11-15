@@ -68,39 +68,25 @@ void mint_Root() {
     sa::global->SetType("Function", { "Function" });
     t_function = sa::global->GetType("Function");
 
-    mint_Str();
-
     sa::global->SetType("null", { "null" });
     t_null = sa::global->GetType("null");
 
     sa::global->SetType("void", { "void" });
     t_void = sa::global->GetType("void");
 
-    mint::Type("int", { }, {
+    mint_Str();
+
+    t_int = mint::Type("int", { }, {
         { "ToStr", { t_str }, int_ToStr }
     });
-    t_int = sa::global->GetType("int");
 
-    mint::Type("float", { }, {
+    t_float = mint::Type("float", { }, {
         { "ToStr", { t_str }, float_ToStr }
     });
-    t_float = sa::global->GetType("float");
 
-    
-    mint::Type("bool", { }, {
+    t_bool = mint::Type("bool", { }, {
         { "ToStr", { t_str }, bool_ToStr }
     });
-    t_bool = sa::global->GetType("bool");
 
     mint::Function("print", { t_void, t_str } , builtin_print);
-
-    mint::TModule mod = mint::Module("std");
-
-    mod.Type(
-        "int",
-        { },
-        {
-            { "Print", { t_str }, builtin_print }
-        }
-    );
 }
