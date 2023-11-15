@@ -1,4 +1,3 @@
 
-let a: bool = true
+mut a: std.int = std.int()
 
-print (a.ToStr())

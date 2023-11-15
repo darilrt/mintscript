@@ -209,12 +209,12 @@ public:
 
 class TypeAccessAST : public ASTNode {
 public:
-    TypeSignatureAST* lhs = nullptr;
+    ASTNode* lhs = nullptr;
     TypeSignatureAST* rhs = nullptr;
 
     ~TypeAccessAST();
 
-    TypeAccessAST(TypeSignatureAST* lhs, TypeSignatureAST* rhs) : lhs(lhs), rhs(rhs) {}
+    TypeAccessAST(ASTNode* lhs, TypeSignatureAST* rhs) : lhs(lhs), rhs(rhs) {}
 
     sa::Type* Accept(Visitor* visitor) override { return visitor->Visit(this); }
 };

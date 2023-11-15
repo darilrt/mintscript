@@ -96,5 +96,11 @@ void mint_Root() {
 
     mint::TModule mod = mint::Module("std");
 
-    mod.Function("print", { t_void, t_str } , builtin_print);
+    mod.Type(
+        "int",
+        { },
+        {
+            { "Print", { t_str }, builtin_print }
+        }
+    );
 }
