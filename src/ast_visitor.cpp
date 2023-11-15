@@ -20,6 +20,8 @@
     }
 #define ins new ir::Instruction
 
+static void* payload = nullptr;
+
 inline bool IsPrimitive(sa::Type* type) {
     return type == t_int || type == t_float || type == t_str || type == t_bool;
 }
@@ -42,7 +44,7 @@ AstVisitor::~AstVisitor() { }
 AstVisitor* AstVisitor::Eval(ASTNode *node, std::string moduleName) {
     AstVisitor* visitor = new AstVisitor();
     
-    visitor->moduleName = moduleName;
+    visitor->moduleName = moduleName + ".";
     visitor->stack.push(ins(ir::Scope, 0, { }));
     visitor->table = sa::global;
 
@@ -57,15 +59,11 @@ sa::Type* AstVisitor::Visit(ASTNode *node) {
 }
 
 sa::Type* AstVisitor::Visit(ProgramAST *node) {
-
     for (auto& stmt : node->statements) {
         if (stmt == nullptr) { continue; }
-
         sa::Type* res = stmt->Accept(this);
-
         if (mError::HasError()) { return {}; }
     }
-
     return t_null;
 }
 
@@ -96,7 +94,13 @@ sa::Type* AstVisitor::Visit(NullExprAST *node) {
     return t_null;
 }
 
+sa::Type* AstVisitor::Visit(IndexExprAST *node) {
+    throw std::runtime_error("IndexExprAST not implemented");
+    return t_null;
+}
+
 sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
+
     sa::Symbol* sym = table->GetSymbol(node->name);
     if (sym != nullptr) {
         PUSH_INST(ins(ir::Var, sym->name, { }));
@@ -105,22 +109,91 @@ sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
     
     sa::Type* typ = table->GetType(node->name);
     if (typ != nullptr) {
-        PUSH_INST(ins(ir::Var, node->name, { }));
+        payload = typ;
         return t_type;
     }
 
     sa::Module* mod = table->GetModule(node->name);
     if (mod != nullptr) {
-        PUSH_INST(ins(ir::Var, node->name, { }));
-        return table->GetType("Module");
+        payload = mod;
+        return t_module;
     }
 
     mError::AddError("Symbol '" + node->name + "' not found");
     return t_null;
 }
 
-sa::Type* AstVisitor::Visit(IndexExprAST *node) {
-    throw std::runtime_error("IndexExprAST not implemented");
+sa::Type* AstVisitor::Visit(AccessExprAST *node) {
+    ir::Instruction* inst = ins(ir::Field, { });
+
+    STACK_PUSH(inst);
+    sa::Type* type = node->expr->Accept(this);
+    STACK_POP();
+
+    if (type == t_module) {
+        sa::Module* modu = (sa::Module*)payload;
+
+        if (modu == nullptr) {
+            mError::AddError("Module '" + node->name.value + "' not found");
+            return t_null;
+        }
+
+        sa::SymbolTable* smtable = modu->symbols;
+
+        sa::Symbol* sym = smtable->GetSymbol(node->name.value);
+        if (sym != nullptr) {
+            PUSH_INST(ins(ir::Var, sym->name, { }));
+            return sym->type;
+        }
+        
+        sa::Type* typ = smtable->GetType(node->name.value);
+        if (typ != nullptr) {
+            payload = typ;
+            return t_type;
+        }
+
+        sa::Module* mod = smtable->GetModule(node->name.value);
+        if (mod != nullptr) {
+            payload = mod;
+            return t_module;
+        }
+
+        mError::AddError("Symbol '" + node->name.value + "' not found");
+        return t_null;
+    }
+    else if (type == t_type) {
+        sa::Type* typ = table->GetType(node->name.value);
+
+        if (typ == nullptr) {
+            mError::AddError("Type '" + node->name.value + "' not found");
+            return t_null;
+        }
+
+        // TODO: Check for static fields and methods
+
+        return t_type;
+    }
+    else if (type->HasMethod(node->name.value)) {
+        const sa::Method* method = type->GetMethod(node->name.value);
+        PUSH_INST(ins(ir::Var, method->name, { inst->GetArg(0) }));
+        delete inst;
+        return method->type;
+    }
+    else if (type->HasField(node->name.value)) {
+        sa::Field* field = type->GetField(node->name.value);
+        PUSH_INST(ins(
+            ir::Field,
+            field->offset, 
+            { inst->GetArg(0) }
+        ));
+        delete inst;
+        return field->type;
+    }
+    else {
+        mError::AddError("'" + node->name.value + "' is not a member of '" + type->name + "'");
+    }
+
+    delete inst;
     return t_null;
 }
 
@@ -132,10 +205,11 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
     sa::Type* ptype = node->property->Accept(this);
     sa::Type* type = t_null;
 
-    if (ptype == t_type) {
-        const std::string name = *inst->GetArg(0)->value.s;
-        type = table->GetType(name);
 
+    if (ptype == t_type) {
+        type = (sa::Type*)payload;
+        const std::string name = type->name;
+        
         if (type == nullptr) {
             mError::AddError("Type '" + name + "' not found");
             return t_null;
@@ -153,6 +227,7 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         else {
             inst->SetInstruction(ir::New);
             inst->value.i = (int) type->fields.size();
+            ptype = t_function->GetVariant({ type });
         }
     }
     else if (ptype->IsVariantOf(table->GetType("Function"))) {
@@ -163,7 +238,7 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         return t_null;
     }
 
-    std::vector<ir::Instruction*>& args = inst->GetArg(0)->GetArgs();
+    std::vector<ir::Instruction*>& args = inst->GetArgs().size() > 0 ? inst->GetArg(0)->GetArgs() : inst->GetArgs();
 
     if (args.size() > 0) {
         if (args[0]->GetInstruction() == ir::Var || args[0]->GetInstruction() == ir::Field) {
@@ -331,80 +406,6 @@ sa::Type* AstVisitor::Visit(ParenExprAST *node) {
 
 sa::Type* AstVisitor::Visit(ArrayExprAST *node) {
     throw std::runtime_error("ArrayExprAST not implemented");
-    return t_null;
-}
-
-sa::Type* AstVisitor::Visit(AccessExprAST *node) {
-    ir::Instruction* inst = ins(ir::Field, { });
-
-    STACK_PUSH(inst);
-    sa::Type* type = node->expr->Accept(this);
-    STACK_POP();
-
-    if (type == t_module) {
-        sa::Module* modu = table->GetModule(inst->GetArg(0)->value.s->c_str());
-
-        if (modu == nullptr) {
-            mError::AddError("Module '" + node->name.value + "' not found");
-            return t_null;
-        }
-
-        sa::SymbolTable* smtable = modu->symbols;
-
-        sa::Symbol* sym = smtable->GetSymbol(node->name.value);
-        if (sym != nullptr) {
-            PUSH_INST(ins(ir::Var, sym->name, { }));
-            return sym->type;
-        }
-        
-        sa::Type* typ = smtable->GetType(node->name.value);
-        if (typ != nullptr) {
-            PUSH_INST(ins(ir::Var, node->name.value, { }));
-            return t_type;
-        }
-
-        sa::Module* mod = smtable->GetModule(node->name.value);
-        if (mod != nullptr) {
-            PUSH_INST(ins(ir::Var, node->name.value, { }));
-            return table->GetType("Module");
-        }
-
-        mError::AddError("Symbol '" + node->name.value + "' not found");
-        return t_null;
-    }
-    else if (type == t_type) {
-        sa::Type* typ = table->GetType(node->name.value);
-
-        if (typ == nullptr) {
-            mError::AddError("Type '" + node->name.value + "' not found");
-            return t_null;
-        }
-
-        // TODO: Check for static fields and methods
-
-        return t_type;
-    }
-    else if (type->HasMethod(node->name.value)) {
-        const sa::Method* method = type->GetMethod(node->name.value);
-        PUSH_INST(ins(ir::Var, method->name, { inst->GetArg(0) }));
-        delete inst;
-        return method->type;
-    }
-    else if (type->HasField(node->name.value)) {
-        sa::Field* field = type->GetField(node->name.value);
-        PUSH_INST(ins(
-            ir::Field,
-            field->offset, 
-            { inst->GetArg(0) }
-        ));
-        delete inst;
-        return field->type;
-    }
-    else {
-        mError::AddError("'" + node->name.value + "' is not a member of '" + type->name + "'");
-    }
-
-    delete inst;
     return t_null;
 }
 
@@ -739,7 +740,7 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
             }
 
             type->SetMethod(methodName, {
-                "m" + moduleName + type->name + methodName, 
+                "m" + moduleName + type->name + "_" + methodName, 
                 table->GetTypeVariant("Function", argtypes)
             });
 
@@ -827,15 +828,49 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
 
 sa::Type* AstVisitor::Visit(TypeSignatureAST *node) {
     sa::Type* type = table->GetType(node->name.value);
+    if (type != nullptr) {
+        payload = type;
+        return type;
+    }
 
-    if (type == nullptr) {
-        mError::AddError("Invalid type '" + node->name.value + "'");
-        return t_null;
+    sa::Module* mod = table->GetModule(node->name.value);
+    if (mod != nullptr) {
+        payload = mod;
+        return t_module; 
     }
     
-    return type;
+    mError::AddError("Type '" + node->name.value + "' not found");
+
+    return t_null;
 }
 
 sa::Type* AstVisitor::Visit(TypeAccessAST *node) {
-    return node->lhs->Accept(this);
+    sa::Type* type = node->lhs->Accept(this);
+
+    if (type == t_module) {
+        sa::Module* mod = (sa::Module*)payload;
+        sa::SymbolTable* smtable = mod->symbols;
+
+        sa::Type* typ = smtable->GetType(node->rhs->name.value);
+        if (typ != nullptr) {
+            payload = typ;
+            return typ;
+        }
+
+        sa::Module* modu = smtable->GetModule(node->rhs->name.value);
+        if (modu != nullptr) {
+            payload = modu;
+            return t_module;
+        }
+
+        mError::AddError("Type '" + node->rhs->name.value + "' not found in module '" + mod->name + "'");
+        return t_null;
+    }
+    else if (type != nullptr) {
+        mError::AddError("Cannot access type '" + type->name + "'");
+        return t_null;
+    }
+
+    payload = type;
+    return t_null;
 }

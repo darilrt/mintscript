@@ -579,8 +579,8 @@ ASTNode *Parser::Type(bool strict) {
 
         TypeSignatureAST *rhs = nullptr;
         EXPECTF(rhs, TypeSignature);
-
-        node = new TypeAccessAST(lhs, rhs);
+        
+        node = new TypeAccessAST(node, rhs);
     }
 
     scanner.Consume();

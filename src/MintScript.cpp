@@ -258,7 +258,7 @@ sa::Type* mint::Type(const std::string &name, const std::vector<Field> &fields, 
     }
 
     for (Method method : methods) {
-        const std::string &methodName = "m" + name + method.name;
+        const std::string &methodName = "m" + name + "." + method.name;
 
         type->SetMethod(method.name, { methodName, t_function->GetVariant(method.args) });
 
@@ -279,7 +279,7 @@ void mint::Extend(const std::string &name, const std::vector<Field> &fields, con
     }
 
     for (Method method : methods) {
-        const std::string &methodName = "m" + name + method.name;
+        const std::string &methodName = "m" + name + "_" + method.name;
 
         type->SetMethod(method.name, { methodName, t_function->GetVariant(method.args) });
 
@@ -310,13 +310,13 @@ mint::TModule::TModule(sa::Module *mod) {
 }
 
 void mint::TModule::Type(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
-    const std::string tname = mod->name + name;
-    mod->symbols->SetType(name, { tname });
+    mod->symbols->SetType(name, { name });
     sa::Type* type = mod->symbols->GetType(name);
 }
 
 void mint::TModule::Function(const std::string &name, const std::vector<sa::Type *> &args, ir::Mainfold (*value)(std::vector<ir::Mainfold>)) {
-    const std::string fname = "f" + mod->name + name;
+    const std::string fname = "f" + mod->name + "." + name;
+    
     mod->symbols->SetSymbol(name, { false, fname, t_function->GetVariant(args) });
     ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
         new ir::Instruction(ir::Decl, fname, { }),

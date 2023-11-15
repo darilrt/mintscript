@@ -1,2 +1,2 @@
 
-std.print("Hello, World!")
+mut a: std.int = std.int()
