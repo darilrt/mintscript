@@ -309,15 +309,17 @@ mint::TModule::TModule(sa::Module *mod) {
     mod->symbols = new sa::SymbolTable();
 }
 
-void mint::TModule::Type(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods)
-{
+void mint::TModule::Type(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
     const std::string tname = mod->name + name;
-
     mod->symbols->SetType(name, { tname });
-
     sa::Type* type = mod->symbols->GetType(name);
 }
 
 void mint::TModule::Function(const std::string &name, const std::vector<sa::Type *> &args, ir::Mainfold (*value)(std::vector<ir::Mainfold>)) {
-
+    const std::string fname = "f" + mod->name + name;
+    mod->symbols->SetSymbol(name, { false, fname, t_function->GetVariant(args) });
+    ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
+        new ir::Instruction(ir::Decl, fname, { }),
+        new ir::Instruction(ir::Native, value, { })
+    }));
 }

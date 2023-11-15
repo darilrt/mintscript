@@ -11,7 +11,8 @@ sa::Type    *t_null = nullptr,
             *t_bool = nullptr,
             *t_type = nullptr,
             *t_function = nullptr,
-            *t_void = nullptr;
+            *t_void = nullptr,
+            *t_module = nullptr;
 
 ir::Mainfold builtin_print(std::vector<ir::Mainfold> args) {
     ir::Mainfold mf = args[0];
@@ -52,6 +53,7 @@ ir::Mainfold float_ToStr(std::vector<ir::Mainfold> args) {
 
 void mint_Root() {
     sa::global->SetType("Module", { "Module" });
+    t_module = sa::global->GetType("Module");
 
     sa::global->SetType("Type", { "Type" });
     t_type = sa::global->GetType("Type");

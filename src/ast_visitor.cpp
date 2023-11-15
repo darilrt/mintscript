@@ -340,8 +340,51 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
     STACK_PUSH(inst);
     sa::Type* type = node->expr->Accept(this);
     STACK_POP();
-    
-    if (type->HasMethod(node->name.value)) {
+
+    if (type == t_module) {
+        sa::Module* modu = table->GetModule(inst->GetArg(0)->value.s->c_str());
+
+        if (modu == nullptr) {
+            mError::AddError("Module '" + node->name.value + "' not found");
+            return t_null;
+        }
+
+        sa::SymbolTable* smtable = modu->symbols;
+
+        sa::Symbol* sym = smtable->GetSymbol(node->name.value);
+        if (sym != nullptr) {
+            PUSH_INST(ins(ir::Var, sym->name, { }));
+            return sym->type;
+        }
+        
+        sa::Type* typ = smtable->GetType(node->name.value);
+        if (typ != nullptr) {
+            PUSH_INST(ins(ir::Var, node->name.value, { }));
+            return t_type;
+        }
+
+        sa::Module* mod = smtable->GetModule(node->name.value);
+        if (mod != nullptr) {
+            PUSH_INST(ins(ir::Var, node->name.value, { }));
+            return table->GetType("Module");
+        }
+
+        mError::AddError("Symbol '" + node->name.value + "' not found");
+        return t_null;
+    }
+    else if (type == t_type) {
+        sa::Type* typ = table->GetType(node->name.value);
+
+        if (typ == nullptr) {
+            mError::AddError("Type '" + node->name.value + "' not found");
+            return t_null;
+        }
+
+        // TODO: Check for static fields and methods
+
+        return t_type;
+    }
+    else if (type->HasMethod(node->name.value)) {
         const sa::Method* method = type->GetMethod(node->name.value);
         PUSH_INST(ins(ir::Var, method->name, { inst->GetArg(0) }));
         delete inst;

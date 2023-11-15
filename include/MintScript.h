@@ -20,14 +20,15 @@
 #include <string>
 #include <vector>
 
-extern MINT_API sa::Type *t_null,
-                *t_int,
-                *t_float,
-                *t_str,
-                *t_bool,
-                *t_type,
-                *t_function,
-                *t_void;
+extern MINT_API sa::Type    *t_null,
+                            *t_int,
+                            *t_float,
+                            *t_str,
+                            *t_bool,
+                            *t_type,
+                            *t_function,
+                            *t_void,
+                            *t_module;
 
 namespace mint {
 
@@ -77,17 +78,17 @@ namespace mint {
         ir::Mainfold (*value)(std::vector<ir::Mainfold>)
     );
 
-    class TModule {
+    class MINT_API TModule {
     public:
         TModule(sa::Module* mod);
 
-        inline MINT_API void Type(
+        void Type(
             const std::string &name,
             const std::vector<Field> &fields,
             const std::vector<Method> &methods
         );
 
-        inline MINT_API void Function(
+        void Function(
             const std::string &name,
             const std::vector<sa::Type*> &args,
             ir::Mainfold (*value)(std::vector<ir::Mainfold>)
