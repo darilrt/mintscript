@@ -108,6 +108,7 @@ sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
     }
     
     sa::Type* typ = table->GetType(node->name);
+
     if (typ != nullptr) {
         payload = typ;
         return t_type;
@@ -190,7 +191,7 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
         return field->type;
     }
     else {
-        mError::AddError("'" + node->name.value + "' is not a member of '" + type->name + "'");
+        mError::AddError("'" + node->name.value + "' is not a member of '" + type->ToString() + "'");
     }
 
     delete inst;
@@ -217,9 +218,8 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         if (type->HasMethod(name)) {
             const sa::Method* method = type->GetMethod(name);
 
-            delete inst->GetArg(0)->value.s;
-            inst->GetArg(0)->value.s = new std::string(method->name);
-            inst->GetArgs().push_back(ins(ir::New, (int) type->fields.size(), { }));
+            PUSH_INST(ins(ir::Var, method->name, { }));
+            PUSH_INST(ins(ir::New, (int)type->fields.size(), { }));
 
             ptype = method->type;
         }
@@ -233,7 +233,7 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         type = ptype->typeParameters[0];
     }
     else {
-        mError::AddError("Cannot call '" + ptype->name + "'");
+        mError::AddError("Cannot call '" + ptype->ToString() + "'");
         return t_null;
     }
 
@@ -254,7 +254,7 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
             sa::Type* expected = ptype->typeParameters[i + 1];
 
             if (type != expected) {
-                mError::AddError("Type mismatch expected '" + expected->name + "' got '" + type->name + "'");
+                mError::AddError("Type mismatch expected '" + expected->ToString() + "' got '" + type->ToString() + "'");
                 return t_null;
             }
 
@@ -416,7 +416,7 @@ sa::Type* AstVisitor::Visit(AssignmentAST *node) {
     sa::Type* expr = node->expression->Accept(this);
 
     if (type != expr) {
-        mError::AddError("Type mismatch expected '" + type->name + "' got '" + expr->name + "'");
+        mError::AddError("Type mismatch expected '" + type->ToString() + "' got '" + expr->ToString() + "'");
         return t_null;
     }
     STACK_POP();
@@ -441,9 +441,10 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
 
         if (node->expression) {
             sa::Type* value = node->expression->Accept(this);
+            sa::Field* field = clazz->GetField(node->identifier.value);
 
-            if (clazz->GetField(node->identifier.value)->type != value) {
-                mError::AddError("Type mismatch");
+            if (!value->Implements(field->type)) {
+                mError::AddError("Type mismatch expected '" + field->type->ToString() + "' got '" + value->ToString() + "'");
                 return t_null;
             }
         }
@@ -467,8 +468,8 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
     if (node->expression) {
         sa::Type* value = node->expression->Accept(this);
 
-        if (type != value) {
-            mError::AddError("Type mismatch");
+        if (!value->Implements(type)) {
+            mError::AddError("Type mismatch expected '" + type->ToString() + "' got '" + value->ToString() + "'");
             return t_null;
         }
     }
@@ -486,8 +487,44 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(LambdaAST *node) {
-    throw std::runtime_error("LambdaAST not implemented");
-    return t_null;
+    sa::Type* retType = node->returnType ? node->returnType->Accept(this) : t_void;
+
+    std::vector<sa::Type*> argTypes = { retType };
+
+    STACK_PUSH_I(ins(ir::IR, { }));
+    PushScope();
+
+    for (int i = 0; i < node->parameters.size(); i++) {
+        ArgDeclAST* argDecl = (ArgDeclAST*) node->parameters[i];
+        const std::string argName = "v" + moduleName + argDecl->identifier.value;
+        
+        PUSH_INST(ins(ir::Set, {
+            ins(ir::Decl, argName, { }),
+            ins(ir::Arg, i, { })
+        }));
+
+        sa::Type *argType = argDecl->type->Accept(this);
+
+        argTypes.push_back(argType);
+        
+        table->SetSymbol(argDecl->identifier.value, { 
+            false,
+            argName, 
+            argType
+        });
+    }
+
+    sa::Type* retBodyType = node->body->Accept(this);
+
+    if (retBodyType != retType) {
+        mError::AddError("Lambda return type mismatch expected " + retType->ToString() + " got " + retBodyType->ToString());
+        return t_null;
+    }
+
+    PopScope();
+    STACK_POP();
+
+    return t_function->GetVariant(argTypes);
 }
 
 sa::Type* AstVisitor::Visit(ArgDeclAST *node) {
@@ -529,10 +566,8 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 
     sa::Type* rettype = node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null;
 
-    PUSH_INST(ins(ir::Decl, fname, { }));
-
     STACK_PUSH_I(ins(ir::Set, {
-        ins(ir::Var, fname, { }),
+        ins(ir::Decl, fname, { }),
     }));
 
     STACK_PUSH_I(ins(ir::IR, { }));
@@ -555,9 +590,8 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
         ArgDeclAST* argDecl = (ArgDeclAST*) node->lambda->parameters[i];
         const std::string argName = "v" + moduleName + argDecl->identifier.value;
         
-        PUSH_INST(ins(ir::Decl, argName, { }));
         PUSH_INST(ins(ir::Set, {
-            ins(ir::Var, argName, { }),
+            ins(ir::Decl, argName, { }),
             ins(ir::Arg, i, { })
         }));
 
@@ -577,7 +611,7 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
     sa::Type* retsym = node->lambda->body->Accept(this);
     
     if (retsym != rettype) {
-        mError::AddError("Function '" + node->name.value + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
+        mError::AddError("Function '" + node->name.value + "' return type mismatch expected '" + rettype->ToString() + "' got '" + retsym->ToString() + "'");
         return t_null;
     }
 
@@ -805,7 +839,7 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
             sa::Type* rettype = method->type->typeParameters[0];
 
             if (retsym != rettype) {
-                mError::AddError("Function '" + methodName + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
+                mError::AddError("Function '" + methodName + "' return type mismatch expected '" + rettype->ToString() + "' got '" + retsym->ToString() + "'");
                 return t_null;
             }
         }
@@ -827,12 +861,29 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
 sa::Type* AstVisitor::Visit(TypeSignatureAST *node) {
     sa::Type* type = table->GetType(node->name.value);
     if (type != nullptr) {
-        payload = type;
-        return type;
+
+        if (node->types.size() == 0) {
+            return type;
+        }
+
+        std::vector<sa::Type*> types;
+
+        for (ASTNode* t : node->types) {
+            sa::Type* typ = t->Accept(this);
+            if (typ == nullptr) { return t_null; }
+            types.push_back(typ);
+        }
+        
+        return type->GetVariant(types);
     }
 
     sa::Module* mod = table->GetModule(node->name.value);
     if (mod != nullptr) {
+        if (node->types.size() > 0) {
+            mError::AddError(node->name.value + " is not a generic type");
+            return t_null;
+        }
+
         payload = mod;
         return t_module; 
     }
@@ -865,7 +916,7 @@ sa::Type* AstVisitor::Visit(TypeAccessAST *node) {
         return t_null;
     }
     else if (type != nullptr) {
-        mError::AddError("Cannot access type '" + type->name + "'");
+        mError::AddError("Cannot access type '" + type->ToString() + "'");
         return t_null;
     }
 

@@ -33,6 +33,12 @@ ir::Instruction::Instruction(Type instruction, Mainfold (*value)(std::vector<Mai
     this->value.native = value;
 }
 
+ir::Instruction::Instruction(Type instruction, NewInfo *value, std::vector<Instruction *> args) {
+    this->instruction = instruction;
+    this->args = args;
+    this->value.n = value;
+}
+
 ir::Instruction::~Instruction() {
 }
 
@@ -101,7 +107,12 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
                     }
                 }
                 
-                Mainfold* mf = ARG(0).value.mf;
+                Mainfold* mf = &name;
+
+                if (name.type == Mainfold::Field) {
+                    mf = name.value.mf;
+                }
+
                 Mainfold ret = { Mainfold::Null };
 
                 if (mf->type == Mainfold::Scope) {
@@ -127,6 +138,14 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
         case Arg: {
             return stack.top()[instruction->value.i]; 
+        }
+
+        case Vtable: {
+            Mainfold var = ARG(0);
+            return {
+                Mainfold::Field,
+                &context.GetCurrent()->Get(var.vtables[instruction->value.i])
+            };
         }
 
         case Scope: {
@@ -229,8 +248,21 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
         // Objects
         case New: {
-            Object* object = new Object(instruction->value.i);
+            Instruction::NewInfo* info = instruction->value.n;
+            Object* object = new Object(info->size);
+
+            for (int i = 0; i < instruction->GetArgs().size(); i++) {
+                Mainfold mf = ARG(i);
+
+                if (mf.type == Mainfold::Field) {
+                    mf = *mf.value.mf;
+                }
+
+                object->fields[i] = mf;
+            }
+
             Mainfold mf = { Mainfold::Object, object };
+            mf.vtables = info->vtables;
             return mf;
         }
 

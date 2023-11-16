@@ -5,3 +5,5 @@
 void mint_Root();
 
 void mint_Str();
+
+void mint_GList();

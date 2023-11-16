@@ -13,6 +13,8 @@ sa::Type::Type(const std::string &name) {
 }
 
 void sa::Type::SetMethod(std::string name, sa::Method symbol) {
+    symbol.parent = this;
+    symbol.offset = lastMethodOffset++;
     methods[name] = symbol;
 }
 
@@ -103,6 +105,38 @@ std::string sa::Type::ToString() {
     return str;
 }
 
+std::string sa::Type::GetFullName() {
+    std::string fullName = name;
+
+    Module* node = this->_module;
+    while (node != nullptr) {
+        fullName = node->name + "." + fullName;
+        node = node->_module;
+    }
+
+    return fullName;
+}
+
+bool sa::Type::Implements(sa::Type *type) {
+    if (this == type) {
+        return true;
+    }
+
+    if (type->isInterface) {
+        for (auto& method : type->methods) {
+            if (!HasMethod(method.first)) {
+                return false;
+            }
+        }
+
+        return true;
+    } else {
+        return IsVariantOf(type);
+    }
+
+    return false;
+}
+
 sa::Symbol *sa::SymbolTable::GetSymbol(std::string name) {
     if (symbols.find(name) != symbols.end()) {
         return &symbols[name];
@@ -146,4 +180,58 @@ sa::Module *sa::SymbolTable::GetModule(std::string name) {
 sa::Field::Field(bool isMutable, Type *type)  {
     this->isMutable = isMutable;
     this->type = type;
+}
+
+std::string sa::Field::GetFullName() {
+    std::string fullName = name;
+
+    Type* parent = this->parent;
+    while (parent != nullptr) {
+        fullName = parent->name + "_" + fullName;
+        parent = parent->parent;
+    }
+
+    return fullName;
+}
+
+std::string sa::Module::GetFullName() {
+    std::string fullName = name;
+
+    Module* parent = this->_module;
+    while (parent != nullptr) {
+        fullName = parent->name + "." + fullName;
+        parent = parent->_module;
+    }
+
+    return fullName;
+}
+
+sa::Symbol::Symbol(bool isMutable, std::string name, Type *type) {
+    this->isMutable = isMutable;
+    this->name = name;
+    this->type = type;
+}
+
+std::string sa::Symbol::GetFullName() {
+    std::string fullName = name;
+
+    Module* parent = this->_module;
+    while (parent != nullptr) {
+        fullName = parent->name + "." + fullName;
+        parent = parent->_module;
+    }
+
+    return fullName;
+}
+
+std::string sa::Method::GetFullName() {
+    std::string fullName = name;
+
+    Type* parent = this->parent;
+    while (parent != nullptr) {
+        fullName = parent->name + "_" + fullName;
+        parent = parent->parent;
+    }
+
+    return fullName;
 }

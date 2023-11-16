@@ -60,6 +60,8 @@ namespace mint {
         Field() = default;
     };
     
+    MINT_API sa::Type* Type(const std::string &name);
+
     MINT_API sa::Type* Type(
         const std::string &name,
         const std::vector<Field> &fields,
@@ -76,6 +78,16 @@ namespace mint {
         const std::string &name,
         const std::vector<sa::Type*> &args,
         ir::Mainfold (*value)(std::vector<ir::Mainfold>)
+    );
+
+    MINT_API void Interface(
+        const std::string &name,
+        const std::vector<Method> &methods
+    );
+
+    MINT_API void Implement(
+        sa::Type* itrfce,
+        sa::Type* type
     );
 
     class MINT_API TModule {

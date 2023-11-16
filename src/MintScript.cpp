@@ -249,7 +249,11 @@ void mint::RunREPL() {
     }
 }
 
-sa::Type* mint::Type(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
+sa::Type *mint::Type(const std::string &name) {
+    return sa::global->GetType(name);
+}
+
+sa::Type *mint::Type(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
     sa::global->SetType(name, { name });
     sa::Type* type = sa::global->GetType(name);
 
@@ -274,6 +278,11 @@ sa::Type* mint::Type(const std::string &name, const std::vector<Field> &fields, 
 void mint::Extend(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
     sa::Type* type = sa::global->GetType(name);
 
+    if (type == nullptr) {
+        mError::AddError("Type '" + name + "' does not exist");
+        return;
+    }
+
     for (Field field : fields) {
         type->AddField(field.name, { field.isMutable, field.type });
     }
@@ -295,6 +304,57 @@ void mint::Function(const std::string &name, const std::vector<sa::Type *> &args
     ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
         new ir::Instruction(ir::Decl, "f" + name, { }),
         new ir::Instruction(ir::Native, value, { })
+    }));
+}
+
+void mint::Interface(const std::string &name, const std::vector<Method> &methods) {
+    sa::global->SetType(name, { name });
+    sa::Type* type = sa::global->GetType(name);
+    type->isInterface = true;
+
+    for (Method method : methods) {
+        type->SetMethod(method.name, { method.name, t_function->GetVariant(method.args) });
+    }
+}
+
+void mint::Implement(sa::Type *itrfce, sa::Type *type) {
+    if (!itrfce->isInterface) {
+        mError::AddError("Type " + itrfce->name + " is not an interface");
+        return;
+    }
+
+    if (type->isInterface) {
+        mError::AddError("Type " + type->name + " is an interface");
+        return;
+    }
+
+    if (!type->Implements(itrfce)) {
+        mError::AddError("Type " + type->name + " does not implement interface " + itrfce->name);
+        return;
+    }
+    
+    type->implements.insert(itrfce);
+
+
+    std::vector<sa::Method> methods;
+
+    for (auto p : itrfce->methods) {
+        methods.push_back(p.second);
+    }
+
+    ir::Instruction* list = new ir::Instruction(ir::New, (int) methods.size(), { });
+
+    std::sort(methods.begin(), methods.end(), [](sa::Method a, sa::Method b) {
+        return a.offset < b.offset;
+    });
+
+    for (sa::Method method : methods) {
+        list->GetArgs().push_back(new ir::Instruction(ir::Var, type->GetMethod(method.name)->name, { }));
+    }
+
+    ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
+        new ir::Instruction(ir::Decl, "vt" + type->GetFullName() + "#" + itrfce->GetFullName(), { }),
+        list
     }));
 }
 

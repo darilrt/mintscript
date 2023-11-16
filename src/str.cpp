@@ -14,4 +14,8 @@ void mint_Str() {
     mint::Extend("str", { }, {
         { "Concat", { t_str, t_str }, str_Concat },
     });
+
+    mint::Interface("IStringable", {
+        { "ToStr", { t_str }, nullptr }
+    });
 }

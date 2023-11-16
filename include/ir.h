@@ -120,6 +120,8 @@ namespace ir {
             Mainfold (*native)(std::vector<Mainfold>);
         } value;
 
+        std::vector<std::string> vtables;
+
         Mainfold() { this->type = Null; }
         Mainfold(Type type) { this->type = type; }
         Mainfold(Type type, int value) { this->type = type; this->value.i = value; }
