@@ -219,7 +219,14 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
             const sa::Method* method = type->GetMethod(name);
 
             PUSH_INST(ins(ir::Var, method->name, { }));
-            PUSH_INST(ins(ir::New, (int)type->fields.size(), { }));
+            STACK_PUSH_I(ins(ir::New, (int) type->GetSize(), { }));
+
+            for (auto itrfce : type->implements) {
+                const std::string& name = "vt" + type->GetFullName() + "#" + itrfce->GetFullName();
+                PUSH_INST(ins(ir::Var, name, { }));
+            }
+
+            STACK_POP();
 
             ptype = method->type;
         }
@@ -746,12 +753,10 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
         if (stmt == nullptr) { continue; }
 
         VarDeclarationAST* varDecl = dynamic_cast<VarDeclarationAST*>(stmt);
-
+        
         if (varDecl != nullptr) { // Field
             const std::string fieldName = varDecl->identifier.value;
-
             type->SetField(fieldName, { varDecl->isMutable, varDecl->type->Accept(this) });
-
             continue;
         }
         
@@ -854,6 +859,22 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
     }
 
     nameStack.pop();
+
+    for (ASTNode* base : node->bases) {
+        sa::Type* baseType = base->Accept(this);
+
+        if (baseType == nullptr) { return t_null; }
+
+        if (baseType->isInterface) {
+            mint::Implement(baseType, type);
+        }
+        else {
+            mError::AddError("Class '" + node->name.value + "' cannot inherit from non-interface type '" + baseType->ToString() + "'");
+        }
+        // else {
+        //     type->AddBase(baseType);
+        // }
+    }
 
     return t_null;
 }

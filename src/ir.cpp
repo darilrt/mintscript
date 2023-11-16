@@ -33,12 +33,6 @@ ir::Instruction::Instruction(Type instruction, Mainfold (*value)(std::vector<Mai
     this->value.native = value;
 }
 
-ir::Instruction::Instruction(Type instruction, NewInfo *value, std::vector<Instruction *> args) {
-    this->instruction = instruction;
-    this->args = args;
-    this->value.n = value;
-}
-
 ir::Instruction::~Instruction() {
 }
 
@@ -138,14 +132,6 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
         case Arg: {
             return stack.top()[instruction->value.i]; 
-        }
-
-        case Vtable: {
-            Mainfold var = ARG(0);
-            return {
-                Mainfold::Field,
-                &context.GetCurrent()->Get(var.vtables[instruction->value.i])
-            };
         }
 
         case Scope: {
@@ -248,8 +234,7 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
         // Objects
         case New: {
-            Instruction::NewInfo* info = instruction->value.n;
-            Object* object = new Object(info->size);
+            Object* object = new Object(instruction->value.i);
 
             for (int i = 0; i < instruction->GetArgs().size(); i++) {
                 Mainfold mf = ARG(i);
@@ -262,7 +247,6 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             }
 
             Mainfold mf = { Mainfold::Object, object };
-            mf.vtables = info->vtables;
             return mf;
         }
 
@@ -434,7 +418,11 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
         // Objects
 
         case New: {
-            std::cout << indentStr << "New(" << instruction->value.i << ")" << std::endl;
+            std::cout << indentStr << "New(" << instruction->value.i << ") {" << std::endl;
+            for (int i = 0; i < instruction->GetArgs().size(); i++) {
+                Print(instruction->GetArg(i), indent + 1);
+            }
+            std::cout << indentStr << "}" << std::endl;
             break;
         }
 

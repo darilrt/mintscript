@@ -96,7 +96,7 @@ namespace sa {
 
         std::string GetFullName();
 
-        inline uint32_t GetSize() { return lastFieldOffset; }
+        inline uint32_t GetSize() { return lastFieldOffset + implements.size(); }
 
         bool Implements(Type* type);
 

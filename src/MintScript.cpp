@@ -335,7 +335,6 @@ void mint::Implement(sa::Type *itrfce, sa::Type *type) {
     
     type->implements.insert(itrfce);
 
-
     std::vector<sa::Method> methods;
 
     for (auto p : itrfce->methods) {
