@@ -3,6 +3,7 @@
 #include "MintScript.h" 
 
 #include <iostream>
+#include <cassert>
 
 sa::Type    *t_null = nullptr,
             *t_int = nullptr,
@@ -35,6 +36,16 @@ ir::Mainfold builtin_print(std::vector<ir::Mainfold> args) {
     std::cout << "\n";
 
     return { ir::Mainfold::Null };
+}
+
+ir::Mainfold builtin_input(std::vector<ir::Mainfold> args) {
+    std::cout << *args[0].value.s;
+    std::string str;
+    std::cin >> str;
+    return {
+        ir::Mainfold::String,
+        new std::string(str)
+    };
 }
 
 ir::Mainfold int_ToStr(std::vector<ir::Mainfold> args) {
@@ -76,9 +87,12 @@ void mint_Root() {
 
     mint_Str();
 
+    sa::Type* IStringable = mint::Type("IStringable");
+
     t_int = mint::Type("int", { }, {
         { "ToStr", { t_str }, int_ToStr }
     });
+    mint::Implement(IStringable, t_int);
 
     t_float = mint::Type("float", { }, {
         { "ToStr", { t_str }, float_ToStr }
@@ -89,4 +103,9 @@ void mint_Root() {
     });
 
     mint::Function("print", { t_void, t_str } , builtin_print);
+    mint::Function("input", { t_str, t_str }, builtin_input);
+
+    mint_GList();
+
+    ir::global->GetArgs().push_back(new ir::Instruction(ir::VTInit, { }));
 }

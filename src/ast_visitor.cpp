@@ -7,6 +7,7 @@
 #include "MintScript.h"
 
 #include <sstream>
+#include <algorithm>
 
 #define PUSH_INST stack.top()->GetArgs().push_back
 #define STACK_TOP stack.top()
@@ -100,6 +101,7 @@ sa::Type* AstVisitor::Visit(IndexExprAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
+    payload = nullptr;
 
     sa::Symbol* sym = table->GetSymbol(node->name);
     if (sym != nullptr) {
@@ -108,6 +110,7 @@ sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
     }
     
     sa::Type* typ = table->GetType(node->name);
+
     if (typ != nullptr) {
         payload = typ;
         return t_type;
@@ -125,6 +128,7 @@ sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
 
 sa::Type* AstVisitor::Visit(AccessExprAST *node) {
     ir::Instruction* inst = ins(ir::Field, { });
+    payload = nullptr;
 
     STACK_PUSH(inst);
     sa::Type* type = node->expr->Accept(this);
@@ -174,7 +178,18 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
         return t_type;
     }
     else if (type->HasMethod(node->name.value)) {
-        const sa::Method* method = type->GetMethod(node->name.value);
+        sa::Method* method = type->GetMethod(node->name.value);
+
+        if (type->isInterface) {
+            PUSH_INST(ins(ir::VTSolve, method->GetFullName(), { 
+                inst->GetArg(0),
+            }));
+            payload = inst->GetArg(0);
+            inst->GetArgs().clear();
+            delete inst;
+            return method->type;
+        }
+        
         PUSH_INST(ins(ir::Var, method->name, { inst->GetArg(0) }));
         delete inst;
         return method->type;
@@ -183,14 +198,14 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
         sa::Field* field = type->GetField(node->name.value);
         PUSH_INST(ins(
             ir::Field,
-            field->offset, 
+            field->offset,
             { inst->GetArg(0) }
         ));
         delete inst;
         return field->type;
     }
     else {
-        mError::AddError("'" + node->name.value + "' is not a member of '" + type->name + "'");
+        mError::AddError("'" + node->name.value + "' is not a member of '" + type->ToString() + "'");
     }
 
     delete inst;
@@ -210,34 +225,44 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         const std::string name = type->name;
         
         if (type == nullptr) {
-            mError::AddError("Type '" + name + "' not found");
+            mError::AddError("Type " + name + " not found");
             return t_null;
         }
 
         if (type->HasMethod(name)) {
             const sa::Method* method = type->GetMethod(name);
 
-            delete inst->GetArg(0)->value.s;
-            inst->GetArg(0)->value.s = new std::string(method->name);
-            inst->GetArgs().push_back(ins(ir::New, (int) type->fields.size(), { }));
+            PUSH_INST(ins(ir::Var, method->name, { }));
+            PUSH_INST(ins(
+                ir::New,
+                (int) type->GetSize(), 
+                { ins(ir::Var, "vt" + type->GetFullName(), { }) }
+            ));
 
             ptype = method->type;
         }
         else {
             inst->SetInstruction(ir::New);
             inst->value.i = (int) type->fields.size();
+            inst->GetArgs().push_back(ins(ir::Var, "vt" + type->GetFullName(), { }));
+
             ptype = t_function->GetVariant({ type });
         }
+        payload = nullptr;
     }
     else if (ptype->IsVariantOf(table->GetType("Function"))) {
         type = ptype->typeParameters[0];
     }
     else {
-        mError::AddError("Cannot call '" + ptype->name + "'");
+        mError::AddError("Cannot call '" + ptype->ToString() + "'");
         return t_null;
     }
 
-    std::vector<ir::Instruction*>& args = inst->GetArgs().size() > 0 ? inst->GetArg(0)->GetArgs() : inst->GetArgs();
+    std::vector<ir::Instruction*> args;
+
+    if (payload != nullptr) {
+        args.push_back((ir::Instruction*)payload);
+    }
 
     if (args.size() > 0) {
         if (args[0]->GetInstruction() == ir::Var || args[0]->GetInstruction() == ir::Field) {
@@ -253,8 +278,8 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
             sa::Type* type = node->args[i]->Accept(this);
             sa::Type* expected = ptype->typeParameters[i + 1];
 
-            if (type != expected) {
-                mError::AddError("Type mismatch expected '" + expected->name + "' got '" + type->name + "'");
+            if (!type->Implements(expected)) {
+                mError::AddError("Type mismatch expected '" + expected->ToString() + "' got '" + type->ToString() + "'");
                 return t_null;
             }
 
@@ -416,7 +441,7 @@ sa::Type* AstVisitor::Visit(AssignmentAST *node) {
     sa::Type* expr = node->expression->Accept(this);
 
     if (type != expr) {
-        mError::AddError("Type mismatch expected '" + type->name + "' got '" + expr->name + "'");
+        mError::AddError("Type mismatch expected '" + type->ToString() + "' got '" + expr->ToString() + "'");
         return t_null;
     }
     STACK_POP();
@@ -441,9 +466,10 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
 
         if (node->expression) {
             sa::Type* value = node->expression->Accept(this);
+            sa::Field* field = clazz->GetField(node->identifier.value);
 
-            if (clazz->GetField(node->identifier.value)->type != value) {
-                mError::AddError("Type mismatch");
+            if (!value->Implements(field->type)) {
+                mError::AddError("Type mismatch expected '" + field->type->ToString() + "' got '" + value->ToString() + "'");
                 return t_null;
             }
         }
@@ -467,8 +493,8 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
     if (node->expression) {
         sa::Type* value = node->expression->Accept(this);
 
-        if (type != value) {
-            mError::AddError("Type mismatch");
+        if (!value->Implements(type)) {
+            mError::AddError("Type mismatch expected '" + type->ToString() + "' got '" + value->ToString() + "'");
             return t_null;
         }
     }
@@ -486,8 +512,44 @@ sa::Type* AstVisitor::Visit(VarDeclarationAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(LambdaAST *node) {
-    throw std::runtime_error("LambdaAST not implemented");
-    return t_null;
+    sa::Type* retType = node->returnType ? node->returnType->Accept(this) : t_void;
+
+    std::vector<sa::Type*> argTypes = { retType };
+
+    STACK_PUSH_I(ins(ir::IR, { }));
+    PushScope();
+
+    for (int i = 0; i < node->parameters.size(); i++) {
+        ArgDeclAST* argDecl = (ArgDeclAST*) node->parameters[i];
+        const std::string argName = "v" + moduleName + argDecl->identifier.value;
+        
+        PUSH_INST(ins(ir::Set, {
+            ins(ir::Decl, argName, { }),
+            ins(ir::Arg, i, { })
+        }));
+
+        sa::Type *argType = argDecl->type->Accept(this);
+
+        argTypes.push_back(argType);
+        
+        table->SetSymbol(argDecl->identifier.value, { 
+            false,
+            argName, 
+            argType
+        });
+    }
+
+    sa::Type* retBodyType = node->body->Accept(this);
+
+    if (retBodyType != retType) {
+        mError::AddError("Lambda return type mismatch expected " + retType->ToString() + " got " + retBodyType->ToString());
+        return t_null;
+    }
+
+    PopScope();
+    STACK_POP();
+
+    return t_function->GetVariant(argTypes);
 }
 
 sa::Type* AstVisitor::Visit(ArgDeclAST *node) {
@@ -529,10 +591,8 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 
     sa::Type* rettype = node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null;
 
-    PUSH_INST(ins(ir::Decl, fname, { }));
-
     STACK_PUSH_I(ins(ir::Set, {
-        ins(ir::Var, fname, { }),
+        ins(ir::Decl, fname, { }),
     }));
 
     STACK_PUSH_I(ins(ir::IR, { }));
@@ -555,9 +615,8 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
         ArgDeclAST* argDecl = (ArgDeclAST*) node->lambda->parameters[i];
         const std::string argName = "v" + moduleName + argDecl->identifier.value;
         
-        PUSH_INST(ins(ir::Decl, argName, { }));
         PUSH_INST(ins(ir::Set, {
-            ins(ir::Var, argName, { }),
+            ins(ir::Decl, argName, { }),
             ins(ir::Arg, i, { })
         }));
 
@@ -577,7 +636,7 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
     sa::Type* retsym = node->lambda->body->Accept(this);
     
     if (retsym != rettype) {
-        mError::AddError("Function '" + node->name.value + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
+        mError::AddError("Function '" + node->name.value + "' return type mismatch expected '" + rettype->ToString() + "' got '" + retsym->ToString() + "'");
         return t_null;
     }
 
@@ -712,12 +771,10 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
         if (stmt == nullptr) { continue; }
 
         VarDeclarationAST* varDecl = dynamic_cast<VarDeclarationAST*>(stmt);
-
+        
         if (varDecl != nullptr) { // Field
             const std::string fieldName = varDecl->identifier.value;
-
             type->SetField(fieldName, { varDecl->isMutable, varDecl->type->Accept(this) });
-
             continue;
         }
         
@@ -805,7 +862,7 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
             sa::Type* rettype = method->type->typeParameters[0];
 
             if (retsym != rettype) {
-                mError::AddError("Function '" + methodName + "' return type mismatch expected '" + rettype->name + "' got '" + retsym->name + "'");
+                mError::AddError("Function '" + methodName + "' return type mismatch expected '" + rettype->ToString() + "' got '" + retsym->ToString() + "'");
                 return t_null;
             }
         }
@@ -821,18 +878,79 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
 
     nameStack.pop();
 
-    return t_null;
+    for (ASTNode* base : node->bases) {
+        sa::Type* baseType = base->Accept(this);
+
+        if (baseType == nullptr) { return t_null; }
+
+        if (!baseType->isInterface) {
+            mError::AddError("Class " + node->name.value + " cannot inherit from non-interface type " + baseType->ToString());
+            return t_void;
+        }
+
+        if (type->isInterface) {
+            mError::AddError("Interface " + node->name.value + " cannot inherit from interface type " + baseType->ToString());
+            return t_void;
+        }
+
+        if (!type->Implements(baseType)) {
+            mError::AddError("Type " + type->name + " does not implement interface " + baseType->name);
+            return t_void;
+        }
+        
+        type->implements.insert(baseType);
+
+        std::vector<std::pair<std::string, sa::Method>> methods;
+        for (auto p : baseType->methods) {
+            methods.push_back(p);
+        }
+
+        std::sort(methods.begin(), methods.end(), [](std::pair<std::string, sa::Method> a, std::pair<std::string, sa::Method> b) {
+            return a.second.offset < b.second.offset;
+        });
+
+        ir::Instruction* inst = ins(ir::VTDecl, "vt" + type->GetFullName(), { });
+        type->vtable = inst;
+        STACK_PUSH_I(inst);
+
+        for (auto method : methods) {
+            PUSH_INST(ins(ir::VTSet, method.second.GetFullName(), { 
+                ins(ir::Var, type->GetMethod(method.first)->name, { })
+            }));
+        }
+
+        STACK_POP();
+    }
+
+    return t_void;
 }
 
 sa::Type* AstVisitor::Visit(TypeSignatureAST *node) {
     sa::Type* type = table->GetType(node->name.value);
     if (type != nullptr) {
-        payload = type;
-        return type;
+
+        if (node->types.size() == 0) {
+            return type;
+        }
+
+        std::vector<sa::Type*> types;
+
+        for (ASTNode* t : node->types) {
+            sa::Type* typ = t->Accept(this);
+            if (typ == nullptr) { return t_null; }
+            types.push_back(typ);
+        }
+        
+        return type->GetVariant(types);
     }
 
     sa::Module* mod = table->GetModule(node->name.value);
     if (mod != nullptr) {
+        if (node->types.size() > 0) {
+            mError::AddError(node->name.value + " is not a generic type");
+            return t_null;
+        }
+
         payload = mod;
         return t_module; 
     }
@@ -865,7 +983,7 @@ sa::Type* AstVisitor::Visit(TypeAccessAST *node) {
         return t_null;
     }
     else if (type != nullptr) {
-        mError::AddError("Cannot access type '" + type->name + "'");
+        mError::AddError("Cannot access type '" + type->ToString() + "'");
         return t_null;
     }
 

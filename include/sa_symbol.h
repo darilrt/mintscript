@@ -1,15 +1,35 @@
 #pragma once
+
+#include "ir.h"
+
 #include <unordered_map>
 #include <string>
 #include <vector>
 #include <list>
+#include <set>
+#include <cstdint>
 
 namespace sa {
     class SymbolTable;
     class Type;
 
+    class Module {
+    public:
+        Module* _module = nullptr;
+        std::string name;
+        SymbolTable* symbols;
+
+        Module() = default;
+        Module(const std::string& name) { this->name = name; }
+
+        inline std::string GetName() { return name; }
+
+        std::string GetFullName();
+    };
+
     class Field {
     public:
+        Type* parent;
         bool isMutable;
         std::string name;
         int offset;
@@ -17,27 +37,41 @@ namespace sa {
 
         Field() = default;
         Field(bool isMutable, Type* type);
+
+        inline std::string GetName() { return name; }
+
+        std::string GetFullName();
     };
 
     class Method {
     public:
+        Type* parent;
         std::string name;
         Type* type;
+        uint32_t offset;
         SymbolTable* parameters = nullptr;
 
         Method() = default;
         Method(Type* type) { this->type = type; }
         Method(std::string name, Type* type) { this->name = name; this->type = type; }
-    };
 
+        inline std::string GetName() { return name; }
+
+        std::string GetFullName();
+    };
+    
     class Type {
     public:
+        bool isInterface = false;
+        Module* _module = nullptr;
         std::string name;
         std::unordered_map<std::string, Method> methods;
         std::unordered_map<std::string, Field> fields;
         std::vector<Type*> variants;
         std::vector<Type*> typeParameters;
+        std::set<Type*> implements;
         Type* parent = nullptr;
+        ir::Instruction* vtable = nullptr;
 
         Type();
         Type(const std::string& name);
@@ -63,23 +97,32 @@ namespace sa {
 
         std::string ToString();
 
+        inline std::string GetName() { return name; }
+
+        std::string GetFullName();
+
+        inline uint32_t GetSize() { return lastFieldOffset + implements.size(); }
+
+        bool Implements(Type* type);
+
     private:
-        int lastFieldOffset = 0;
+        uint32_t lastFieldOffset = 0;
+        uint32_t lastMethodOffset = 0;
     };
 
     class Symbol {
     public:
+        Module* _module;
         bool isMutable;
         std::string name;
         Type* type;
 
         Symbol() = default;
-    };
+        Symbol(bool isMutable, std::string name, Type* type);
 
-    class Module {
-    public:
-        std::string name;
-        SymbolTable* symbols;
+        inline std::string GetName() { return name; }
+
+        std::string GetFullName();
     };
 
     class SymbolTable {

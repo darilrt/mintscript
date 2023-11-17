@@ -167,7 +167,7 @@ void mint::RunFile(const std::string &path, bool printIR) {
     }
 
     ir::Interpreter interpreter;
-    
+
     ir::global->GetArgs().push_back(irCode);
 
     if (printIR) {
@@ -249,7 +249,11 @@ void mint::RunREPL() {
     }
 }
 
-sa::Type* mint::Type(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
+sa::Type *mint::Type(const std::string &name) {
+    return sa::global->GetType(name);
+}
+
+sa::Type *mint::Type(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
     sa::global->SetType(name, { name });
     sa::Type* type = sa::global->GetType(name);
 
@@ -274,6 +278,11 @@ sa::Type* mint::Type(const std::string &name, const std::vector<Field> &fields, 
 void mint::Extend(const std::string &name, const std::vector<Field> &fields, const std::vector<Method> &methods) {
     sa::Type* type = sa::global->GetType(name);
 
+    if (type == nullptr) {
+        mError::AddError("Type '" + name + "' does not exist");
+        return;
+    }
+
     for (Field field : fields) {
         type->AddField(field.name, { field.isMutable, field.type });
     }
@@ -296,6 +305,64 @@ void mint::Function(const std::string &name, const std::vector<sa::Type *> &args
         new ir::Instruction(ir::Decl, "f" + name, { }),
         new ir::Instruction(ir::Native, value, { })
     }));
+}
+
+void mint::Interface(const std::string &name, const std::vector<Method> &methods) {
+    sa::global->SetType(name, { name });
+    sa::Type* type = sa::global->GetType(name);
+    type->isInterface = true;
+
+    for (Method method : methods) {
+        type->SetMethod(method.name, { method.name, t_function->GetVariant(method.args) });
+    }
+}
+
+void mint::Implement(sa::Type *itrfce, sa::Type *type) {
+    if (type->isInterface) {
+        mError::AddError("Interface " + type->name + " cannot inherit from interface type " + itrfce->ToString());
+        return;
+    }
+
+    if (!itrfce->isInterface) {
+        mError::AddError("Class " + type->name + " cannot inherit from non-interface type " + itrfce->ToString());
+        return;
+    }
+    
+    if (type->implements.find(itrfce) != type->implements.end()) {
+        mError::AddError("Type " + type->name + " already implements interface " + itrfce->name);
+        return;
+    }
+
+    if (!type->Implements(itrfce)) {
+        mError::AddError("Type " + type->name + " does not implement interface " + itrfce->name);
+        return;
+    }
+    
+    type->implements.insert(itrfce);
+
+    std::vector<std::pair<std::string, sa::Method>> methods;
+    for (auto p : itrfce->methods) {
+        methods.push_back(p);
+    }
+
+    std::sort(methods.begin(), methods.end(), [](std::pair<std::string, sa::Method> a, std::pair<std::string, sa::Method> b) {
+        return a.second.offset < b.second.offset;
+    });
+
+    ir::Instruction* inst;
+    
+    if (!type->vtable) {
+        type->vtable = new ir::Instruction(ir::VTDecl, "vt" + type->GetFullName(), { });
+        ir::global->GetArgs().push_back(type->vtable);
+    }
+
+    inst = type->vtable;
+
+    for (auto method : methods) {
+        inst->GetArgs().push_back(new ir::Instruction(ir::VTSet, method.second.GetFullName(), { 
+            new ir::Instruction(ir::Var, type->GetMethod(method.first)->name, { })
+        }));
+    }
 }
 
 mint::TModule mint::Module(const std::string &name) {

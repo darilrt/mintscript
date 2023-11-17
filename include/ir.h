@@ -23,7 +23,10 @@ namespace ir {
         Decl, Var, Set, Val,
 
         // Objects
-        New, Field,
+        New, Field, 
+        
+        // Interfacing
+        VTDecl, VTSet, VTSolve, VTInit,
 
         // Operators
         AddI, SubI, MulI, DivI, ModI,
@@ -95,6 +98,23 @@ namespace ir {
         Object(int size) { fields.resize(size); }
     };
 
+    class VTable {
+    public:
+        static VTable   *t_int,
+                        *t_float,
+                        *t_str,
+                        *t_bool,
+                        *t_object,
+                        *t_scope,
+                        *t_field,
+                        *t_native,
+                        *t_null;
+
+        std::unordered_map<std::string, Mainfold*> methods;
+
+        VTable() = default;
+    };
+
     class Mainfold {
     public:
         enum Type {
@@ -119,6 +139,8 @@ namespace ir {
             Mainfold* mf;
             Mainfold (*native)(std::vector<Mainfold>);
         } value;
+
+        VTable* vtable = nullptr;
 
         Mainfold() { this->type = Null; }
         Mainfold(Type type) { this->type = type; }
@@ -176,6 +198,8 @@ namespace ir {
 
         Interpreter();
         ~Interpreter();
+
+        void InitPrimitiesVTables();
 
         Mainfold Interpret(Instruction* instruction);
 

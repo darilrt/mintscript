@@ -200,14 +200,14 @@ ASTNode *Parser::ClassDeclaration() {
 
         ASTNode *parent = nullptr;
 
-        EXPECTF(parent, Expression);
+        EXPECTF(parent, Type);
 
         bases.push_back(parent);
 
         while (IS(Comma)) {
             scanner.Next();
 
-            EXPECTF(parent, Expression);
+            EXPECTF(parent, Type);
 
             bases.push_back(parent);
         }
