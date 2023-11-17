@@ -167,7 +167,7 @@ void mint::RunFile(const std::string &path, bool printIR) {
     }
 
     ir::Interpreter interpreter;
-    
+
     ir::global->GetArgs().push_back(irCode);
 
     if (printIR) {
@@ -318,13 +318,18 @@ void mint::Interface(const std::string &name, const std::vector<Method> &methods
 }
 
 void mint::Implement(sa::Type *itrfce, sa::Type *type) {
-    if (!itrfce->isInterface) {
-        mError::AddError("Type " + itrfce->name + " is not an interface");
+    if (type->isInterface) {
+        mError::AddError("Interface " + type->name + " cannot inherit from interface type " + itrfce->ToString());
         return;
     }
 
-    if (type->isInterface) {
-        mError::AddError("Type " + type->name + " is an interface");
+    if (!itrfce->isInterface) {
+        mError::AddError("Class " + type->name + " cannot inherit from non-interface type " + itrfce->ToString());
+        return;
+    }
+    
+    if (type->implements.find(itrfce) != type->implements.end()) {
+        mError::AddError("Type " + type->name + " already implements interface " + itrfce->name);
         return;
     }
 
@@ -335,15 +340,29 @@ void mint::Implement(sa::Type *itrfce, sa::Type *type) {
     
     type->implements.insert(itrfce);
 
-    std::vector<sa::Method> methods;
+    std::vector<std::pair<std::string, sa::Method>> methods;
     for (auto p : itrfce->methods) {
-        methods.push_back(p.second);
+        methods.push_back(p);
     }
 
-    std::sort(methods.begin(), methods.end(), [](sa::Method a, sa::Method b) {
-        return a.offset < b.offset;
+    std::sort(methods.begin(), methods.end(), [](std::pair<std::string, sa::Method> a, std::pair<std::string, sa::Method> b) {
+        return a.second.offset < b.second.offset;
     });
 
+    ir::Instruction* inst;
+    
+    if (!type->vtable) {
+        type->vtable = new ir::Instruction(ir::VTDecl, "vt" + type->GetFullName(), { });
+        ir::global->GetArgs().push_back(type->vtable);
+    }
+
+    inst = type->vtable;
+
+    for (auto method : methods) {
+        inst->GetArgs().push_back(new ir::Instruction(ir::VTSet, method.second.GetFullName(), { 
+            new ir::Instruction(ir::Var, type->GetMethod(method.first)->name, { })
+        }));
+    }
 }
 
 mint::TModule mint::Module(const std::string &name) {

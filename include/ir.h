@@ -26,11 +26,7 @@ namespace ir {
         New, Field, 
         
         // Interfacing
-        VTDecl, VTSet, VTSolve,
-
-        // Example
-        // VTDecl("vtIStringable", { VTSet("vtIStringable", { Var("mint_ToStr") }) })
-        // VTGet("mIStringable_ToStr", {  })
+        VTDecl, VTSet, VTSolve, VTInit,
 
         // Operators
         AddI, SubI, MulI, DivI, ModI,
@@ -104,6 +100,16 @@ namespace ir {
 
     class VTable {
     public:
+        static VTable   *t_int,
+                        *t_float,
+                        *t_str,
+                        *t_bool,
+                        *t_object,
+                        *t_scope,
+                        *t_field,
+                        *t_native,
+                        *t_null;
+
         std::unordered_map<std::string, Mainfold*> methods;
 
         VTable() = default;
@@ -192,6 +198,8 @@ namespace ir {
 
         Interpreter();
         ~Interpreter();
+
+        void InitPrimitiesVTables();
 
         Mainfold Interpret(Instruction* instruction);
 

@@ -3,6 +3,16 @@
 
 #include <cmath>
 
+ir::VTable *ir::VTable::t_int = nullptr,
+           *ir::VTable::t_float = nullptr,
+           *ir::VTable::t_str = nullptr,
+           *ir::VTable::t_bool = nullptr,
+           *ir::VTable::t_object = nullptr,
+           *ir::VTable::t_scope = nullptr,
+           *ir::VTable::t_field = nullptr,
+           *ir::VTable::t_native = nullptr,
+           *ir::VTable::t_null = nullptr;
+
 void PrintMF(ir::Mainfold& mf) {
     
     switch (mf.type) {
@@ -67,9 +77,19 @@ ir::Interpreter::Interpreter() {
 ir::Interpreter::~Interpreter() {
 }
 
+void ir::Interpreter::InitPrimitiesVTables() {
+    SymbolTable* current = context.GetCurrent();
+    VTable::t_int = (VTable*) current->Get("vtint").value.st;
+}
+
 ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
 
     switch (instruction->GetInstruction()) {
+        case VTInit: {
+            InitPrimitiesVTables();
+            return { Mainfold::Null };
+        }
+
         case IR: { 
             return { Mainfold::Scope, new Instruction(ir::Scope, 1, instruction->GetArgs()) };
         }
@@ -298,7 +318,7 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             std::string name = *instruction->value.s;
 
             VTable* vtable = mf->vtable;
-
+            
             if (vtable->methods.find(name) != vtable->methods.end()) {
                 return *vtable->methods[name];
             }
@@ -350,11 +370,31 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         case BoolToFloat: { return { Mainfold::Float, { (float)ARG(0).value.b } }; }
         
         // Literals
-        case Int: return { Mainfold::Int, { instruction->value.i } };
-        case Float: return { Mainfold::Float, { instruction->value.f } };
-        case String: return { Mainfold::String, { instruction->value.s } };
-        case Bool: return { Mainfold::Bool, { instruction->value.b } };
-        case Null: return { Mainfold::Null };
+        case Int: {
+            Mainfold mf = { Mainfold::Int, { instruction->value.i } };
+            mf.vtable = VTable::t_int;
+            return mf;
+        }
+        case Float: {
+            Mainfold mf = { Mainfold::Float, { instruction->value.f } };
+            mf.vtable = VTable::t_float;
+            return mf;
+        }
+        case String: {
+            Mainfold mf = { Mainfold::String, { instruction->value.s } };
+            mf.vtable = VTable::t_str;
+            return mf;
+        }
+        case Bool: {
+            Mainfold mf = { Mainfold::Bool, { instruction->value.b } };
+            mf.vtable = VTable::t_bool;
+            return mf;
+        }
+        case Null: {
+            Mainfold mf = { Mainfold::Null };
+            mf.vtable = VTable::t_null;
+            return mf;
+        }
         default: break;
     }
 
@@ -365,6 +405,11 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
     const std::string indentStr = std::string(indent, ' ');
 
     switch (instruction->GetInstruction()) {
+        case VTInit: {
+            std::cout << indentStr << "VTInit()" << std::endl;
+            break;
+        }
+
         case IR: {
             std::cout << indentStr << "IR {" << std::endl;
             for (int i = 0; i < instruction->GetArgs().size(); i++) {

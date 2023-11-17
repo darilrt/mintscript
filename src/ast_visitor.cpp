@@ -910,6 +910,7 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
         });
 
         ir::Instruction* inst = ins(ir::VTDecl, "vt" + type->GetFullName(), { });
+        type->vtable = inst;
         STACK_PUSH_I(inst);
 
         for (auto method : methods) {

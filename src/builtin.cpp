@@ -87,12 +87,12 @@ void mint_Root() {
 
     mint_Str();
 
-    sa::Type* iStringable = mint::Type("IStringable");
+    sa::Type* IStringable = mint::Type("IStringable");
 
     t_int = mint::Type("int", { }, {
         { "ToStr", { t_str }, int_ToStr }
     });
-    mint::Implement(iStringable, t_int);
+    mint::Implement(IStringable, t_int);
 
     t_float = mint::Type("float", { }, {
         { "ToStr", { t_str }, float_ToStr }
@@ -106,4 +106,6 @@ void mint_Root() {
     mint::Function("input", { t_str, t_str }, builtin_input);
 
     mint_GList();
+
+    ir::global->GetArgs().push_back(new ir::Instruction(ir::VTInit, { }));
 }
