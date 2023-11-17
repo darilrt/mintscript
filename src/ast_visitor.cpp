@@ -7,6 +7,7 @@
 #include "MintScript.h"
 
 #include <sstream>
+#include <algorithm>
 
 #define PUSH_INST stack.top()->GetArgs().push_back
 #define STACK_TOP stack.top()
@@ -100,6 +101,7 @@ sa::Type* AstVisitor::Visit(IndexExprAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
+    payload = nullptr;
 
     sa::Symbol* sym = table->GetSymbol(node->name);
     if (sym != nullptr) {
@@ -126,6 +128,7 @@ sa::Type* AstVisitor::Visit(PropertyExprAST *node) {
 
 sa::Type* AstVisitor::Visit(AccessExprAST *node) {
     ir::Instruction* inst = ins(ir::Field, { });
+    payload = nullptr;
 
     STACK_PUSH(inst);
     sa::Type* type = node->expr->Accept(this);
@@ -175,12 +178,16 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
         return t_type;
     }
     else if (type->HasMethod(node->name.value)) {
-        const sa::Method* method = type->GetMethod(node->name.value);
+        sa::Method* method = type->GetMethod(node->name.value);
 
         if (type->isInterface) {
-            const int offset = method->offset;
-            PUSH_INST(ins(ir::Field, offset, { ins(ir::Field, 0, { inst->GetArg(0) }) }));
+            PUSH_INST(ins(ir::VTSolve, method->GetFullName(), { 
+                inst->GetArg(0),
+            }));
+            payload = inst->GetArg(0);
+            inst->GetArgs().clear();
             delete inst;
+            return method->type;
         }
         
         PUSH_INST(ins(ir::Var, method->name, { inst->GetArg(0) }));
@@ -192,7 +199,7 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
         PUSH_INST(ins(
             ir::Field,
             field->offset,
-            { (type->vtable ? 1 : 0) + inst->GetArg(0) }
+            { inst->GetArg(0) }
         ));
         delete inst;
         return field->type;
@@ -218,7 +225,7 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         const std::string name = type->name;
         
         if (type == nullptr) {
-            mError::AddError("Type '" + name + "' not found");
+            mError::AddError("Type " + name + " not found");
             return t_null;
         }
 
@@ -227,16 +234,19 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
 
             PUSH_INST(ins(ir::Var, method->name, { }));
             PUSH_INST(ins(
-                ir::New, 
-                (int) type->GetSize() + type->vtable ? 1 : 0, 
+                ir::New,
+                (int) type->GetSize(), 
                 { ins(ir::Var, "vt" + type->GetFullName(), { }) }
             ));
 
             ptype = method->type;
+            payload = nullptr;
         }
         else {
             inst->SetInstruction(ir::New);
             inst->value.i = (int) type->fields.size();
+            inst->GetArgs().push_back(ins(ir::Var, "vt" + type->GetFullName(), { }));
+
             ptype = t_function->GetVariant({ type });
         }
     }
@@ -248,7 +258,12 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         return t_null;
     }
 
-    std::vector<ir::Instruction*>& args = inst->GetArgs().size() > 0 ? inst->GetArg(0)->GetArgs() : inst->GetArgs();
+
+    std::vector<ir::Instruction*> args;
+
+    if (payload != nullptr) {
+        args.push_back((ir::Instruction*)payload);
+    }
 
     if (args.size() > 0) {
         if (args[0]->GetInstruction() == ir::Var || args[0]->GetInstruction() == ir::Field) {
@@ -886,24 +901,22 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
         
         type->implements.insert(baseType);
 
-        std::vector<sa::Method> methods;
+        std::vector<std::pair<std::string, sa::Method>> methods;
         for (auto p : baseType->methods) {
-            methods.push_back(p.second);
+            methods.push_back(p);
         }
 
-        std::sort(methods.begin(), methods.end(), [](sa::Method a, sa::Method b) {
-            return a.offset < b.offset;
+        std::sort(methods.begin(), methods.end(), [](std::pair<std::string, sa::Method> a, std::pair<std::string, sa::Method> b) {
+            return a.second.offset < b.second.offset;
         });
 
-        ir::Instruction* list = new ir::Instruction(ir::New, (int) methods.size(), { });
-        STACK_PUSH_I(ins(ir::Set, { 
-            ins(ir::Decl, "vt" + type->GetFullName(), { }),
-            list
-        }));
-        type->vtable = list;
+        ir::Instruction* inst = ins(ir::VTDecl, "vt" + type->GetFullName(), { });
+        STACK_PUSH_I(inst);
 
-        for (sa::Method method : methods) {
-            list->GetArgs().push_back(ins(ir::Var, type->GetMethod(method.name)->name, { }));
+        for (auto method : methods) {
+            PUSH_INST(ins(ir::VTSet, method.second.GetFullName(), { 
+                ins(ir::Var, type->GetMethod(method.first)->name, { })
+            }));
         }
 
         STACK_POP();

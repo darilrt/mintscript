@@ -23,7 +23,14 @@ namespace ir {
         Decl, Var, Set, Val,
 
         // Objects
-        New, Field, DeclVtable, SetToVtable,
+        New, Field, 
+        
+        // Interfacing
+        VTDecl, VTSet, VTSolve,
+
+        // Example
+        // VTDecl("vtIStringable", { VTSet("vtIStringable", { Var("mint_ToStr") }) })
+        // VTGet("mIStringable_ToStr", {  })
 
         // Operators
         AddI, SubI, MulI, DivI, ModI,
@@ -97,10 +104,10 @@ namespace ir {
 
     class VTable {
     public:
-        std::unordered_map<std::string, Instruction*> methods;
+        std::unordered_map<std::string, Mainfold*> methods;
 
         VTable() = default;
-    }
+    };
 
     class Mainfold {
     public:

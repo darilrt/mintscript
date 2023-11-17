@@ -1,6 +1,26 @@
 #include "ir.h"
+#include "builtin.h"
 
 #include <cmath>
+
+void PrintMF(ir::Mainfold& mf) {
+    
+    switch (mf.type) {
+        case ir::Mainfold::Int: std::cout << mf.value.i; break;
+        case ir::Mainfold::Float: std::cout << mf.value.f; break;
+        case ir::Mainfold::String: std::cout << *mf.value.s; break;
+        case ir::Mainfold::Bool: std::cout << (mf.value.b ? "true" : "false"); break;
+        case ir::Mainfold::Null: std::cout << "Null"; break;
+        case ir::Mainfold::Field: std::cout << "{ field." << mf.value.mf << " }"; break;
+        case ir::Mainfold::Object: std::cout << "{ object." << mf.value.st << " }"; break;
+        case ir::Mainfold::Native: std::cout << "{ native." << (void*)mf.value.native << " }"; break;
+        case ir::Mainfold::Scope: std::cout << "{ scope." << mf.value.ir << " }"; break;
+        default: std::cout << "Unknown Mainfold type " << mf.type; break;
+    }
+
+    std::cout << "\n";
+
+}
 
 ir::Instruction* ir::global = new Instruction(ir::Scope, 3, { });
 
@@ -217,6 +237,7 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             
             mf->type = value.type;
             mf->value = value.value;
+            mf->vtable = value.vtable;
 
             return { Mainfold::Null };
         }
@@ -236,17 +257,12 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         case New: {
             Object* object = new Object(instruction->value.i);
 
-            for (int i = 0; i < instruction->GetArgs().size(); i++) {
-                Mainfold mf = ARG(i);
-
-                if (mf.type == Mainfold::Field) {
-                    mf = *mf.value.mf;
-                }
-
-                object->fields[i] = mf;
+            Mainfold mf = { Mainfold::Object, object };
+            
+            if (instruction->GetArgs().size() == 1) {
+                mf.vtable = (VTable*) ARG(0).value.mf->value.st;
             }
 
-            Mainfold mf = { Mainfold::Object, object };
             return mf;
         }
 
@@ -255,24 +271,36 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             return { Mainfold::Field, &object->fields[instruction->value.i] };
         }
 
-        case DeclVtable: {
+        case VTDecl: {
             context.GetCurrent()->Set(*instruction->value.s);
-            Mainfold mf = context.GetCurrent()->Get(*instruction->value.s);
+            Mainfold &mf = context.GetCurrent()->Get(*instruction->value.s);
 
             VTable* vtable = new VTable();
 
-            for (int i = 0; i < instruction->GetArgs().size(); i++) {
-                vtable 
+            for (auto inst : instruction->GetArgs()) {
+                vtable->methods[*inst->value.s] = Interpret(inst->GetArg(0)).value.mf;
             }
+
+            mf.value.st = (Object*) vtable;
+            mf.type = Mainfold::Object;
 
             return { Mainfold::Null };
         }
 
-        case Vtable {
-            Mainfold mf = context.GetCurrent()->Get(*instruction->value.s);
+        case VTSolve: {
+            Mainfold _mf = ARG(0); // Object
+            Mainfold *mf = &_mf;
 
-            for (int i = 0; i < instruction->GetArgs().size(); i++) {
-                mf.vtables.push_back(*instruction->GetArg(i)->value.s);
+            if (_mf.type == Mainfold::Field) {
+                mf = _mf.value.mf;
+            }
+
+            std::string name = *instruction->value.s;
+
+            VTable* vtable = mf->vtable;
+
+            if (vtable->methods.find(name) != vtable->methods.end()) {
+                return *vtable->methods[name];
             }
 
             return { Mainfold::Null };
@@ -451,6 +479,31 @@ void ir::Interpreter::Print(Instruction *instruction, int indent) {
 
         case Field: {
             std::cout << indentStr << "Field(" << instruction->value.i << ") { \n";
+            Print(instruction->GetArg(0), indent + 1);
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        // VTables
+
+        case VTDecl: {
+            std::cout << indentStr << "VTDecl(" << *instruction->value.s << ") {" << std::endl;
+            for (int i = 0; i < instruction->GetArgs().size(); i++) {
+                Print(instruction->GetArg(i), indent + 1);
+            }
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        case VTSolve: {
+            std::cout << indentStr << "VTSolve(" << *instruction->value.s << ") {" << std::endl;
+            Print(instruction->GetArg(0), indent + 1);
+            std::cout << indentStr << "}" << std::endl;
+            break;
+        }
+
+        case VTSet: {
+            std::cout << indentStr << "VTSet(" << *instruction->value.s << ") {" << std::endl;
             Print(instruction->GetArg(0), indent + 1);
             std::cout << indentStr << "}" << std::endl;
             break;
