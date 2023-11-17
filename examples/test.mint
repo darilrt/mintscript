@@ -1,10 +1,13 @@
 
 class Hello(IStringable) {
-    Hello() {
-    }
-
     ToStr() -> str {
         return "Hello, World!"
+    }
+}
+
+class Goodbye(IStringable) {
+    ToStr() -> str {
+        return "Goodbye, World!"
     }
 }
 
@@ -12,5 +15,5 @@ format(a: IStringable) -> str {
     return a.ToStr()
 }
 
-let h: IStringable = Hello()
-print(format(h))
+print(format(Hello()))
+print(format(Goodbye()))

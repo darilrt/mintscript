@@ -240,7 +240,6 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
             ));
 
             ptype = method->type;
-            payload = nullptr;
         }
         else {
             inst->SetInstruction(ir::New);
@@ -249,6 +248,7 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
 
             ptype = t_function->GetVariant({ type });
         }
+        payload = nullptr;
     }
     else if (ptype->IsVariantOf(table->GetType("Function"))) {
         type = ptype->typeParameters[0];
@@ -257,7 +257,6 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         mError::AddError("Cannot call '" + ptype->ToString() + "'");
         return t_null;
     }
-
 
     std::vector<ir::Instruction*> args;
 
@@ -279,7 +278,7 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
             sa::Type* type = node->args[i]->Accept(this);
             sa::Type* expected = ptype->typeParameters[i + 1];
 
-            if (type != expected) {
+            if (!type->Implements(expected)) {
                 mError::AddError("Type mismatch expected '" + expected->ToString() + "' got '" + type->ToString() + "'");
                 return t_null;
             }
