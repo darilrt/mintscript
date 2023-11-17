@@ -255,6 +255,29 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
             return { Mainfold::Field, &object->fields[instruction->value.i] };
         }
 
+        case DeclVtable: {
+            context.GetCurrent()->Set(*instruction->value.s);
+            Mainfold mf = context.GetCurrent()->Get(*instruction->value.s);
+
+            VTable* vtable = new VTable();
+
+            for (int i = 0; i < instruction->GetArgs().size(); i++) {
+                vtable 
+            }
+
+            return { Mainfold::Null };
+        }
+
+        case Vtable {
+            Mainfold mf = context.GetCurrent()->Get(*instruction->value.s);
+
+            for (int i = 0; i < instruction->GetArgs().size(); i++) {
+                mf.vtables.push_back(*instruction->GetArg(i)->value.s);
+            }
+
+            return { Mainfold::Null };
+        }
+
         // Operators
         case AddI: { return { Mainfold::Int,  { ARG(0).value.i + ARG(1).value.i } }; }
         case SubI: { return { Mainfold::Int,  { ARG(0).value.i - ARG(1).value.i } }; }

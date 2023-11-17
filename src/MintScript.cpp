@@ -336,25 +336,32 @@ void mint::Implement(sa::Type *itrfce, sa::Type *type) {
     type->implements.insert(itrfce);
 
     std::vector<sa::Method> methods;
-
     for (auto p : itrfce->methods) {
         methods.push_back(p.second);
     }
-
-    ir::Instruction* list = new ir::Instruction(ir::New, (int) methods.size(), { });
 
     std::sort(methods.begin(), methods.end(), [](sa::Method a, sa::Method b) {
         return a.offset < b.offset;
     });
 
+    ir::Instruction* list;
+    if (type->vtable) {
+        list = type->vtable;
+    }
+    else {
+        list = new ir::Instruction(ir::New, (int) methods.size(), { });
+        
+        ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
+            new ir::Instruction(ir::Decl, "vt" + type->GetFullName(), { }),
+            list
+        }));
+
+        type->vtable = list;
+    }
+
     for (sa::Method method : methods) {
         list->GetArgs().push_back(new ir::Instruction(ir::Var, type->GetMethod(method.name)->name, { }));
     }
-
-    ir::global->GetArgs().push_back(new ir::Instruction(ir::Set, {
-        new ir::Instruction(ir::Decl, "vt" + type->GetFullName() + "#" + itrfce->GetFullName(), { }),
-        list
-    }));
 }
 
 mint::TModule mint::Module(const std::string &name) {

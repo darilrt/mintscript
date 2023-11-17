@@ -1,4 +1,7 @@
 #pragma once
+
+#include "ir.h"
+
 #include <unordered_map>
 #include <string>
 #include <vector>
@@ -67,6 +70,7 @@ namespace sa {
         std::vector<Type*> typeParameters;
         std::set<Type*> implements;
         Type* parent = nullptr;
+        ir::Instruction* vtable = nullptr;
 
         Type();
         Type(const std::string& name);

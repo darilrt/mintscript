@@ -176,6 +176,13 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
     }
     else if (type->HasMethod(node->name.value)) {
         const sa::Method* method = type->GetMethod(node->name.value);
+
+        if (type->isInterface) {
+            const int offset = method->offset;
+            PUSH_INST(ins(ir::Field, offset, { ins(ir::Field, 0, { inst->GetArg(0) }) }));
+            delete inst;
+        }
+        
         PUSH_INST(ins(ir::Var, method->name, { inst->GetArg(0) }));
         delete inst;
         return method->type;
@@ -184,8 +191,8 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
         sa::Field* field = type->GetField(node->name.value);
         PUSH_INST(ins(
             ir::Field,
-            field->offset, 
-            { inst->GetArg(0) }
+            field->offset,
+            { (type->vtable ? 1 : 0) + inst->GetArg(0) }
         ));
         delete inst;
         return field->type;
@@ -219,14 +226,11 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
             const sa::Method* method = type->GetMethod(name);
 
             PUSH_INST(ins(ir::Var, method->name, { }));
-            STACK_PUSH_I(ins(ir::New, (int) type->GetSize(), { }));
-
-            for (auto itrfce : type->implements) {
-                const std::string& name = "vt" + type->GetFullName() + "#" + itrfce->GetFullName();
-                PUSH_INST(ins(ir::Var, name, { }));
-            }
-
-            STACK_POP();
+            PUSH_INST(ins(
+                ir::New, 
+                (int) type->GetSize() + type->vtable ? 1 : 0, 
+                { ins(ir::Var, "vt" + type->GetFullName(), { }) }
+            ));
 
             ptype = method->type;
         }
@@ -865,18 +869,47 @@ sa::Type* AstVisitor::Visit(ClassAST *node) {
 
         if (baseType == nullptr) { return t_null; }
 
-        if (baseType->isInterface) {
-            mint::Implement(baseType, type);
+        if (!baseType->isInterface) {
+            mError::AddError("Class " + node->name.value + " cannot inherit from non-interface type " + baseType->ToString());
+            return t_void;
         }
-        else {
-            mError::AddError("Class '" + node->name.value + "' cannot inherit from non-interface type '" + baseType->ToString() + "'");
+
+        if (type->isInterface) {
+            mError::AddError("Interface " + node->name.value + " cannot inherit from interface type " + baseType->ToString());
+            return t_void;
         }
-        // else {
-        //     type->AddBase(baseType);
-        // }
+
+        if (!type->Implements(baseType)) {
+            mError::AddError("Type " + type->name + " does not implement interface " + baseType->name);
+            return t_void;
+        }
+        
+        type->implements.insert(baseType);
+
+        std::vector<sa::Method> methods;
+        for (auto p : baseType->methods) {
+            methods.push_back(p.second);
+        }
+
+        std::sort(methods.begin(), methods.end(), [](sa::Method a, sa::Method b) {
+            return a.offset < b.offset;
+        });
+
+        ir::Instruction* list = new ir::Instruction(ir::New, (int) methods.size(), { });
+        STACK_PUSH_I(ins(ir::Set, { 
+            ins(ir::Decl, "vt" + type->GetFullName(), { }),
+            list
+        }));
+        type->vtable = list;
+
+        for (sa::Method method : methods) {
+            list->GetArgs().push_back(ins(ir::Var, type->GetMethod(method.name)->name, { }));
+        }
+
+        STACK_POP();
     }
 
-    return t_null;
+    return t_void;
 }
 
 sa::Type* AstVisitor::Visit(TypeSignatureAST *node) {

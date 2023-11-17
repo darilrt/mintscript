@@ -23,7 +23,7 @@ namespace ir {
         Decl, Var, Set, Val,
 
         // Objects
-        New, Field,
+        New, Field, DeclVtable, SetToVtable,
 
         // Operators
         AddI, SubI, MulI, DivI, ModI,
@@ -95,6 +95,13 @@ namespace ir {
         Object(int size) { fields.resize(size); }
     };
 
+    class VTable {
+    public:
+        std::unordered_map<std::string, Instruction*> methods;
+
+        VTable() = default;
+    }
+
     class Mainfold {
     public:
         enum Type {
@@ -120,7 +127,7 @@ namespace ir {
             Mainfold (*native)(std::vector<Mainfold>);
         } value;
 
-        std::vector<std::string> vtables;
+        VTable* vtable = nullptr;
 
         Mainfold() { this->type = Null; }
         Mainfold(Type type) { this->type = type; }
