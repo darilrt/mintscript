@@ -29,8 +29,8 @@ namespace ir {
         VTDecl, VTSet, VTSolve, VTInit,
 
         // Operators
-        AddI, SubI, MulI, DivI, ModI,
-        AddF, SubF, MulF, DivF, ModF,
+        AddI, SubI, MulI, DivI, ModI, NegI,
+        AddF, SubF, MulF, DivF, ModF, NegF,
         And, Or, Xor, Not,
         Shl, Shr,
         EqI, NeqI, LtI, GtI, LeqI, GeqI,

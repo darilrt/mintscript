@@ -90,7 +90,7 @@ Token Lexer::NextToken() {
         Next();
 
         if (Peek() == '/') {
-            while (Peek() != '\n') {
+            while (Peek() != '\n' && Peek() != EOF) {
                 Next();
             }
             Next();

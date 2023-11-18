@@ -190,7 +190,9 @@ sa::Type* AstVisitor::Visit(AccessExprAST *node) {
             return method->type;
         }
         
-        PUSH_INST(ins(ir::Var, method->name, { inst->GetArg(0) }));
+        PUSH_INST(ins(ir::Var, method->name, { }));
+        payload = inst->GetArg(0);
+        inst->GetArgs().clear();
         delete inst;
         return method->type;
     }
@@ -219,6 +221,7 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
 
     sa::Type* ptype = node->property->Accept(this);
     sa::Type* type = t_null;
+    std::vector<ir::Instruction*> args;
     
     if (ptype == t_type) {
         type = (sa::Type*)payload;
@@ -257,8 +260,6 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
         mError::AddError("Cannot call '" + ptype->ToString() + "'");
         return t_null;
     }
-
-    std::vector<ir::Instruction*> args;
 
     if (payload != nullptr) {
         args.push_back((ir::Instruction*)payload);
@@ -589,7 +590,7 @@ sa::Type* AstVisitor::Visit(ReturnAST *node) {
 sa::Type* AstVisitor::Visit(FunctionAST *node) {
     const std::string fname = "f" + moduleName + node->name.value;
 
-    sa::Type* rettype = node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_null;
+    sa::Type* rettype = node->lambda->returnType ? node->lambda->returnType->Accept(this) : t_void;
 
     STACK_PUSH_I(ins(ir::Set, {
         ins(ir::Decl, fname, { }),
@@ -637,14 +638,14 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
     
     if (retsym != rettype) {
         mError::AddError("Function '" + node->name.value + "' return type mismatch expected '" + rettype->ToString() + "' got '" + retsym->ToString() + "'");
-        return t_null;
+        return t_void;
     }
 
     PopScope();
     STACK_POP();
     STACK_POP();
  
-    return t_null;
+    return t_void;
 }
 
 sa::Type* AstVisitor::Visit(IfAST* node) {

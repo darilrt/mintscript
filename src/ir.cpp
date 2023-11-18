@@ -332,12 +332,14 @@ ir::Mainfold ir::Interpreter::Interpret(Instruction *instruction) {
         case MulI: { return { Mainfold::Int,  { ARG(0).value.i * ARG(1).value.i } }; }
         case DivI: { return { Mainfold::Int,  { ARG(0).value.i / ARG(1).value.i } }; }
         case ModI: { return { Mainfold::Int,  { ARG(0).value.i % ARG(1).value.i } }; }
+        case NegI: { return { Mainfold::Int,  { -ARG(0).value.i } }; }
 
         case AddF: { return { Mainfold::Float,  { ARG(0).value.f + ARG(1).value.f } }; }
         case SubF: { return { Mainfold::Float,  { ARG(0).value.f - ARG(1).value.f } }; }
         case MulF: { return { Mainfold::Float,  { ARG(0).value.f * ARG(1).value.f } }; }
         case DivF: { return { Mainfold::Float,  { ARG(0).value.f / ARG(1).value.f } }; }
         case ModF: { return { Mainfold::Float,  { std::fmod(ARG(0).value.f, ARG(1).value.f) } }; }
+        case NegF: { return { Mainfold::Float,  { -ARG(0).value.f } }; }
         
         case Shl: { return { Mainfold::Int,  { ARG(0).value.i << ARG(1).value.i } }; }
         case Shr: { return { Mainfold::Int,  { ARG(0).value.i >> ARG(1).value.i } }; }

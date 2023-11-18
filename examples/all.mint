@@ -21,12 +21,12 @@ else {
 }
 
 while var_a < 10 {
-    print(var_a)
+    print(var_a.ToStr())
     var_a = var_a + 1
 }
 
 foo(a: int, b: int) -> int {
-    ret a + b
+    return a + b
 }
 
-print(foo(1, 2))
+print(foo(1, 2).ToStr())

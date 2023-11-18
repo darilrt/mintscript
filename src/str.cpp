@@ -16,6 +16,6 @@ void mint_Str() {
     });
 
     mint::Interface("IStringable", {
-        { "ToStr", { t_str }, nullptr }
+        { "ToStr", { t_str }, nullptr },
     });
 }
