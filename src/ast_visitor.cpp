@@ -4,6 +4,7 @@
 #include "token.h"
 #include "ast_visitor.h"
 #include "builtin.h"
+#include "lib.h"
 #include "MintScript.h"
 
 #include <sstream>
@@ -236,11 +237,17 @@ sa::Type* AstVisitor::Visit(CallExprAST *node) {
             const sa::Method* method = type->GetMethod(name);
 
             PUSH_INST(ins(ir::Var, method->name, { }));
-            PUSH_INST(ins(
+
+            ir::Instruction* inst;
+            PUSH_INST(inst = ins(
                 ir::New,
                 (int) type->GetSize(), 
-                { ins(ir::Var, "vt" + type->GetFullName(), { }) }
+                { }
             ));
+
+            if (type->vtable) {
+                inst->GetArgs().push_back(ins(ir::Var, "vt" + type->GetFullName(), { }));
+            }
 
             ptype = method->type;
         }
@@ -649,12 +656,17 @@ sa::Type* AstVisitor::Visit(FunctionAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(IfAST* node) {
-    STACK_PUSH_I(ins(ir::If, { }));
+    ir::Instruction* inst = nullptr;
+    STACK_PUSH_I(inst = ins(ir::If, { }));
 
     sa::Type* type = node->condition->Accept(this);
 
+    if (inst->GetArg(0)->GetInstruction() == ir::Var || inst->GetArg(0)->GetInstruction() == ir::Field) {
+        inst->GetArgs()[0] = ins(ir::Val, { inst->GetArg(0) });
+    }
+    
     // Add body {
-    STACK_PUSH_I(ins(ir::Scope, { }));
+    STACK_PUSH_I(ins(ir::Scope, 0, { }));
     PushScope();
 
     sa::Type* res = node->body->Accept(this);
@@ -667,7 +679,7 @@ sa::Type* AstVisitor::Visit(IfAST* node) {
 
     // Add else {
     if (node->elseIfs.size() == 0 && node->elseBody != nullptr) {
-        STACK_PUSH_I(ins(ir::Scope, { }));
+        STACK_PUSH_I(ins(ir::Scope, 0, { }));
         PushScope();
 
         sa::Type* res = node->elseBody->Accept(this);
@@ -680,12 +692,16 @@ sa::Type* AstVisitor::Visit(IfAST* node) {
 
     if (node->elseIfs.size() > 0) {
         for (auto elif : node->elseIfs) {
-            STACK_PUSH_I(ins(ir::If, { }));
+            STACK_PUSH_I(inst = ins(ir::If, { }));
 
             sa::Type* type = elif->condition->Accept(this);
 
+            if (inst->GetArg(0)->GetInstruction() == ir::Var || inst->GetArg(0)->GetInstruction() == ir::Field) {
+                inst->GetArgs()[0] = ins(ir::Val, { inst->GetArg(0) });
+            }
+            
             // Add body {
-            STACK_PUSH_I(ins(ir::Scope, { }));
+            STACK_PUSH_I(ins(ir::Scope, 0, { }));
             PushScope();
 
             sa::Type* res = elif->body->Accept(this);
@@ -718,9 +734,14 @@ sa::Type* AstVisitor::Visit(IfAST* node) {
 }
 
 sa::Type* AstVisitor::Visit(WhileAST *node) {
-    STACK_PUSH_I(ins(ir::Loop, { }));
+    ir::Instruction* inst = ins(ir::Loop, { });
+    STACK_PUSH_I(inst);
 
     sa::Type* type = node->condition->Accept(this);
+    
+    if (inst->GetArg(0)->GetInstruction() == ir::Var || inst->GetArg(0)->GetInstruction() == ir::Field) {
+        inst->GetArgs()[0] = ins(ir::Val, { inst->GetArg(0) });
+    }
 
     STACK_PUSH_I(ins(ir::Scope, 2, { }));
     PushScope();
@@ -753,8 +774,17 @@ sa::Type* AstVisitor::Visit(ContinueAST *node) {
 }
 
 sa::Type* AstVisitor::Visit(ImportAST *node) {
-    throw std::runtime_error("ImportAST not implemented");
-    return t_null;
+    const std::string& name = "lib" + node->identifiers.back().value + ".dll";
+
+    lib::Library *lib = new lib::Library(name);
+
+    if (!lib->IsLoaded()) {
+        mError::AddError("Failed to load library '" + node->identifiers.back().value + "'");
+        delete lib;
+        return t_void;
+    }
+
+    return t_void;
 }
 
 sa::Type* AstVisitor::Visit(ExportAST *node) {

@@ -1,3 +1,3 @@
 
 all:
-	g++ -shared -o testlib.dll testlib.cpp -I../include -L../build -lmint
+	g++ -shared -o libtest.dll testlib.cpp -I../include -L../build -lmint

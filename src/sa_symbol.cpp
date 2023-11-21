@@ -32,6 +32,7 @@ bool sa::Type::HasMethod(std::string name) {
 void sa::Type::AddField(std::string name, sa::Field symbol) {
     fields[name] = symbol;
     fields[name].name = name;
+    fields[name].offset = lastFieldOffset++;
 }
 
 void sa::Type::SetField(std::string name, sa::Field symbol) {

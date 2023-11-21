@@ -46,5 +46,6 @@ clean:
 install: $(EXECUTABLE)
 	mkdir -p $(DESTDIR)
 	cp $(EXECUTABLE) $(DESTDIR)
+	cp $(OUTDLL) $(DESTDIR)
 
 # TODO: Test

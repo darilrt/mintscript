@@ -87,12 +87,12 @@ void mint_Root() {
 
     mint_Str();
 
-    sa::Type* IStringable = mint::Type("IStringable");
+    sa::Type* stringable = mint::Type("Stringable");
 
     t_int = mint::Type("int", { }, {
         { "ToStr", { t_str }, int_ToStr }
     });
-    mint::Implement(IStringable, t_int);
+    mint::Implement(stringable, t_int);
 
     t_float = mint::Type("float", { }, {
         { "ToStr", { t_str }, float_ToStr }

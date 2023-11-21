@@ -10,60 +10,6 @@
 #include <fstream>
 #include <filesystem>
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-#elif defined(__linux__)
-#include <dlfcn.h>
-#endif
-
-void* mLoadLib(const std::string& path) {
-typedef void (*root_t)(void); 
-#if defined(_WIN32) || defined(_WIN64)
-    // load function from dll called test.dll
-    HINSTANCE hinstLib = LoadLibrary(path.c_str());
-
-    if (!hinstLib) {
-        std::cout << "Could not load the dynamic library" << std::endl;
-        return nullptr;
-    }
-
-    root_t root = (root_t) GetProcAddress(hinstLib, "mint_Root");
-
-    if (root != NULL) {
-        root();
-    }
-    else {
-        std::cout << "Could not load the root function" << std::endl;
-        FreeLibrary(hinstLib);
-        return nullptr;
-    }
-
-    // Free the DLL module when you are finished with it:
-    // FreeLibrary(hinstLib);
-    return hinstLib;
-#elif defined(__linux__)
-    void* handle = dlopen(path.c_str(), RTLD_LAZY);
-
-    if (!handle) {
-        std::cout << "Could not load the dynamic library" << std::endl;
-        return nullptr;
-    }
-
-    root_t root = (root_t) dlsym(handle, "mint_Root");
-
-    if (root != NULL) {
-        root();
-    }
-    else {
-        std::cout << "Could not load the root function" << std::endl;
-        dlclose(handle);
-        return nullptr;
-    }
-
-    return handle;
-#endif
-}
-
 ir::Instruction* mLoadFile(const std::string &path, const std::string &moduleName) {
     std::filesystem::path filePath(path);
     MAIN_FILE_PATH = std::filesystem::absolute(filePath).parent_path();
@@ -263,6 +209,11 @@ sa::Type *mint::Type(const std::string &name, const std::vector<Field> &fields, 
 
     for (Method method : methods) {
         const std::string &methodName = "m" + name + "." + method.name;
+
+        std::vector<sa::Type*> args = { method.args };
+        std::for_each(method.args.begin(), method.args.end(), [&args, type](sa::Type* t) {
+            args.push_back( t == nullptr ? type : t);
+        });
 
         type->SetMethod(method.name, { methodName, t_function->GetVariant(method.args) });
 
