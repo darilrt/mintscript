@@ -19,4 +19,12 @@ private:
     char next();
 
     char seek();
+
+    Token get_number_token();
+
+    Token get_string_token(char delimiter);
+
+    Token get_identifier_token();
+
+    Token get_keyword_from_identifier(const std::string &identifier);
 };

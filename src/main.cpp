@@ -2,24 +2,23 @@
 #include <fstream>
 #include <sstream>
 
-#include "mint/lexer.hpp"
+#include "mint/token_buffer.hpp"
 
 int main()
 {
     // std::ifstream stream("examples/test.mint");
 
     std::stringstream file;
-    file << "  test";
+    file << "10 + \n 10\n";
 
-    Lexer lexer(file.rdbuf(), "examples/test.mint");
+    TokenBuffer buffer(file.rdbuf(), "examples/test.mint");
 
-    Token token = lexer.next_token();
-
-    while (token.type != Token::EndFile)
-    {
-        std::cout << token << std::endl;
-        token = lexer.next_token();
-    }
+    buffer.push_ignore_newlines_state(true);
+    std::cout << buffer.next_token() << std::endl;
+    std::cout << buffer.next_token() << std::endl;
+    std::cout << buffer.next_token() << std::endl;
+    buffer.pop_ignore_newlines_state();
+    std::cout << buffer.next_token() << std::endl;
 
     return 0;
 }

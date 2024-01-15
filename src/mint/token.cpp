@@ -356,6 +356,11 @@ std::string Token::to_string() const
         tokentType = "SlashAssign";
         break;
     }
+    case Type::ColonAssign:
+    {
+        tokentType = "ColonAssign";
+        break;
+    }
     case Type::PercentAssign:
     {
         tokentType = "PercentAssign";
