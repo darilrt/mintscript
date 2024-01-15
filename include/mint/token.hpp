@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <iostream>
 
 class Location
 {
@@ -120,4 +121,6 @@ public:
     Location location;
 
     std::string to_string() const;
+
+    friend std::ostream &operator<<(std::ostream &os, const Token &token);
 };

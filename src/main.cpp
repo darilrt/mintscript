@@ -1,19 +1,25 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
-#include "mint/token.hpp"
+#include "mint/lexer.hpp"
 
 int main()
 {
-    Token token{
-        .type = Token::Int,
-        .value = "123",
-        .location = {
-            .line = 1,
-            .column = 1,
-            .file = "main.mint",
-        },
-    };
+    // std::ifstream stream("examples/test.mint");
 
-    std::cout << token.to_string() << std::endl;
+    std::stringstream file;
+    file << "  test";
+
+    Lexer lexer(file.rdbuf(), "examples/test.mint");
+
+    Token token = lexer.next_token();
+
+    while (token.type != Token::EndFile)
+    {
+        std::cout << token << std::endl;
+        token = lexer.next_token();
+    }
+
     return 0;
 }

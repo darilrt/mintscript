@@ -415,3 +415,9 @@ std::string Token::to_string() const
 
     return tokentType + "(" + value + ")";
 }
+
+std::ostream &operator<<(std::ostream &os, const Token &token)
+{
+    os << token.to_string();
+    return os;
+}
