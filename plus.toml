@@ -1,0 +1,25 @@
+require = []
+
+[project]
+name = "mintscript"
+version = "0.1.0"
+description = ""
+author = ""
+email = ""
+url = ""
+license = ""
+
+[compiler]
+cxx = "g++"
+standard = "c++17"
+flags = []
+includes = [ "include",]
+defines = []
+warnings = []
+debug = true
+
+[linker]
+type = "console-app"
+flags = []
+libdirs = []
+libs = []
