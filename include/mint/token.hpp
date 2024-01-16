@@ -6,8 +6,8 @@
 class Location
 {
 public:
-    int line;
-    int column;
+    size_t line;
+    size_t column;
     std::string file;
 
     std::string to_string() const;
@@ -21,7 +21,7 @@ public:
         Unknown, // unknown token
 
         // literals
-        Int,        // integer
+        Integer,    // integer
         Float,      // float
         String,     // string
         Identifier, // identifier

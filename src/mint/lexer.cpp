@@ -1,7 +1,16 @@
 #include "mint/lexer.hpp"
 
-#define TOKEN(c, r) \
-    Token { Token::Type::c, r, location }
+#define TOKEN(c, r)                                            \
+    Token                                                      \
+    {                                                          \
+        Token::Type::c, r, Location                            \
+        {                                                      \
+            .line = location.line,                             \
+            .column = location.column - std::string(r).size(), \
+            .file = location.file                              \
+        }                                                      \
+    }
+
 #define CASE(c, r) \
     case c:        \
     {              \
@@ -212,7 +221,17 @@ Token Lexer::next_token()
         CASE('{', TOKEN(LBrace, "{"))
         CASE('}', TOKEN(RBrace, "}"))
         CASE('\\', TOKEN(Backslash, "\\"))
-        CASE('\n', TOKEN(NewLine, "LF"))
+    case '\n':
+        Token{
+            .type = Token::NewLine,
+            .value = " ",
+            .location = {
+                .line = location.line - 1,
+                .column = location.column++,
+                .file = location.file,
+            }};
+        next();
+        return next_token();
     };
 
     return Token{
@@ -233,7 +252,7 @@ char Lexer::next()
     if (c == '\n')
     {
         location.line++;
-        location.column = 0;
+        location.column = 1;
     }
     return c;
 }
@@ -336,7 +355,7 @@ Token Lexer::get_number_token()
     }
 
     return Token{
-        .type = is_float ? Token::Float : Token::Int,
+        .type = is_float ? Token::Float : Token::Integer,
         .value = v,
         .location = location,
     };
@@ -464,7 +483,7 @@ Token Lexer::get_string_token(char delimiter)
 
     return Token{
         .type = Token::String,
-        .value = v,
+        .value = "\"" + v + "\"",
         .location = location,
     };
 }

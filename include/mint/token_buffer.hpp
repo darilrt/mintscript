@@ -13,6 +13,8 @@ public:
     std::vector<bool> ignore_newlines_states;
     size_t index;
 
+    TokenBuffer() : lexer(){};
+
     TokenBuffer(std::streambuf *streambuf, const std::string &file);
 
     Token next_token();

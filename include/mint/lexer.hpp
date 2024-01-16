@@ -9,6 +9,8 @@ public:
     std::streambuf *streambuf;
     Location location;
 
+    Lexer() = default;
+
     Lexer(std::streambuf *streambuf, const std::string &file);
 
     Token next_token();

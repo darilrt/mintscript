@@ -16,7 +16,7 @@ std::string Token::to_string() const
         tokentType = "Unknown";
         break;
     }
-    case Type::Int:
+    case Type::Integer:
     {
         tokentType = "Int";
         break;
