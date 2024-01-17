@@ -520,44 +520,38 @@ Type casting can be done by using the `as` operator:
 x := 5 as float
 ```
 
-### Templating
+### Macros
 
-Default templates
-
-```mintscript
-foo[T]() { print(T) }
-
-foo[int]() { print("int") }
-
-foo[int]() // "int"
-```
-
-Constraints templates
+The macro system is supported, you can define a rule that is identified in the code to be replaced by another code.
+First define de rule with the `rule` keyword followed by the rule name and the rule code:
 
 ```mintscript
-foo[T: int]() { print(T) }
-
-foo[int]() { print("int") }
-
-foo[str]() // Error: str is not an int
-```
-
-Variadic templates
-
-```mintscript
-foo[T: int...]() { print(T) }
-```
-
-ifexpr
-
-```mintscript
-
-foo[T]() {
-    ifexpr is_int[T] {
-        print("arg is an int")
-    } else {
-        print("arg is not an int")
-    }
+rule attr ::= 'hello' '(' <arg1: str> ')' {
+    apply_ast(call_func('print', [arg1]))
 }
+// usage
+hola("Hello, World!") // replaced by print("Hello, World!") and outputs "Hello, World!"
+```
 
+The rule notation is similar to the EBNF notation:
+
+- alternation `|`
+- optional `[ ... ]`
+- repetition `{ ... }`
+- grouping `( ... )`
+- terminal string `" ... "`
+- terminal string `' ... '`
+- repeat `...*`
+- repeat at least once `...+`
+
+To store the value of a terminal string in a variable, use `<` and `>` around the variable name then `:` and the type of the variable `<name: expr>`
+
+Example of a rule print with N arguments:
+
+```mintscript
+rule print ::= 'print' '(' <args: str> [ ',' <args: str> ]* ')' {
+    apply_ast(call_func('print', [args]))
+}
+// usage
+print("Hello", "World!") // replaced by print("Hello", "World!") and outputs "Hello World!"
 ```
