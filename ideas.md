@@ -549,9 +549,15 @@ To store the value of a terminal string in a variable, use `<` and `>` around th
 Example of a rule print with N arguments:
 
 ```mintscript
-rule print ::= 'print' '(' <args: str> [ ',' <args: str> ]* ')' {
+rule println ::= 'println' '(' <args: str> [ ',' <args: str> ]* ')' {
     apply_ast(call_func('print', [args]))
+    apply_ast(call_func('print', ["\n"]))
 }
 // usage
-print("Hello", "World!") // replaced by print("Hello", "World!") and outputs "Hello World!"
+println("Hello", "World!")
+
+// replaced by
+print("Hello")
+print("World!")
+print("\n")
 ```
