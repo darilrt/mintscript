@@ -25,7 +25,11 @@ public:
 
     void pop_state();
 
+    void back_to_state();
+
     void push_ignore_newlines_state(bool ignore_newlines);
 
     void pop_ignore_newlines_state();
+
+    void print_tokens();
 };

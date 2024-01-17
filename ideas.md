@@ -1,5 +1,7 @@
 # Mintscript
 
+## Introduction
+
 ### Variable declaration and assignment
 
 The following code declares a variable named `x` as an integer and assigns it the value `5`:
@@ -508,6 +510,14 @@ Type aliases can be declared by using the `type` keyword before the type alias n
 
 ```mintscript
 type Person = (str, int)
+```
+
+### Type casting
+
+Type casting can be done by using the `as` operator:
+
+```mintscript
+x := 5 as float
 ```
 
 ### Templating

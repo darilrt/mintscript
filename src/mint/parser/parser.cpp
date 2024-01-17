@@ -24,5 +24,5 @@ Parser::Parser(const std::string &file_name)
 
 std::unique_ptr<Ast> Parser::parse()
 {
-    return parse_expression();
+    return parse_program();
 }

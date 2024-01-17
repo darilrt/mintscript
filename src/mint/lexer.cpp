@@ -222,16 +222,17 @@ Token Lexer::next_token()
         CASE('}', TOKEN(RBrace, "}"))
         CASE('\\', TOKEN(Backslash, "\\"))
     case '\n':
-        Token{
+        auto t = Token{
             .type = Token::NewLine,
             .value = " ",
             .location = {
                 .line = location.line - 1,
                 .column = location.column++,
                 .file = location.file,
-            }};
+            },
+        };
         next();
-        return next_token();
+        return t;
     };
 
     return Token{
@@ -357,7 +358,11 @@ Token Lexer::get_number_token()
     return Token{
         .type = is_float ? Token::Float : Token::Integer,
         .value = v,
-        .location = location,
+        .location = {
+            .line = location.line,
+            .column = location.column - v.size(),
+            .file = location.file,
+        },
     };
 }
 

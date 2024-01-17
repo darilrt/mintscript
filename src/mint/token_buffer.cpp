@@ -56,6 +56,11 @@ void TokenBuffer::push_state()
 
 void TokenBuffer::pop_state()
 {
+    states.pop_back();
+}
+
+void TokenBuffer::back_to_state()
+{
     index = states.back();
     states.pop_back();
 }
@@ -70,4 +75,13 @@ void TokenBuffer::pop_ignore_newlines_state()
 {
     this->ignore_newlines = ignore_newlines_states.back();
     ignore_newlines_states.pop_back();
+}
+
+void TokenBuffer::print_tokens()
+{
+    for (auto &token : tokens)
+    {
+        std::cout << token.to_string() << " ";
+    }
+    std::cout << std::endl;
 }

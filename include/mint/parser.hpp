@@ -17,50 +17,49 @@ public:
     std::unique_ptr<Ast> parse();
 
 private:
+    // Program
+    // <program> ::= <statement> { "\n" <statement> }
+
+    std::unique_ptr<Ast> parse_program();
+
+    // Statements
+    // <statement> ::= <expression>
+
+    std::unique_ptr<Ast> parse_statement();
+
+    // Types
+    // <type> ::= "int" | "float" | "string" | "bool"
+
+    std::unique_ptr<Ast> parse_type();
+
     // Expressions
-
+    // <expr_list> ::= <expression> { "," { <expression> } }
     // <expression> ::= <logical_or>
-    std::unique_ptr<Ast> parse_expression();
-
     // <logical_or> ::= <logical_and> { "||" <logical_and> }
-    std::unique_ptr<Ast> parse_logical_or();
-
     // <logical_and> ::= <bitwise_or> { "&&" <bitwise_or> }
-    std::unique_ptr<Ast> parse_logical_and();
-
     // <bitwise_or> ::= <bitwise_xor> { "|" <bitwise_xor> }
-    std::unique_ptr<Ast> parse_bitwise_or();
-
     // <bitwise_xor> ::= <bitwise_and> { "^" <bitwise_and> }
-    std::unique_ptr<Ast> parse_bitwise_xor();
-
     // <bitwise_and> ::= <equality> { "&" <equality> }
-    std::unique_ptr<Ast> parse_bitwise_and();
-
-    // <equality> ::= <comparison> { ("==" | "!=") <comparison> }
-    std::unique_ptr<Ast> parse_equality();
-
-    // <comparison> ::= <shift> { ("<" | ">" | "<=" | ">=") <shift> }
-    std::unique_ptr<Ast> parse_comparison();
-
+    // <comparison> ::= <shift> { ("==" | "!=" | "<" | ">" | "<=" | ">=") <shift> }
     // <shift> ::= <additive> { ("<<" | ">>") <additive> }
-    std::unique_ptr<Ast> parse_shift();
-
     // <additive> ::= <multiplicative> { ("+" | "-") <multiplicative> }
-    std::unique_ptr<Ast> parse_additive();
-
     // <multiplicative> ::= <unary> { ("*" | "/" | "%") <unary> }
+    // <unary> ::= ("!" | "~" | "-" | "+" | "++" | "--") <unary> | <postfix>
+    // <postfix> ::= <factor> ("++" | "--" | "as" <type>)
+    // <factor> ::= <integer> | <float> | <string> | <boolean> | <identifier> | "(" <expression> ")"
+
+    std::unique_ptr<Ast> parse_expr_list();
+    std::unique_ptr<Ast> parse_expression(bool ignore_newlines);
+    std::unique_ptr<Ast> parse_logical_or();
+    std::unique_ptr<Ast> parse_logical_and();
+    std::unique_ptr<Ast> parse_bitwise_or();
+    std::unique_ptr<Ast> parse_bitwise_xor();
+    std::unique_ptr<Ast> parse_bitwise_and();
+    std::unique_ptr<Ast> parse_comparison();
+    std::unique_ptr<Ast> parse_shift();
+    std::unique_ptr<Ast> parse_additive();
     std::unique_ptr<Ast> parse_multiplicative();
-
-    // <unary> ::= ("!" | "~" | "-" | "+") <unary> | <postfix>
     std::unique_ptr<Ast> parse_unary();
-
-    // <prefix> ::= ("++" | "--") <prefix> | <unary>
-    std::unique_ptr<Ast> parse_prefix();
-
-    // <postfix> ::= <factor> { ("++" | "--") }
     std::unique_ptr<Ast> parse_postfix();
-
-    // <factor> ::= <integer> | <float>
     std::unique_ptr<Ast> parse_factor();
 };
