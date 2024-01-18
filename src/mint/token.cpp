@@ -141,9 +141,9 @@ std::string Token::to_string() const
         tokentType = "Impl";
         break;
     }
-    case Type::Ref:
+    case Type::New:
     {
-        tokentType = "Ref";
+        tokentType = "New";
         break;
     }
     case Type::Export:

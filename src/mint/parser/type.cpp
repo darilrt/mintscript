@@ -12,10 +12,11 @@ std::unique_ptr<Ast> Parser::parse_type()
     {
         ast->type = Ast::Identifier;
         ast->token = token;
+        buffer.pop_state();
     }
     else
     {
-        buffer.pop_state();
+        buffer.back_to_state();
     }
 
     return ast;

@@ -72,6 +72,10 @@ std::string Ast::to_string() const
         }
         return result;
     }
+    case Instantiation:
+    {
+        return "new " + children[0]->to_string();
+    }
     case Identifier:
     {
         return token.value;

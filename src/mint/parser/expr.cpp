@@ -651,6 +651,21 @@ std::unique_ptr<Ast> Parser::parse_factor()
         buffer.pop_ignore_newlines_state();
         break;
     }
+    case Token::New:
+    {
+        ast->type = Ast::Instantiation;
+        ast->token = token;
+
+        ast->children.push_back(parse_type());
+
+        if (ast->children[0]->type == Ast::None)
+        {
+            Error::error_in_line("Expected type after 'new'", token, file);
+        }
+
+        buffer.pop_state();
+        break;
+    }
     default:
     {
         buffer.back_to_state();

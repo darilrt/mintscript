@@ -505,7 +505,11 @@ Token Lexer::get_identifier_token()
     return Token{
         .type = Token::Identifier,
         .value = v,
-        .location = location,
+        .location = {
+            .line = location.line,
+            .column = location.column - v.size(),
+            .file = location.file,
+        },
     };
 }
 
@@ -587,9 +591,9 @@ Token Lexer::get_keyword_from_identifier(const std::string &value)
     {
         return TOKEN(Let, value);
     }
-    else if (value == "ref")
+    else if (value == "new")
     {
-        return TOKEN(Ref, value);
+        return TOKEN(New, value);
     }
     else if (value == "export")
     {

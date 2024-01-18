@@ -49,7 +49,7 @@ public:
         Mut,           // mut
         Let,           // let
         Impl,          // impl
-        Ref,           // ref
+        New,           // new
         Export,        // export
         KeywordsEnd,   // end of keywords
 

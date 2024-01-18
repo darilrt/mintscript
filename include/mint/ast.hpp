@@ -34,6 +34,8 @@ public:
         // Expressions
         // Ast { children: [ Node ] }
         Expression,
+        // Ast { children: [ Node ] }
+        Instantiation,
         // Ast { token: Type, children: [ Lhs, Rhs ] }
         BinaryOperator,
         // Ast { token: Type, children: [ Prefix ] }
