@@ -1,0 +1,98 @@
+(* Statements *)
+program = {import}, { statement }, export;
+statement = ( block 
+    | if
+    | while
+    | foreach
+    | return
+    | break
+    | continue
+    | var_decl
+    | var_assign
+    | class
+    | trait
+    | function
+    | expr_statement
+    ), ('\n', '\0');
+
+block = '{', { statement }, '}';
+if = 'if', expression, block, [ 'else', block ];
+while = 'while', expression, block;
+foreach = 'for', ident, 'in', expression, block;
+return = 'return', [ expression ];
+break = 'break';
+continue = 'continue';
+expr_statement = expression;
+
+(* Imports *)
+import = 'import', (module_access | [module_list, 'from', string ]);
+module_access = module_name, ('.', ( '*' | ident ) | module_list );
+module_name = ident, { '.', ident };
+module_list = '{', ident_list, '}';
+
+(* Exports *)
+export = 'export', '{', export_list, '}';
+export_list = export_item, { ',', export_item };
+export_item = ident, [ 'as', ident ];
+
+(* Functions *)
+function = ident, '::', 'fn', [ '[', generic_list, ']' ], '(', [ param_list ], ')', [ '->', type ], block;
+param_list = param, { ',', param };
+param = ident, ':', type;
+
+(* Classes *)
+class = ident, '::', 'class', [ '[', generic_list, ']' ], [ '(' ident_list ')' ], block;
+ident_list = ident, { ',', ident };
+
+(* Traits *)
+trait = ident, '::', 'trait', [ '[', generic_list, ']' ], block;
+
+(* Variables *)
+var_decl = ident, ( [ ':', type ], [ '=', expression ] | ':=', expression );
+var_assign = ident, '=', expression;
+
+(* Types *)
+type_list = type, { ',', type };
+type = dotted_type;
+list_type = '[]', ['?'], optional_type | optional_type;
+optional_type = dotted_type, ['?'];
+dotted_type = generic_type, { '.', generic_type };
+generic_type = ident, [ '[', type_list, ']' ];
+generic_list = generic_pair, { ',', generic_pair };
+generic_pair = ident, ':', generic_value;
+generic_value = (type, { '+', type });
+
+(* Expressions *)
+expression = logical_or;
+expr_list = expression, { ',', expression };
+logical_or = logical_and, { '||', logical_and };
+logical_and = bitwaise_or, { '&&', bitwaise_or };
+bitwaise_or = bitwaise_xor, { '|', bitwaise_xor };
+bitwaise_xor = bitwaise_and, { '^', bitwaise_and };
+bitwaise_and = comparison, { '&', comparison };
+comparison = shift, { ( '==' | '!=' | '<' | '>' | '<=' | '>=' ), shift };
+shift = additive, { ( '<<' | '>>' ), additive };
+additive = multiplicative, { ( '+' | '-' ), multiplicative };
+multiplicative = unary, { ( '*' | '/' | '%' ), unary };
+unary = ( '!' | '~' | '-' | '+' | '++' | '--' ), unary | postfix;
+postfix = factor, { ( '++' | '--' | 'as', type ) };
+factor = literal | access | '(', expression, ')' | new;
+new = 'new', type, '(', expr_list, ')';
+access = postfix_access, { '.', postfix_access };
+postfix_access = ident, { ( '(', expr_list, ')' | '[', ( expr_list | type_list ), ']' ) }; 
+literal = integer | float | string | 'true' | 'false' | 'null' | array | dict;
+array = '[', expr_list, ']';
+dict_pair = expression, ':', expression;
+dict_list = dict_pair, { ',', dict_pair };
+dict = '{', dict_list, '}';
+
+(* Literals *)
+integer = ( '0' | [1-9], { [0-9] } ), [ 'u' | 'U' | 'l' | 'L' ];
+float = ( [0-9], { [0-9] } ), '.', [0-9], { [0-9] }, [ 'f' | 'F' | 'd' | 'D' ];
+string = '"', { ( '\\' | '\n' | '\r' | '\t' | '\b' | '\f' | '\v' | '\0' | [^"\n\r] ) }, '"';
+ident = [a-zA-Z_], { [a-zA-Z0-9_] };
+
+(* Tokens *)
+comment = '/*', { [^*] }, '*/' | '//', { [^\n] }, '\n';
+whitespace = [ \t\r\n\v\f]+;
+symbol = [][{}():;,.?@&|~^%*/+-];
