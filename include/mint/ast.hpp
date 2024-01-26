@@ -22,6 +22,7 @@ public:
         Float,   // T = float
         String,  // T = std::string
         Boolean, // T = bool
+        Null,    // T = void
         // Ast { children: [ ExprList ] }
         Array,
         // Ast { children: [ Value... ] }
@@ -46,14 +47,13 @@ public:
 
     Type type;
     Token token;
-    void *value = nullptr;
     std::vector<std::unique_ptr<Ast>> children;
 
     Ast() : type(None) {}
 
     Ast(Type type) : type(type) {}
 
-    ~Ast();
+    Ast(Type type, Token token) : type(type), token(token) {}
 
     inline Ast &operator[](size_t index)
     {

@@ -81,7 +81,7 @@ print(x) // "Hello"
 Functions can be declared without keywords only a label followed by a parameter list return type after '->' and a block:
 
 ```mintscript
-add(a: int, b: int) -> int {
+add :: fn(a: int, b: int) -> int {
     return a + b
 }
 ```
@@ -89,7 +89,7 @@ add(a: int, b: int) -> int {
 If the function not returns a value, the return type can be omitted:
 
 ```mintscript
-print_hello() {
+print_hello :: fn() {
     print("Hello")
 }
 ```
@@ -106,7 +106,7 @@ print_hello() // "Hello"
 Functions cannot be overloaded, but you can use default parameters to achieve the same result:
 
 ```mintscript
-add(a: int, b: int = 5) -> int {
+add :: fn(a: int, b: int = 5) -> int {
     return a + b
 }
 add(5) // 10
@@ -222,16 +222,11 @@ for i in x {
 Classes can be declared by using the `class` keyword followed by the class name and the interface list:
 
 ```mintscript
-class Person(Human, Animal) {
+Person :: class(Human, Animal) {
     name: str
     age: int
 
-    Person(name: str, age: int) {
-        this.name = name
-        this.age = age
-    }
-
-    say_hello() {
+    say_hello :: fn() {
         print("Hello, my name is " + .name) // .name is the same as this.name
     }
 }
@@ -241,7 +236,7 @@ Im the methods its obligatory to use the `this` keyword to access the class memb
 Classes can be instantiated by the class name and the constructor parameters:
 
 ```mintscript
-person := Person("John", 20)
+person := Person {"John", 20}
 person.say_hello() // "Hello, my name is John"
 ```
 
@@ -250,7 +245,7 @@ person.say_hello() // "Hello, my name is John"
 Interfaces can be declared by using the `interface` keyword followed by the interface name and the method list:
 
 ```mintscript
-interface Human {
+Human :: trait {
     say_hello() -> void
 }
 ```
@@ -258,16 +253,16 @@ interface Human {
 Compounds interfaces are supported:
 
 ```mintscript
-interface Human {
-    say_hello() -> void
+Human :: trait {
+    say_hello :: fn() -> void
 }
 
-interface Animal {
-    say_hello() -> void
+Animal :: trait {
+    say_hello :: fn() -> void
 }
 
-interface HumanAnimal(Human, Animal) {
-    say_hello() -> void
+HumanAnimal :: trait(Human, Animal) {
+    say_hello :: fn() -> void
 }
 ```
 
@@ -320,7 +315,7 @@ Generics can be declared by using the `[]` operator after the type.
 Example, to define a generic function that returns the first element of an array:
 
 ```mintscript
-first[T](arr: [] T) -> T {
+first :: fn[T](arr: [] T) -> T {
     return arr[0]
 }
 ```
@@ -328,7 +323,7 @@ first[T](arr: [] T) -> T {
 You can also define a constraint for the generic:
 
 ```mintscript
-first[T: int](arr: [] T) -> T {
+first :: fn[T: int](arr: [] T) -> T {
     return arr[0]
 }
 ```
@@ -336,7 +331,7 @@ first[T: int](arr: [] T) -> T {
 The constraint can be a type or an interface and can be multiple and negated:
 
 ```mintscript
-first[T: Operable & !str](arr: [] T) -> T {
+first :: fn[T: Operable & !str](arr: [] T) -> T {
     return arr[0]
 }
 ```
@@ -379,8 +374,8 @@ Function[T, ...]
 The following built-in functions are supported:
 
 ```mintscript
-print(args: Stringable...) -> void
-input(prompt: str? = null) -> str
+print :: fn(args: Stringable...) -> void
+input :: fn(prompt: str? = null) -> str
 ```
 
 ### Attributes
@@ -400,16 +395,16 @@ Every attribute has a class that can be implemented to create a custom attribute
 ```mintscript
 import reflect.*
 
-class entry_point(Attribute) {
-    on_function(func: Function) {
+entry_point :: class(Attribute) {
+    on_function :: fn(func: Function) {
         // Do something with the function
     }
 
-    on_class(cls: Class) {
+    on_class :: fn(cls: Class) {
         // Do something with the class
     }
 
-    on_variable(var: Variable) {
+    on_variable :: fn(var: Variable) {
         // Do something with the variable
     }
 }
@@ -422,21 +417,16 @@ The reflection is supported by using the `reflect` module:
 ```mintscript
 import reflect.*
 
-class Person {
+Person :: class {
     name: str
     age: int
 
-    Person(name: str, age: int) {
-        this.name = name
-        this.age = age
-    }
-
-    say_hello() {
+    say_hello :: fn() {
         print("Hello, my name is " + .name) // .name is the same as this.name
     }
 }
 
-person := Person("John", 20)
+person := Person {"John", 20}
 
 // Get the class of the person variable
 person_type := type_of(person) // Class<Person>
@@ -466,7 +456,7 @@ say_hello_method.call(person) // "Hello, my name is John"
 Mintscript not supports exceptions, but you can use the `Result` type to handle errors:
 
 ```mintscript
-add(a: int, b: int) -> Result[int] {
+add :: fn(a: int, b: int) -> Result[int] {
     if a == 0 {
         return err[int]("a cannot be 0")
     }
@@ -487,16 +477,11 @@ if result.is_err() {
 Static methods can be declared by using the `static` keyword before the method name:
 
 ```mintscript
-class Person {
+Person :: class {
     name: str
     age: int
 
-    Person(name: str, age: int) {
-        this.name = name
-        this.age = age
-    }
-
-    static create(name: str, age: int) -> Person {
+    create :: static fn(name: str, age: int) -> Person {
         return Person(name, age)
     }
 }
@@ -509,7 +494,7 @@ person := Person.create("John", 20)
 Type aliases can be declared by using the `type` keyword before the type alias name:
 
 ```mintscript
-type Person = (str, int)
+Person :: type = (str, int)
 ```
 
 ### Type casting
@@ -526,7 +511,7 @@ The macro system is supported, you can define a rule that is identified in the c
 First define de rule with the `rule` keyword followed by the rule name and the rule code:
 
 ```mintscript
-rule attr ::= 'hello' '(' <arg1: str> ')' {
+attr :: rule 'hello' '(' <arg1: str> ')' {
     apply_ast(call_func('print', [arg1]))
 }
 // usage
@@ -549,7 +534,7 @@ To store the value of a terminal string in a variable, use `<` and `>` around th
 Example of a rule print with N arguments:
 
 ```mintscript
-rule println ::= 'println' '(' <args: str> [ ',' <args: str> ]* ')' {
+println :: rule 'println' '(' <args: str> [ ',' <args: str> ]* ')' {
     apply_ast(call_func('print', [args]))
     apply_ast(call_func('print', ["\n"]))
 }
