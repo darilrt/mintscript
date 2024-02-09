@@ -19,24 +19,13 @@ std::string Ast::to_string() const
         return result;
     }
     case Integer:
-    {
-        return token.value;
-    }
     case Float:
-    {
-        return token.value;
-    }
     case String:
-    {
-        return "\"" + token.value + "\"";
-    }
     case Boolean:
+    case Null:
+    case Identifier:
     {
         return token.value;
-    }
-    case Null:
-    {
-        return "null";
     }
     case Array:
     {
@@ -53,14 +42,6 @@ std::string Ast::to_string() const
                 result += ", ";
         }
         return result;
-    }
-    case Instantiation:
-    {
-        return "Instantiation";
-    }
-    case Identifier:
-    {
-        return token.value;
     }
     case Expression:
     {
@@ -125,6 +106,84 @@ std::string Ast::to_string() const
     case Access:
     {
         return children[0]->to_string() + "." + token.value;
+    }
+    case Cast:
+    {
+        return "(" + children[0]->to_string() + ") as " + children[1]->to_string();
+    }
+    case Dict:
+    {
+        std::string result = "{ ";
+        for (auto &child : children)
+        {
+            result += child->to_string();
+
+            if (&child != &children.back())
+                result += ", ";
+        }
+        result += " }";
+        return result;
+    }
+    case DictPair:
+    {
+        return children[0]->to_string() + ": " + children[1]->to_string();
+    }
+    case Instantiation:
+    {
+        std::string result = "new " + children[0]->to_string() + " " + children[1]->to_string();
+        return result;
+    }
+    case StructBraceInitializer:
+    {
+        std::string result = "{ ";
+
+        for (auto &child : children)
+        {
+            result += child->to_string();
+
+            if (&child != &children.back())
+                result += ", ";
+        }
+
+        result += " }";
+        return result;
+    }
+    case StructBraceInitializerPair:
+    {
+        return "." + token.value + " = " + children[0]->to_string();
+    }
+    case Optional:
+    {
+        return "(" + children[0]->to_string() + ")?";
+    }
+    case Generic:
+    {
+        std::string result = children[0]->to_string() + "<";
+        for (auto &child : children[1]->children)
+        {
+            result += child->to_string();
+
+            if (&child != &children[1]->children.back())
+                result += ", ";
+        }
+        result += ">";
+        return result;
+    }
+    case List:
+    {
+        return "List[" + children[0]->to_string() + "]";
+    }
+    case TypeList:
+    {
+        std::string result;
+        for (auto &child : children)
+        {
+            result += child->to_string();
+
+            if (&child != &children.back())
+                result += ", ";
+        }
+        return result;
     }
     default:
     {

@@ -33,6 +33,16 @@ public:
         // Ast { value: std::string }
         Identifier,
 
+        // Types
+        // Ast { token: Type, children: [ type, TypeList ] }
+        Generic,
+        // Ast { token: Type, children: [ type ] }
+        List,
+        // Ast { token: Type, children: [ type ] }
+        Optional,
+        // Ast { token: Type, children: [ type.. ] }
+        TypeList,
+
         // Expressions
         // Ast { children: [ Node ] }
         Expression,
@@ -50,6 +60,16 @@ public:
         Subscript,
         // Ast { token: Type, children: [ Lhs, Rhs ] }
         Access,
+        // Ast { children: [ Lhs, Type ] }
+        Cast,
+        // Ast { token: Type, children: [ DictPair...] }
+        Dict,
+        // Ast { token: Type, children: [ Key, Value ] }
+        DictPair,
+        // Ast { token: Type, children: [ StructBraceInitializerPair... ] }
+        StructBraceInitializer,
+        // Ast { token: Type, children: [ Field, Value ] }
+        StructBraceInitializerPair,
     };
 
     Type type;

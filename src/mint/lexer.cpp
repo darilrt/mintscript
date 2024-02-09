@@ -67,12 +67,12 @@ Token Lexer::next_token()
     if (is_alpha(peek()) || peek() == '_')
     {
         const Token identifier = get_identifier_token();
-        // const Token keyword = get_keyword_from_identifier(identifier.value);
+        const Token keyword = get_keyword_from_identifier(identifier.value);
 
-        // if (keyword.type != Token::Unknown)
-        // {
-        //     return keyword;
-        // }
+        if (keyword.type != Token::Unknown)
+        {
+            return keyword;
+        }
 
         return identifier;
     }
@@ -106,19 +106,6 @@ Token Lexer::next_token()
         return get_string_token('\'');
     }
 
-    if (peek() == '/' && seek() == '/')
-    {
-        next();
-        next();
-
-        while (peek() != '\n')
-        {
-            next();
-        }
-
-        return next_token();
-    }
-
     switch (peek())
     {
         CASE('+',
@@ -146,7 +133,7 @@ Token Lexer::next_token()
              OPTION('=',
                     TOKEN(SlashAssign, "/="),
                     OPTION('/',
-                           TOKEN(SlashSlash, "//"),
+                           remove_comment(),
                            TOKEN(Slash, "/"))))
         CASE('%',
              OPTION('=',
@@ -601,4 +588,14 @@ Token Lexer::get_keyword_from_identifier(const std::string &value)
     }
 
     return TOKEN(Unknown, value);
+}
+
+Token Lexer::remove_comment()
+{
+    while (peek() != '\n' && peek() != '\0' && peek() != EOF)
+    {
+        next();
+    }
+
+    return next_token();
 }

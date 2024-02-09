@@ -29,4 +29,6 @@ private:
     Token get_identifier_token();
 
     Token get_keyword_from_identifier(const std::string &identifier);
+
+    Token remove_comment();
 };

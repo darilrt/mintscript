@@ -52,42 +52,40 @@ var_decl = ident, ( [ ':', type ], [ '=', expression ] | ':=', expression );
 var_assign = ident, '=', expression;
 
 (* Types *)
-type_list = type, { ',', type };
-type = dotted_type;
-list_type = '[]', ['?'], optional_type | optional_type;
-optional_type = dotted_type, ['?'];
-dotted_type = generic_type, { '.', generic_type };
-generic_type = ident, [ '[', type_list, ']' ];
+type_list = type, { ',', type }; (* Implemented *)
+type = list_type; (* Implemented *)
+list_type = '[]', ['?'], optional_type | optional_type; (* Implemented *)
+optional_type = dotted_type, ['?']; (* Implemented *)
+dotted_type = generic_type, { '.', generic_type }; (* Implemented *)
+generic_type = ident, [ '[', type_list, ']' ]; (* Implemented *)
+
 generic_list = generic_pair, { ',', generic_pair };
 generic_pair = ident, ':', generic_value;
 generic_value = (type, { '+', type });
 
 (* Expressions *)
-expression = logical_or;
+expression = logical_and; (* Implemented *)
 expr_list = expression, { ',', expression }; (* Implemented *)
-logical_or = logical_and, { '||', logical_and };
-logical_and = bitwaise_or, { '&&', bitwaise_or };
-bitwaise_or = bitwaise_xor, { '|', bitwaise_xor };
-bitwaise_xor = bitwaise_and, { '^', bitwaise_and };
-bitwaise_and = comparison, { '&', comparison };
-comparison = shift, { ( '==' | '!=' | '<' | '>' | '<=' | '>=' ), shift };
-shift = additive, { ( '<<' | '>>' ), additive };
-additive = multiplicative, { ( '+' | '-' ), multiplicative };
-multiplicative = unary, { ( '*' | '/' | '%' ), unary };
-unary = ( '!' | '~' | '-' | '+' | '++' | '--' ), unary | postfix;
-postfix = instancing, { ( '++' | '--' | 'as', type ) };
-
+logical_and = logical_or, ( '&&', logical_and ); (* Implemented *)
+logical_or = bitwaise_or, ( '||', logical_or ); (* Implemented *)
+bitwaise_or = bitwaise_xor, ( '|', bitwaise_or ); (* Implemented *)
+bitwaise_xor = bitwaise_and, ( '^', bitwaise_xor ); (* Implemented *)
+bitwaise_and = comparison, ( '&', bitwaise_and ); (* Implemented *)
+comparison = shift, ( ( '==' | '!=' | '<' | '>' | '<=' | '>=' ), shift ); (* Implemented *)
+shift = additive, ( ( '<<' | '>>' ), shift ); (* Implemented *)
+additive = multiplicative, ( ( '+' | '-' ), additive ); (* Implemented *)
+multiplicative = unary, ( ( '*' | '/' | '%' ), multiplicative ); (* Implemented *)
+unary = ( '!' | '~' | '-' | '+' | '++' | '--' ), unary | postfix; (* Implemented *)
+postfix = instancing, ( '++' | '--' | 'as', type ); (* Implemented *)
 instancing = postfix_access, [ struct_brace_initilizer ]; (* Implemented *)
-postfix_access = factor, { ( '.', ident ) | ( '(', expr_list, ')' | '[', ( expr_list | type_list ), ']' ) }; (* Implemented *)
+postfix_access = factor, { ( '.', ident ) | ( '(', expr_list, ')' | '[', ( expression | type_list ), ']' ) }; (* Implemented *)
 factor = literal | '(', expression, ')'; (* Implemented *)
-literal = integer | float | string | 'true' | 'false' | 'null' | ident | array | dict; (* Partial *)
+literal = integer | float | string | 'true' | 'false' | 'null' | ident | array | dict; (* Implemented *)
 array = '[', expr_list, ']'; (* Implemented *)
-dict_pair = expression, ':', expression; 
-dict_list = dict_pair, { ',', dict_pair };
-dict = '{', dict_list, '}';
-struct_brace_initilizer = '{', struct_list, '}'; (* Not Implemented Yet *)
-struct_list = struct_pair, { ',', struct_pair };
-struct_pair = '.', ident, '=', expression;
+dict = '{', ( dict_pair, { ',', dict_pair } ), '}'; (* Implemented *)
+dict_pair = expression, ':', expression;  (* Implemented *)
+struct_brace_initilizer = '{', ( struct_pair, { ',', struct_pair } ), '}'; (* Implemented *)
+struct_pair = '.', ident, '=', expression; (* Implemented *)
 
 (* Literals *)
 integer = ( '0' | [1-9], { [0-9] } ), [ 'u' | 'U' | 'l' | 'L' ];
