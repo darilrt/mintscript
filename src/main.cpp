@@ -8,7 +8,7 @@ int main()
 {
     Parser parser("examples/test.mint");
 
-    std::unique_ptr<Ast> ast = parser.parse();
+    Shared<Ast> ast = parser.parse();
 
     std::cout << ast->to_string() << std::endl;
 

@@ -75,17 +75,17 @@ shift = additive, { ( '<<' | '>>' ), additive };
 additive = multiplicative, { ( '+' | '-' ), multiplicative };
 multiplicative = unary, { ( '*' | '/' | '%' ), unary };
 unary = ( '!' | '~' | '-' | '+' | '++' | '--' ), unary | postfix;
-postfix = factor, { ( '++' | '--' | 'as', type ) };
-factor = literal | instancing | '(', expression, ')';
-instancing = access, [struct_brace_initilizer];
-access = postfix_access, { '.', postfix_access };
-postfix_access = ident, { ( '(', expr_list, ')' | '[', ( expr_list | type_list ), ']' ) }; 
-literal = integer | float | string | 'true' | 'false' | 'null' | array | dict; (* Partial *)
+postfix = instancing, { ( '++' | '--' | 'as', type ) };
+
+instancing = postfix_access, [ struct_brace_initilizer ]; (* Implemented *)
+postfix_access = factor, { ( '.', ident ) | ( '(', expr_list, ')' | '[', ( expr_list | type_list ), ']' ) }; (* Implemented *)
+factor = literal | '(', expression, ')'; (* Implemented *)
+literal = integer | float | string | 'true' | 'false' | 'null' | ident | array | dict; (* Partial *)
 array = '[', expr_list, ']'; (* Implemented *)
-dict_pair = expression, ':', expression;
+dict_pair = expression, ':', expression; 
 dict_list = dict_pair, { ',', dict_pair };
 dict = '{', dict_list, '}';
-struct_brace_initilizer = '{', struct_list, '}';
+struct_brace_initilizer = '{', struct_list, '}'; (* Not Implemented Yet *)
 struct_list = struct_pair, { ',', struct_pair };
 struct_pair = '.', ident, '=', expression;
 

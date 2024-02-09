@@ -1,36 +1,30 @@
 
-name: Type = value
-
-func(Type) -> Type {
-
+Animal:: concepts {
+    say_hello:: fn() -> str
 }
 
-class class_name {
-    func(arg: Type) -> Type {
+Stringable:: interface {
+    to_str:: fn() -> str
+}
 
+Foo:: class(Stringable, Animal) {
+    new:: fn() -> Foo {
+        return {}
+    }
+
+    say_hello:: fn() -> str {
+        return "Hello, from Foo!"
+    }
+
+    to_str:: fn() -> str {
+        return "Foo()"
     }
 }
 
-trait interface_name {
-    func(arg: Type) -> Type {
+main:: fn() {
+    foo: Foo = Foo.new()
 
-    }
+    foo.say_hello()
+
+    foo.to_str()
 }
-
-class HomeController(Controller) {
-
-    [POST]
-    index(Request) -> Response {
-        return Response.make('Hello World');
-    }
-
-    [GET]
-    index(Request) -> Response {
-        return Response.make('Hello World');
-    }
-}
-
-rule := 'print' '(' <args: expr_list> ')' {
-    return new PrintNode(args);
-}
-

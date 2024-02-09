@@ -67,12 +67,12 @@ Token Lexer::next_token()
     if (is_alpha(peek()) || peek() == '_')
     {
         const Token identifier = get_identifier_token();
-        const Token keyword = get_keyword_from_identifier(identifier.value);
+        // const Token keyword = get_keyword_from_identifier(identifier.value);
 
-        if (keyword.type != Token::Unknown)
-        {
-            return keyword;
-        }
+        // if (keyword.type != Token::Unknown)
+        // {
+        //     return keyword;
+        // }
 
         return identifier;
     }

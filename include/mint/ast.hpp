@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "cpptypes.hpp"
 #include "mint/token.hpp"
 
 class Ast
@@ -43,17 +44,32 @@ public:
         Prefix,
         // Ast { token: Type, children: [ Factor ] }
         Postfix,
+        // Ast { token: Type, children: [ Lhs, ExprList ] }
+        Call,
+        // Ast { token: Type, children: [ ExprList | TypeList ] }
+        Subscript,
+        // Ast { token: Type, children: [ Lhs, Rhs ] }
+        Access,
     };
 
     Type type;
     Token token;
-    std::vector<std::unique_ptr<Ast>> children;
+    std::vector<Unique<Ast>> children;
 
     Ast() : type(None) {}
+
+    Ast(Ast &&other)
+    {
+        type = other.type;
+        token = other.token;
+        children = std::move(other.children);
+    }
 
     Ast(Type type) : type(type) {}
 
     Ast(Type type, Token token) : type(type), token(token) {}
+
+    ~Ast() = default;
 
     inline Ast &operator[](size_t index)
     {

@@ -1,9 +1,9 @@
 #include "mint/parser.hpp"
 #include "mint/error.hpp"
 
-std::unique_ptr<Ast> Parser::parse_program()
+Unique<Ast> Parser::parse_program()
 {
-    std::vector<std::unique_ptr<Ast>> statements;
+    std::vector<Unique<Ast>> statements;
 
     buffer.push_ignore_newlines_state(false);
 
@@ -33,7 +33,7 @@ std::unique_ptr<Ast> Parser::parse_program()
     return program;
 }
 
-std::unique_ptr<Ast> Parser::parse_statement()
+Unique<Ast> Parser::parse_statement()
 {
     return parse_expression(false);
 }

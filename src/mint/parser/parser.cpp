@@ -22,7 +22,7 @@ Parser::Parser(const std::string &file_name)
         file_name);
 }
 
-std::unique_ptr<Ast> Parser::parse()
+Unique<Ast> Parser::parse()
 {
     return parse_program();
 }

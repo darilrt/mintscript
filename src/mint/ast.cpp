@@ -56,7 +56,7 @@ std::string Ast::to_string() const
     }
     case Instantiation:
     {
-        return "new " + children[0]->to_string();
+        return "Instantiation";
     }
     case Identifier:
     {
@@ -97,6 +97,34 @@ std::string Ast::to_string() const
             return "(" + children[0]->to_string() + ") as " + children[1]->to_string();
         else
             return "Unknown postfix";
+    }
+    case Call:
+    {
+        std::string result = children[0]->to_string() + "(";
+        for (auto &child : children[1]->children)
+        {
+            result += child->to_string();
+
+            if (&child != &children[1]->children.back())
+                result += ", ";
+        }
+        result += ")";
+        return result;
+    }
+    case Subscript:
+    {
+        if (children.size() <= 1)
+        {
+            return children[0]->to_string() + "[]";
+        }
+        else
+        {
+            return children[0]->to_string() + "[" + children[1]->to_string() + "]";
+        }
+    }
+    case Access:
+    {
+        return children[0]->to_string() + "." + token.value;
     }
     default:
     {
